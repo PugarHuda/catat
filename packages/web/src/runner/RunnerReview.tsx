@@ -21,9 +21,10 @@ interface Props {
   onReset: () => void;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
+  onHome?: () => void;
 }
 
-export default function RunnerReview({ schema, submission, onReset, surface, onSurfaceChange }: Props) {
+export default function RunnerReview({ schema, submission, onReset, surface, onSurfaceChange, onHome }: Props) {
   const [copied, setCopied] = useState(false);
 
   const { _meta_encrypted_field_ids, ...payload } = submission;
@@ -40,7 +41,14 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-3xl items-center gap-3 px-6 text-sm">
-          <span className="font-mono text-foreground">catat</span>
+          <button
+            type="button"
+            onClick={onHome}
+            className="font-mono text-foreground transition hover:text-muted-foreground"
+            title="Back to landing"
+          >
+            catat
+          </button>
           <span className="text-muted-foreground">/</span>
           <span className="text-muted-foreground">submission preview</span>
           <span className="ml-auto" />

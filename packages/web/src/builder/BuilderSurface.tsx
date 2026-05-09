@@ -12,6 +12,7 @@ interface Props {
   onSchemaChange: Dispatch<SetStateAction<FormSchema>>;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
+  onHome?: () => void;
 }
 
 let nextId = 1000;
@@ -34,7 +35,7 @@ function defaultsForType(type: FieldType): Partial<Field> {
   }
 }
 
-export default function BuilderSurface({ schema, onSchemaChange: setSchema, surface, onSurfaceChange }: Props) {
+export default function BuilderSurface({ schema, onSchemaChange: setSchema, surface, onSurfaceChange, onHome }: Props) {
   const [slashOpen, setSlashOpen] = useState(false);
   const slashAnchorRef = useRef<HTMLDivElement>(null);
 
@@ -98,7 +99,14 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-3xl items-center gap-3 px-6 text-sm">
-          <span className="font-mono text-foreground">catat</span>
+          <button
+            type="button"
+            onClick={onHome}
+            className="font-mono text-foreground transition hover:text-muted-foreground"
+            title="Back to landing"
+          >
+            catat
+          </button>
           <span className="text-muted-foreground">/</span>
           <input
             value={schema.title}

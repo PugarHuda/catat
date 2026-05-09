@@ -11,6 +11,7 @@ interface Props {
   schema: FormSchema;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
+  onHome?: () => void;
 }
 
 function serializeValue(v: unknown): unknown {
@@ -27,7 +28,7 @@ function serializeValue(v: unknown): unknown {
   return v;
 }
 
-export default function RunnerSurface({ schema, surface, onSurfaceChange }: Props) {
+export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome }: Props) {
   const [values, setValues] = useState<Values>({});
   const [submitted, setSubmitted] = useState<SerializedSubmission | null>(null);
 
@@ -91,6 +92,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange }: Prop
         }}
         surface={surface}
         onSurfaceChange={onSurfaceChange}
+        onHome={onHome}
       />
     );
   }
@@ -101,7 +103,14 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange }: Prop
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-2xl items-center gap-3 px-6 text-sm">
-          <span className="font-mono text-foreground">catat</span>
+          <button
+            type="button"
+            onClick={onHome}
+            className="font-mono text-foreground transition hover:text-muted-foreground"
+            title="Back to landing"
+          >
+            catat
+          </button>
           <span className="text-muted-foreground">/</span>
           <span className="min-w-0 flex-1 truncate text-muted-foreground">{schema.title}</span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} />

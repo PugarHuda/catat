@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import LandingPage from './landing/LandingPage';
 import BuilderSurface from './builder/BuilderSurface';
 import RunnerSurface from './runner/RunnerSurface';
 import AdminSurface from './admin/AdminSurface';
@@ -8,10 +9,26 @@ import type { FormSchema } from './builder/types';
 import type { Submission } from './admin/types';
 import type { Surface } from './lib/surfaces';
 
+type View = 'landing' | 'app';
+
 export default function App() {
+  const [view, setView] = useState<View>('landing');
   const [schema, setSchema] = useState<FormSchema>(bugReportTemplate);
   const [submissions, setSubmissions] = useState<Submission[]>(() => generateMockSubmissions());
   const [surface, setSurface] = useState<Surface>('builder');
+
+  if (view === 'landing') {
+    return (
+      <LandingPage
+        onEnterApp={() => {
+          setSurface('builder');
+          setView('app');
+        }}
+      />
+    );
+  }
+
+  const onHome = () => setView('landing');
 
   if (surface === 'runner') {
     return (
@@ -19,6 +36,7 @@ export default function App() {
         schema={schema}
         surface={surface}
         onSurfaceChange={setSurface}
+        onHome={onHome}
       />
     );
   }
@@ -31,6 +49,7 @@ export default function App() {
         onSubmissionsChange={setSubmissions}
         surface={surface}
         onSurfaceChange={setSurface}
+        onHome={onHome}
       />
     );
   }
@@ -41,6 +60,7 @@ export default function App() {
       onSchemaChange={setSchema}
       surface={surface}
       onSurfaceChange={setSurface}
+      onHome={onHome}
     />
   );
 }

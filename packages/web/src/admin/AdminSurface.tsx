@@ -14,6 +14,7 @@ interface Props {
   onSubmissionsChange: Dispatch<SetStateAction<Submission[]>>;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
+  onHome?: () => void;
 }
 
 const SEVERITY_WEIGHT: Record<string, number> = { Critical: 4, High: 3, Medium: 2, Low: 1 };
@@ -33,7 +34,7 @@ function hasEncryptedField(s: Submission): boolean {
   );
 }
 
-export default function AdminSurface({ schema, submissions, onSubmissionsChange, surface, onSurfaceChange }: Props) {
+export default function AdminSurface({ schema, submissions, onSubmissionsChange, surface, onSurfaceChange, onHome }: Props) {
   const [filters, setFilters] = useState<Filters>({
     status: new Set<Status>(),
     severity: new Set<string>(),
@@ -143,7 +144,14 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-6xl items-center gap-3 px-6 text-sm">
-          <span className="font-mono text-foreground">catat</span>
+          <button
+            type="button"
+            onClick={onHome}
+            className="font-mono text-foreground transition hover:text-muted-foreground"
+            title="Back to landing"
+          >
+            catat
+          </button>
           <span className="text-muted-foreground">/</span>
           <span className="min-w-0 flex-1 truncate font-medium">{schema.title}</span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} count={{ admin: counts.total }} />
