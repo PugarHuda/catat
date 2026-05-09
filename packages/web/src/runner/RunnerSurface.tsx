@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send } from 'lucide-react';
 import type { FormSchema } from '../builder/types';
 import RunnerField, { type Values } from './RunnerField';
 import RunnerReview, { type SerializedSubmission } from './RunnerReview';
+import SurfaceTabs from '@/components/SurfaceTabs';
+import type { Surface } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 
 interface Props {
   schema: FormSchema;
-  onBack: () => void;
+  surface: Surface;
+  onSurfaceChange: (s: Surface) => void;
 }
 
 function serializeValue(v: unknown): unknown {
@@ -24,7 +27,7 @@ function serializeValue(v: unknown): unknown {
   return v;
 }
 
-export default function RunnerSurface({ schema, onBack }: Props) {
+export default function RunnerSurface({ schema, surface, onSurfaceChange }: Props) {
   const [values, setValues] = useState<Values>({});
   const [submitted, setSubmitted] = useState<SerializedSubmission | null>(null);
 
@@ -86,7 +89,8 @@ export default function RunnerSurface({ schema, onBack }: Props) {
           setValues({});
           setSubmitted(null);
         }}
-        onBack={onBack}
+        surface={surface}
+        onSurfaceChange={onSurfaceChange}
       />
     );
   }
@@ -97,17 +101,11 @@ export default function RunnerSurface({ schema, onBack }: Props) {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-2xl items-center gap-3 px-6 text-sm">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Builder
-          </button>
           <span className="font-mono text-foreground">catat</span>
           <span className="text-muted-foreground">/</span>
-          <span className="text-muted-foreground">preview</span>
-          <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="min-w-0 flex-1 truncate text-muted-foreground">{schema.title}</span>
+          <SurfaceTabs current={surface} onChange={onSurfaceChange} />
+          <span className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline-block">
             respondent view
           </span>
         </div>

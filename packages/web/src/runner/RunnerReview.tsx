@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft, Check, Copy } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import type { FormSchema } from '../builder/types';
+import SurfaceTabs from '@/components/SurfaceTabs';
+import type { Surface } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 
 export interface SerializedSubmission {
@@ -17,10 +19,11 @@ interface Props {
   schema: FormSchema;
   submission: SerializedSubmission;
   onReset: () => void;
-  onBack: () => void;
+  surface: Surface;
+  onSurfaceChange: (s: Surface) => void;
 }
 
-export default function RunnerReview({ schema, submission, onReset, onBack }: Props) {
+export default function RunnerReview({ schema, submission, onReset, surface, onSurfaceChange }: Props) {
   const [copied, setCopied] = useState(false);
 
   const { _meta_encrypted_field_ids, ...payload } = submission;
@@ -37,16 +40,11 @@ export default function RunnerReview({ schema, submission, onReset, onBack }: Pr
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-3xl items-center gap-3 px-6 text-sm">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Builder
-          </button>
           <span className="font-mono text-foreground">catat</span>
           <span className="text-muted-foreground">/</span>
           <span className="text-muted-foreground">submission preview</span>
+          <span className="ml-auto" />
+          <SurfaceTabs current={surface} onChange={onSurfaceChange} />
         </div>
       </header>
 
@@ -88,7 +86,7 @@ export default function RunnerReview({ schema, submission, onReset, onBack }: Pr
             </button>
           </div>
           <pre className="overflow-x-auto bg-background p-4 font-mono text-xs leading-relaxed">
-{submissionJson}
+            {submissionJson}
           </pre>
         </div>
 
@@ -109,13 +107,6 @@ export default function RunnerReview({ schema, submission, onReset, onBack }: Pr
             )}
           >
             Submit another
-          </button>
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground transition hover:opacity-90"
-          >
-            Back to builder
           </button>
         </div>
       </main>

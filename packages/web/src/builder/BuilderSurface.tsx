@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { Plus, Eye, Send } from 'lucide-react';
+import { Plus, Send } from 'lucide-react';
 import type { Field, FieldType, FormSchema } from './types';
 import FieldRow from './FieldRow';
 import SlashMenu from './SlashMenu';
+import SurfaceTabs from '@/components/SurfaceTabs';
+import type { Surface } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 
 interface Props {
   schema: FormSchema;
   onSchemaChange: Dispatch<SetStateAction<FormSchema>>;
-  onPreview: () => void;
+  surface: Surface;
+  onSurfaceChange: (s: Surface) => void;
 }
 
 let nextId = 1000;
@@ -31,7 +34,7 @@ function defaultsForType(type: FieldType): Partial<Field> {
   }
 }
 
-export default function BuilderSurface({ schema, onSchemaChange: setSchema, onPreview }: Props) {
+export default function BuilderSurface({ schema, onSchemaChange: setSchema, surface, onSurfaceChange }: Props) {
   const [slashOpen, setSlashOpen] = useState(false);
   const slashAnchorRef = useRef<HTMLDivElement>(null);
 
@@ -103,20 +106,14 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, onPr
             className="min-w-0 flex-1 bg-transparent font-medium outline-none placeholder:text-muted-foreground"
             placeholder="Untitled form"
           />
+          <SurfaceTabs current={surface} onChange={onSurfaceChange} />
           <span className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline-block">
             testnet
           </span>
           <button
             type="button"
-            onClick={onPreview}
-            className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
-          >
-            <Eye className="h-3.5 w-3.5" /> Preview
-          </button>
-          <button
-            type="button"
-            onClick={onPreview}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-primary-foreground transition hover:opacity-90"
+            title="Coming soon — will publish schema blob to Walrus and register on Sui"
+            className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs text-primary-foreground transition hover:opacity-90"
           >
             <Send className="h-3.5 w-3.5" /> Publish
           </button>
@@ -170,13 +167,11 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, onPr
             </span>
           </button>
 
-          {slashOpen && (
-            <SlashMenu onSelect={addField} onClose={() => setSlashOpen(false)} />
-          )}
+          {slashOpen && <SlashMenu onSelect={addField} onClose={() => setSlashOpen(false)} />}
         </div>
 
         <p className="mt-16 text-center font-mono text-xs text-muted-foreground/60">
-          prototype · {schema.fields.length} fields · {encryptedCount} encrypted · click Preview to fill
+          prototype · {schema.fields.length} fields · {encryptedCount} encrypted · use Preview tab to fill
         </p>
       </main>
     </div>
