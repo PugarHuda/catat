@@ -1,0 +1,12 @@
+{
+  "name": "catat",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "web:dev": "npm --workspace @catat/web run dev",
+    "web:build": "npm --workspace @catat/web run build",
+    "web:preview": "npm --workspace @catat/web run preview",
+    "web:typecheck": "npm --workspace @catat/web run typecheck"
+  }
+}

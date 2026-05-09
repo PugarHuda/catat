@@ -1,0 +1,27 @@
+{
+  "name": "catat-spike",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike scripts untuk validasi Walrus + Seal + Sui SDK sebelum scaffold catat",
+  "scripts": {
+    "keygen": "tsx src/00-keygen.ts",
+    "faucet": "tsx src/01-faucet-check.ts",
+    "blob": "tsx src/02-walrus-blob.ts",
+    "quilt-single": "tsx src/03-walrus-quilt-single.ts",
+    "quilt-multi": "tsx src/04-walrus-quilt-multi.ts",
+    "seal": "tsx src/05-seal-spike.ts"
+  },
+  "dependencies": {
+    "@mysten/sui": "^1.20.0",
+    "@mysten/walrus": "latest",
+    "@mysten/walrus-wasm": "latest",
+    "@mysten/seal": "^1.1.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

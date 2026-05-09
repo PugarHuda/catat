@@ -1,0 +1,19 @@
+{
+  "site_name": "catat",
+  "metadata": {
+    "title": "catat — feedback with proof",
+    "description": "Walrus-native feedback platform. Build forms, store on Walrus, encrypt with Seal, verify on Sui."
+  },
+  "headers": {
+    "/index.html": {
+      "Cache-Control": "no-cache"
+    }
+  },
+  "routes": {
+    "/f/*": "/index.html",
+    "/a/*": "/index.html",
+    "/b/*": "/index.html",
+    "/embed/*": "/index.html",
+    "/p/*": "/index.html"
+  }
+}
