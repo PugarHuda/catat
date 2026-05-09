@@ -1,0 +1,39 @@
+name: Deploy to Walrus Sites
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/web/**'
+      - '.github/workflows/deploy-walrus.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        run: npm install
+
+      - name: Build site
+        run: npm run web:build
+
+      - name: Deploy to Walrus Sites
+        uses: MystenLabs/deploy-walrus-site-action@v1
+        with:
+          SUI_BECH32_PRIVATE_KEY: ${{ secrets.SUI_BECH32_PRIVATE_KEY }}
+          SUI_NETWORK: testnet
+          DIST: ./packages/web/dist
+          EPOCHS: '10'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
