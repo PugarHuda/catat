@@ -30,7 +30,7 @@ jobs:
         run: npm run web:build
 
       - name: Deploy to Walrus Sites
-        uses: MystenLabs/deploy-walrus-site-action@v1
+        uses: MystenLabs/walrus-sites-github-actions/deploy@v3
         with:
           SUI_BECH32_PRIVATE_KEY: ${{ secrets.SUI_BECH32_PRIVATE_KEY }}
           SUI_NETWORK: testnet
