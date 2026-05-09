@@ -36,6 +36,10 @@ Roadmap di [`packages/web/CLAUDE.md`](packages/web/CLAUDE.md).
 └── spike/                   # SDK validation scripts (Walrus/Seal/Sui)
 ```
 
+## Live demo
+
+🌐 **https://catat-walrus.vercel.app** — Builder + Runner + Admin Dashboard, with 12 mock submissions to play with.
+
 ## Run lokal
 
 ```bash
@@ -43,6 +47,16 @@ npm install
 npm run web:dev
 # open http://localhost:5173
 ```
+
+## Deploy infra
+
+| Surface | Where | URL |
+|---|---|---|
+| Frontend | Vercel (Hobby) | https://catat-walrus.vercel.app |
+| Walrus Sites (testnet) | On-chain | Site object [`0xe362ed40...8db7`](https://suiscan.xyz/testnet/object/0xe362ed40995b7eca96dbbfc856b1115fc5c10b6938803df648e1fdb9bc5e8db7) — viewable via self-hosted portal (no public testnet portal exists yet) |
+| Repo | GitHub | https://github.com/PugarHuda/catat |
+
+CI/CD: every push to `main` triggers `.github/workflows/deploy-walrus.yml` which deploys to Walrus Sites testnet via [`MystenLabs/walrus-sites-github-actions/deploy@v3`](https://github.com/MystenLabs/walrus-sites-github-actions). Vercel deploy is via `npx vercel --prod`.
 
 ## Stack
 
