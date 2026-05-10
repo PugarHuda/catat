@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Send, Loader2, AlertTriangle, Wallet } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
 import { walrus, WalrusFile } from '@mysten/walrus';
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
@@ -67,6 +68,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
 
   const account = useCurrentAccount();
   const sui = useSuiClient();
+  const queryClient = useQueryClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
 
   const walrusClient = useMemo(() => {
@@ -193,6 +195,9 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
         _real_walrus_certify_tx: certifyResult.digest,
         _real_form_id: BUG_REPORT_FORM_ID,
       });
+      // Invalidate caches so landing counter + admin list refresh on next view.
+      queryClient.invalidateQueries({ queryKey: ['form-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
       setSubmitState({ kind: 'idle' });
     } catch (e) {
       console.error('Walrus submit failed:', e);
