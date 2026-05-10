@@ -14,6 +14,8 @@ export interface Submission {
   priority: Priority;
   tags: string[];
   notes?: string;
+  /** 'walrus' = read from on-chain registry; 'mock' = bundled demo data */
+  source?: 'mock' | 'walrus';
 }
 
 export interface AdminFilters {

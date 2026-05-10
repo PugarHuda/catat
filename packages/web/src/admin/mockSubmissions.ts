@@ -196,5 +196,6 @@ export function generateMockSubmissions(): Submission[] {
     status: s.status,
     priority: s.priority,
     tags: [],
+    source: 'mock' as const,
   }));
 }

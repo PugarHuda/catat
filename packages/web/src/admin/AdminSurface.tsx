@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Download } from 'lucide-react';
+import { Download, RefreshCw, Loader2 } from 'lucide-react';
 import type { FormSchema } from '../builder/types';
 import type { Submission, Status, AdminFilters as Filters, SortKey } from './types';
 import AdminFilters from './AdminFilters';
 import AdminTable from './AdminTable';
 import AdminDetail from './AdminDetail';
+import { useRealSubmissions } from './useRealSubmissions';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import type { Surface } from '@/lib/surfaces';
+import { cn } from '@/lib/utils';
 
 interface Props {
   schema: FormSchema;
@@ -45,8 +47,18 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
+  const realQuery = useRealSubmissions();
+  const realSubmissions = realQuery.data ?? [];
+
+  // Real submissions appear first (newest demo of "your submission is here").
+  // Local status edits to mock submissions persist in `submissions` state.
+  const allSubmissions = useMemo(
+    () => [...realSubmissions, ...submissions],
+    [realSubmissions, submissions],
+  );
+
   const filtered = useMemo(() => {
-    let rows = submissions;
+    let rows = allSubmissions;
 
     if (filters.status.size > 0) {
       rows = rows.filter(r => filters.status.has(r.status));
@@ -66,9 +78,11 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
         case 'priority': return priorityWeight(b) - priorityWeight(a);
       }
     });
-  }, [submissions, filters, sort]);
+  }, [allSubmissions, filters, sort]);
 
   const updateSubmission = (id: string, patch: Partial<Submission>) => {
+    // Walrus-sourced submissions can't have status persisted yet (next: localStorage).
+    // For now, mutating mock submissions only.
     onSubmissionsChange(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)));
   };
 
@@ -122,8 +136,10 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
   }, [filtered, focusedId, openId]);
 
   const counts = {
-    total: submissions.length,
-    new: submissions.filter(s => s.status === 'new').length,
+    total: allSubmissions.length,
+    new: allSubmissions.filter(s => s.status === 'new').length,
+    real: realSubmissions.length,
+    mock: submissions.length,
   };
 
   const handleExport = () => {
@@ -159,6 +175,25 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
           <WalletButton />
           <button
             type="button"
+            onClick={() => realQuery.refetch()}
+            disabled={realQuery.isFetching}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition',
+              realQuery.isFetching
+                ? 'cursor-not-allowed text-muted-foreground/40'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            )}
+            title="Refresh from chain"
+          >
+            {realQuery.isFetching ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            Refresh
+          </button>
+          <button
+            type="button"
             onClick={handleExport}
             className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground"
           >
@@ -169,6 +204,25 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
 
       <main className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 xl:flex-row">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-1.5 py-0.5 font-mono text-emerald-700">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              {counts.real} on-chain
+            </span>
+            <span className="font-mono text-muted-foreground/60">+</span>
+            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-muted-foreground">
+              {counts.mock} demo
+            </span>
+            {realQuery.isError && (
+              <span className="font-mono text-destructive">
+                · chain read failed: {(realQuery.error as Error).message.slice(0, 60)}
+              </span>
+            )}
+          </div>
+
           <AdminFilters
             filters={filters}
             onFiltersChange={setFilters}

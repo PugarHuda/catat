@@ -67,7 +67,17 @@ export default function AdminTable({ submissions, focusedId, openId, onFocus, on
                 )}
               >
                 <td className="py-2.5 pl-3 pr-1">
-                  {hasEncrypted && <Lock className="h-3 w-3 text-emerald-600" />}
+                  {s.source === 'walrus' ? (
+                    <span
+                      className="relative flex h-1.5 w-1.5"
+                      title="Real on-chain submission read from Walrus"
+                    >
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    </span>
+                  ) : hasEncrypted ? (
+                    <Lock className="h-3 w-3 text-emerald-600" />
+                  ) : null}
                 </td>
                 <td className="py-2.5 pr-2">
                   <span className={cn('inline-flex items-center gap-1.5 text-xs', status.color)}>
