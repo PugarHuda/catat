@@ -1,151 +1,173 @@
-import { Lock } from 'lucide-react';
 import type { Field } from '../builder/types';
-import { fieldMeta } from '../builder/fieldMeta';
-import { cn } from '@/lib/utils';
 
 export type Values = Record<string, unknown>;
 
 interface Props {
   field: Field;
+  index: number;
   value: unknown;
   onChange: (v: unknown) => void;
 }
 
-const baseInput =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm transition focus:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-foreground/10';
-
-export default function RunnerField({ field, value, onChange }: Props) {
-  const meta = fieldMeta[field.type];
-  const Icon = meta.icon;
-
+export default function RunnerField({ field, index, value, onChange }: Props) {
   return (
-    <div>
-      <label className="mb-2 flex items-baseline gap-1.5">
-        <Icon className="relative top-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="text-sm font-medium">{field.label}</span>
-        {field.required && <span className="text-xs text-destructive">*</span>}
+    <div className={`q${field.encrypted ? ' sealed' : ''}`}>
+      <div className="qhead">
+        <span className="num">Q{index} · {field.type.replace('_', ' ')}</span>
+        <h3>{field.label}</h3>
+        {field.required && <span className="req">*</span>}
         {field.encrypted && (
-          <span className="ml-auto inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-700">
-            <Lock className="h-2.5 w-2.5" /> Encrypted
+          <span className="seal">
+            <LockIcon />
+            sealed
           </span>
         )}
-      </label>
-      {field.help && <p className="mb-2 pl-5 text-xs text-muted-foreground">{field.help}</p>}
-      <div className="pl-5">
-        <RunnerInput field={field} value={value} onChange={onChange} />
       </div>
+      {field.help && <p className="qhint">{field.help}</p>}
+      <RunnerInput field={field} value={value} onChange={onChange} />
+      {field.encrypted && (
+        <small style={{ display: 'block', marginTop: 6, fontFamily: 'var(--type)', fontSize: 11, color: 'var(--marker-red)', letterSpacing: '.06em' }}>
+          Encrypted in your browser before it leaves. Only the form owner can read it.
+        </small>
+      )}
     </div>
   );
 }
 
-function RunnerInput({ field, value, onChange }: Props) {
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+function RunnerInput({ field, value, onChange }: Pick<Props, 'field' | 'value' | 'onChange'>) {
   switch (field.type) {
     case 'short_text':
       return (
         <input
+          className="in-text"
           type="text"
           value={(value as string) ?? ''}
           onChange={e => onChange(e.target.value)}
           placeholder={field.placeholder ?? ''}
-          className={baseInput}
         />
       );
 
     case 'wallet_address':
       return (
         <input
+          className="in-text"
           type="text"
           value={(value as string) ?? ''}
           onChange={e => onChange(e.target.value)}
-          placeholder="0x... (will autofill from connected wallet)"
-          className={cn(baseInput, 'font-mono text-xs')}
+          placeholder="0x… (autofill from wallet on submit)"
+          style={{ fontFamily: 'var(--mono)', fontSize: 16 }}
         />
       );
 
     case 'email':
       return (
         <input
+          className="in-text"
           type="email"
           value={(value as string) ?? ''}
           onChange={e => onChange(e.target.value)}
-          placeholder="you@example.com"
-          className={baseInput}
+          placeholder="you@where.xyz"
         />
       );
 
     case 'url':
       return (
-        <input
-          type="url"
-          value={(value as string) ?? ''}
-          onChange={e => onChange(e.target.value)}
-          placeholder="https://"
-          className={baseInput}
-        />
+        <div className="in-url">
+          <span className="pfx">https://</span>
+          <input
+            type="url"
+            value={((value as string) ?? '').replace(/^https?:\/\//, '')}
+            onChange={e => onChange(e.target.value ? `https://${e.target.value.replace(/^https?:\/\//, '')}` : '')}
+            placeholder="suiscan.xyz/testnet/tx/0x…"
+          />
+        </div>
       );
 
     case 'rich_text':
       return (
         <textarea
+          className="in-rich"
           value={(value as string) ?? ''}
           onChange={e => onChange(e.target.value)}
-          rows={5}
-          placeholder="Markdown supported — # heading, **bold**, [link](url)"
-          className={cn(baseInput, 'resize-y leading-relaxed')}
+          placeholder="Steps to reproduce, expected vs actual… markdown welcome."
         />
       );
 
     case 'number':
       return (
         <input
+          className="in-text"
           type="number"
           value={value == null ? '' : String(value)}
           onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
-          className={baseInput}
+          placeholder="0"
         />
       );
 
     case 'date':
       return (
         <input
+          className="in-text"
           type="date"
           value={(value as string) ?? ''}
           onChange={e => onChange(e.target.value)}
-          className={baseInput}
         />
       );
 
-    case 'dropdown':
+    case 'dropdown': {
+      const options = field.options ?? [];
       return (
-        <select
-          value={(value as string) ?? ''}
-          onChange={e => onChange(e.target.value)}
-          className={baseInput}
-        >
-          <option value="" disabled>Select…</option>
-          {(field.options ?? []).map(o => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
+        <div className="opts row" role="radiogroup">
+          {options.map(o => {
+            const on = value === o;
+            return (
+              <button
+                key={o}
+                type="button"
+                className={`opt${on ? ' on' : ''}`}
+                onClick={() => onChange(o)}
+                role="radio"
+                aria-checked={on}
+              >
+                <span className="box round" />
+                {o}
+              </button>
+            );
+          })}
+        </div>
       );
+    }
 
     case 'checkboxes': {
       const arr = (value as string[]) ?? [];
+      const options = field.options ?? [];
       return (
-        <div className="space-y-1.5">
-          {(field.options ?? []).map(o => (
-            <label key={o} className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={arr.includes(o)}
-                onChange={e =>
-                  onChange(e.target.checked ? [...arr, o] : arr.filter(x => x !== o))
+        <div className="opts">
+          {options.map(o => {
+            const on = arr.includes(o);
+            return (
+              <button
+                key={o}
+                type="button"
+                className={`opt${on ? ' on' : ''}`}
+                onClick={() =>
+                  onChange(on ? arr.filter(x => x !== o) : [...arr, o])
                 }
-                className="h-3.5 w-3.5 rounded border-border"
-              />
-              {o}
-            </label>
-          ))}
+              >
+                <span className="box" />
+                {o}
+              </button>
+            );
+          })}
         </div>
       );
     }
@@ -153,25 +175,29 @@ function RunnerInput({ field, value, onChange }: Props) {
     case 'star_rating': {
       const num = (value as number) ?? 0;
       const scale = field.scale ?? 5;
+      const labels = ['', 'terrible', 'meh', 'fine', 'good', 'chef’s kiss'];
       return (
-        <div className="flex items-center gap-1">
-          {Array.from({ length: scale }).map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => onChange(num === i + 1 ? 0 : i + 1)}
-              className={cn(
-                'text-2xl leading-none transition',
-                i < num ? 'text-yellow-500' : 'text-muted-foreground/30 hover:text-yellow-300',
-              )}
-              aria-label={`${i + 1} of ${scale}`}
-            >
-              ★
-            </button>
-          ))}
+        <div className="stars">
+          {Array.from({ length: scale }).map((_, i) => {
+            const n = i + 1;
+            const on = n <= num;
+            return (
+              <button
+                key={i}
+                type="button"
+                className={`star${on ? ' on' : ''}`}
+                onClick={() => onChange(num === n ? 0 : n)}
+                aria-label={`${n} of ${scale}`}
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z" />
+                </svg>
+              </button>
+            );
+          })}
           {num > 0 && (
-            <span className="ml-2 self-center font-mono text-xs text-muted-foreground">
-              {num}/{scale}
+            <span className="lbl">
+              {num} / {scale} — {labels[Math.min(num, labels.length - 1)] ?? ''}
             </span>
           )}
         </div>
@@ -184,22 +210,40 @@ function RunnerInput({ field, value, onChange }: Props) {
       const accept = field.type === 'image_upload' ? 'image/*' : 'video/*';
       const multiple = field.type === 'image_upload';
       return (
-        <div>
-          <input
-            type="file"
-            accept={accept}
-            multiple={multiple}
-            onChange={e => onChange(Array.from(e.target.files ?? []))}
-            className="block w-full text-sm text-muted-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-accent"
-          />
+        <>
+          <label className="drop">
+            <span className="pic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                <rect x="3" y="4" width="18" height="14" rx="2" />
+                <circle cx="9" cy="10" r="2" />
+                <path d="M21 16l-5-5-9 9" />
+              </svg>
+            </span>
+            <span className="meta">
+              <b>drop {field.type === 'video_upload' ? 'video / mp4' : 'image / png / jpg'}</b>
+              <small>
+                up to 50 MB · we sign + Quilt-batch with your other answers
+                {field.encrypted && <em> · seal threshold 2-of-3</em>}
+              </small>
+            </span>
+            <input
+              type="file"
+              accept={accept}
+              multiple={multiple}
+              hidden
+              onChange={e => onChange(Array.from(e.target.files ?? []))}
+            />
+          </label>
           {files.length > 0 && (
-            <ul className="mt-2 space-y-0.5 font-mono text-xs text-muted-foreground">
+            <ul className="uploaded-files" style={{ listStyle: 'none', padding: 0 }}>
               {files.map((f, i) => (
-                <li key={i}>· {f.name} ({(f.size / 1024).toFixed(1)} KB)</li>
+                <li key={i}>
+                  · {f.name} ({(f.size / 1024).toFixed(1)} KB)
+                </li>
               ))}
             </ul>
           )}
-        </div>
+        </>
       );
     }
   }

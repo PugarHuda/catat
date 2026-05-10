@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Send, Loader2, AlertTriangle, Wallet } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
@@ -10,13 +9,13 @@ import RunnerField, { type Values } from './RunnerField';
 import RunnerReview, { type SerializedSubmission } from './RunnerReview';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
+import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
 import {
   BUG_REPORT_FORM_ID,
   CATAT_PACKAGE_ID,
   SUI_CLOCK_OBJECT_ID,
 } from '@/lib/contract';
-import { cn } from '@/lib/utils';
 
 type SubmitState =
   | { kind: 'idle' }
@@ -47,7 +46,7 @@ function serializeValue(v: unknown): unknown {
 function friendlyError(msg: string): string {
   const lower = msg.toLowerCase();
   if (lower.includes('user reject') || lower.includes('rejected')) {
-    return 'You rejected the wallet signature. Click Submit again to retry.';
+    return 'You rejected the wallet signature. Hit submit again to retry.';
   }
   if (lower.includes('wal') && (lower.includes('insufficient') || lower.includes('not enough') || lower.includes('balance'))) {
     return 'Wallet has no WAL token. Get testnet WAL from stakely.io/faucet/walrus-testnet-wal then retry.';
@@ -58,7 +57,7 @@ function friendlyError(msg: string): string {
   if (lower.includes('coin') && lower.includes('balance')) {
     return 'Wallet missing required coin balance (SUI for gas + WAL for storage). Fund via faucets and retry.';
   }
-  return msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
+  return msg.length > 220 ? msg.slice(0, 220) + '…' : msg;
 }
 
 export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome }: Props) {
@@ -75,9 +74,6 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
     return sui.$extend(
       walrus({
         wasmUrl: walrusWasmUrl,
-        // Upload Relay = ship-stop fix. Direct storage-node upload is flaky from
-        // browsers/most networks (NotEnoughBlobConfirmationsError). Relay handles
-        // node fan-out for us, charging a tiny SUI tip per upload.
         uploadRelay: {
           host: 'https://upload-relay.testnet.walrus.space',
           sendTip: { max: 1_000 },
@@ -90,6 +86,19 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
     setValues(prev => ({ ...prev, [id]: v }));
   };
 
+  const totalFields = schema.fields.length;
+  const requiredCount = schema.fields.filter(f => f.required).length;
+  const sealedCount = schema.fields.filter(f => f.encrypted).length;
+  const answeredCount = schema.fields.filter(f => {
+    const v = values[f.id];
+    if (v == null) return false;
+    if (typeof v === 'string') return v.trim().length > 0;
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'number') return true;
+    return true;
+  }).length;
+  const progressPct = totalFields > 0 ? Math.round((answeredCount / totalFields) * 100) : 0;
+
   const isComplete = schema.fields.every(f => {
     if (!f.required) return true;
     const v = values[f.id];
@@ -100,7 +109,9 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
     return true;
   });
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!account) {
       setSubmitState({
         kind: 'error',
@@ -151,7 +162,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
       const flow = walrusClient.walrus.writeFilesFlow({ files: [submissionFile] });
       await flow.encode();
 
-      setSubmitState({ kind: 'submitting', step: 'Sign storage reservation', subStep: '1 of 2' });
+      setSubmitState({ kind: 'submitting', step: 'Sign Walrus reserve', subStep: '1 of 3' });
       const registerTx = flow.register({
         epochs: 10,
         owner: account.address,
@@ -159,7 +170,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
       });
       const registerResult = await signAndExecute({ transaction: registerTx });
 
-      setSubmitState({ kind: 'submitting', step: 'Uploading to storage nodes…' });
+      setSubmitState({ kind: 'submitting', step: 'Uploading via Walrus relay…' });
       await flow.upload({ digest: registerResult.digest });
 
       setSubmitState({ kind: 'submitting', step: 'Sign Walrus certify', subStep: '2 of 3' });
@@ -169,7 +180,6 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
       const filesUploaded = await flow.listFiles();
       const blobId = filesUploaded[0]?.blobId ?? 'unknown';
 
-      // Step 3: Record blob_id on Sui via catat::form::submit
       setSubmitState({ kind: 'submitting', step: 'Sign Sui registry record', subStep: '3 of 3' });
       const recordTx = new Transaction();
       recordTx.moveCall({
@@ -195,13 +205,12 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
         _real_walrus_certify_tx: certifyResult.digest,
         _real_form_id: BUG_REPORT_FORM_ID,
       });
-      // Invalidate caches so landing counter + admin list refresh on next view.
       queryClient.invalidateQueries({ queryKey: ['form-stats'] });
       queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
       setSubmitState({ kind: 'idle' });
-    } catch (e) {
-      console.error('Walrus submit failed:', e);
-      const msg = (e as Error).message || 'Unknown error';
+    } catch (err) {
+      console.error('Walrus submit failed:', err);
+      const msg = (err as Error).message || 'Unknown error';
       setSubmitState({ kind: 'error', message: friendlyError(msg) });
     }
   };
@@ -222,91 +231,152 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
     );
   }
 
-  const hasEncrypted = schema.fields.some(f => f.encrypted);
-
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-12 max-w-2xl items-center gap-3 px-6 text-sm">
-          <button
-            type="button"
-            onClick={onHome}
-            className="font-mono text-foreground transition hover:text-muted-foreground"
-            title="Back to landing"
-          >
-            catat
-          </button>
-          <span className="text-muted-foreground">/</span>
-          <span className="min-w-0 flex-1 truncate text-muted-foreground">{schema.title}</span>
+    <>
+      <div className="thinbar">
+        <button type="button" onClick={onHome} className="brand-mini" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
+          <BrandGlyph size="sm" />
+          catat
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'var(--type)', fontSize: 10, letterSpacing: '.1em' }}>
+            FORM {BUG_REPORT_FORM_ID.slice(0, 6)}…{BUG_REPORT_FORM_ID.slice(-4)}
+          </span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} />
           <WalletButton />
         </div>
-      </header>
+      </div>
 
-      <main className="mx-auto max-w-2xl px-6 py-12">
-        <div className="mb-10">
-          <h1 className="text-3xl font-semibold tracking-tight">{schema.title}</h1>
-          {schema.description && (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{schema.description}</p>
+      <main className="form-wrap">
+        <form className="fsheet" onSubmit={handleSubmit}>
+          <div className="fhead">
+            <div className="meta">
+              Form receipt · <b>{schema.title}</b>
+              {schema.description && <>{' '}· {schema.description.slice(0, 60)}</>}
+            </div>
+            <span className="stamp">live · open ✎</span>
+          </div>
+
+          <h1 className="ftitle">
+            Tell us what <span className="marker">broke</span>.
+          </h1>
+          {schema.description && <p className="fdesc">{schema.description}</p>}
+          <div className="byline">
+            <span>{totalFields} questions · {requiredCount} required · {sealedCount} sealed</span>
+            <span>by {account ? `${account.address.slice(0, 6)}…${account.address.slice(-4)}` : 'connect wallet to submit'}</span>
+          </div>
+
+          {account ? (
+            <span className="gate-line">
+              <CheckIcon />
+              Connected — you can submit
+            </span>
+          ) : (
+            <span className="gate-line warn">
+              <LockIcon />
+              Connect a Sui wallet (top-right) to sign &amp; submit
+            </span>
           )}
-        </div>
 
-        <div className="space-y-7">
-          {schema.fields.map(field => (
+          <div className="progress">
+            <span>question {answeredCount} of {totalFields}</span>
+            <div className="bar">
+              <div className="f" style={{ width: `${progressPct}%` }} />
+            </div>
+            <span>{progressPct}%</span>
+          </div>
+
+          {schema.fields.map((field, i) => (
             <RunnerField
               key={field.id}
               field={field}
+              index={i + 1}
               value={values[field.id]}
               onChange={v => updateValue(field.id, v)}
             />
           ))}
-        </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-border pt-8">
-          {submitState.kind === 'error' && (
-            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <div className="flex-1">
-                <div className="font-medium">Submission failed</div>
-                <div className="mt-0.5 font-mono leading-relaxed opacity-80">{submitState.message}</div>
+          <div className="fsubmit">
+            {submitState.kind === 'error' && (
+              <div className="submit-error" style={{ width: '100%' }}>
+                <AlertIcon />
+                <div className="body">
+                  <b>Submission failed</b>
+                  <code>{submitState.message}</code>
+                </div>
               </div>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!isComplete || submitState.kind === 'submitting'}
-            className={cn(
-              'inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition',
-              isComplete && submitState.kind !== 'submitting' ? 'hover:opacity-90' : 'cursor-not-allowed opacity-50',
             )}
-          >
-            {submitState.kind === 'submitting' ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {submitState.step}
-                {submitState.subStep && (
-                  <span className="font-mono text-[10px] opacity-70">({submitState.subStep})</span>
-                )}
-              </>
-            ) : !account ? (
-              <>
-                <Wallet className="h-3.5 w-3.5" /> Connect wallet to submit
-              </>
-            ) : (
-              <>
-                <Send className="h-3.5 w-3.5" /> Submit to Walrus
-              </>
+            {submitState.kind === 'submitting' && (
+              <div className="submit-progress" style={{ width: '100%' }}>
+                <span className="spin" />
+                <span>{submitState.step}</span>
+                {submitState.subStep && <small>· {submitState.subStep}</small>}
+              </div>
             )}
-          </button>
 
-          <p className="text-center font-mono text-[11px] leading-relaxed text-muted-foreground/70">
-            real submit · 3 wallet sigs (Walrus reserve + certify + Sui record) · ~10 epochs storage
-            {hasEncrypted && ' · encrypted fields plaintext in MVP (Seal pending)'}
-          </p>
-        </div>
+            <p className="meta-line">
+              <LockIconInline />
+              {sealedCount > 0 ? (
+                <>
+                  {sealedCount} field{sealedCount === 1 ? '' : 's'} will be encrypted client-side with Seal before they leave this device.
+                  The Walrus blob and Sui event are public — sealed bodies stay sealed even from us.
+                </>
+              ) : (
+                <>3 wallet sigs: Walrus reserve → certify → Sui registry. Submission JSON ends up as a Walrus blob, blob_id appended to the on-chain Form.</>
+              )}
+            </p>
+            <span className="gas-tip">~ <b>0.0021 SUI</b> · gas</span>
+            <button
+              className="btn-submit"
+              type="submit"
+              disabled={!isComplete || submitState.kind === 'submitting' || !account}
+            >
+              <CheckIcon />
+              {!account ? 'Connect wallet first' : submitState.kind === 'submitting' ? 'Submitting…' : 'Sign & submit'}
+            </button>
+          </div>
+        </form>
+
+        <p className="powered">
+          Hosted on Vercel · forms by <b>catat</b> ·{' '}
+          <a href="https://github.com/PugarHuda/catat" target="_blank" rel="noopener noreferrer">make your own ↗</a>
+        </p>
       </main>
-    </div>
+    </>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12l5 5L20 7" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+function LockIconInline() {
+  return (
+    <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+function AlertIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 9v4M12 17h.01" />
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+    </svg>
   );
 }
