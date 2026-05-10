@@ -11,6 +11,8 @@ import {
   Boxes,
   type LucideIcon,
 } from 'lucide-react';
+import { useFormStats } from './useFormStats';
+import { BUG_REPORT_FORM_ID } from '@/lib/contract';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -64,6 +66,10 @@ function Header({ onEnterApp }: Props) {
 }
 
 function Hero({ onEnterApp }: Props) {
+  const { data: stats, isLoading: statsLoading } = useFormStats();
+  const count = stats?.count ?? 0;
+  const formIdShort = `${BUG_REPORT_FORM_ID.slice(0, 6)}…${BUG_REPORT_FORM_ID.slice(-4)}`;
+
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 -z-10 h-[640px] bg-gradient-to-b from-sky-50 via-sky-50/30 to-transparent" />
@@ -113,17 +119,23 @@ function Hero({ onEnterApp }: Props) {
           </span>
           <span className="text-muted-foreground/40">·</span>
           <span>
-            <span className="text-foreground">1,247</span> verified submissions
+            <span className="text-foreground tabular-nums">
+              {statsLoading ? '—' : count.toLocaleString()}
+            </span>{' '}
+            on-chain submission{count === 1 ? '' : 's'}
           </span>
           <span className="text-muted-foreground/40">·</span>
-          <span>
-            blob_id <span className="text-foreground">0xa9f2..3e7b</span>
-          </span>
+          <a
+            href={`https://suiscan.xyz/testnet/object/${BUG_REPORT_FORM_ID}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition hover:text-foreground"
+            title="View Form object on Suiscan"
+          >
+            form_id <span className="text-foreground">{formIdShort}</span>
+          </a>
           <span className="text-muted-foreground/40">·</span>
-          <span>
-            since epoch <span className="text-foreground">124</span>
-          </span>
-          <span className="text-muted-foreground/50">[demo data]</span>
+          <span>sui testnet</span>
         </div>
       </div>
     </section>
