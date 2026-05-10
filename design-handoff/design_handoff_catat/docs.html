@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.docs-grid{display:grid;grid-template-columns:240px 1fr;gap:36px;align-items:flex-start}
+@media(max-width:920px){.docs-grid{grid-template-columns:1fr}}
+
+/* ---- TOC sidebar — index card ---- */
+.toc{position:sticky;top:90px;background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;padding:18px 18px;box-shadow:4px 4px 0 var(--ink);transform:rotate(-.6deg)}
+.toc h4{font-family:var(--hand);font-size:24px;margin:0 0 4px;line-height:1;color:var(--ink)}
+.toc small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:14px;border-bottom:1.5px dashed var(--ink);padding-bottom:8px}
+.toc ol{list-style:none;padding:0;margin:0;counter-reset:s}
+.toc ol li{font-family:var(--body);font-size:15px;color:var(--ink-soft);padding:5px 0;border-bottom:1px dashed var(--line);counter-increment:s;display:flex;align-items:center;gap:6px;cursor:pointer}
+.toc ol li::before{content:counter(s,decimal-leading-zero);font-family:var(--type);font-size:10px;color:var(--marker-red);letter-spacing:.06em;flex:none;width:20px}
+.toc ol li:last-child{border-bottom:0}
+.toc ol li:hover,.toc ol li.on{color:var(--marker-red)}
+.toc ol li.on{font-family:var(--hand);font-size:18px;line-height:1.1}
+
+.toc-foot{margin-top:14px;padding-top:12px;border-top:1.5px dashed var(--ink);font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.04em}
+.toc-foot a{display:block;padding:3px 0;color:var(--ink-soft)}
+.toc-foot a:hover{color:var(--marker-red)}
+
+/* ---- main article ---- */
+.article{max-width:760px}
+.crumbs{font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil);margin-bottom:6px}
+.crumbs span{color:var(--marker-red)}
+.article h2{font-family:var(--hand);font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-.01em;margin:38px 0 8px;color:var(--ink);scroll-margin-top:90px}
+.article h2 .num{color:var(--marker-red);font-size:30px;margin-right:8px;font-family:var(--type)}
+.article h3{font-family:var(--hand);font-weight:700;font-size:28px;margin:24px 0 6px;color:var(--ink)}
+.article p{font-family:var(--body);font-size:18px;line-height:1.6;color:var(--ink);margin:0 0 14px;text-wrap:pretty}
+.article p em{background:var(--postit);font-style:normal;padding:0 4px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.article a{color:var(--marker-red);text-decoration:underline wavy;text-underline-offset:3px;text-decoration-thickness:1.5px}
+.article ul{margin:6px 0 18px;padding-left:0;list-style:none}
+.article ul li{position:relative;padding:4px 0 4px 26px;font-family:var(--body);font-size:17px;line-height:1.5;color:var(--ink)}
+.article ul li::before{content:"→";position:absolute;left:0;top:4px;color:var(--marker-red);font-family:var(--hand);font-size:20px}
+.article code{font-family:"JetBrains Mono",monospace;font-size:14px;background:#f0e3b6;padding:2px 6px;border-radius:4px;color:var(--ink);border:1px dashed var(--line)}
+.article pre{font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.65;background:#211b14;color:#f4ecd6;padding:18px 22px 18px 50px;border-radius:8px;border:2px solid var(--ink);box-shadow:5px 5px 0 var(--marker-red);margin:16px 0 22px;overflow-x:auto;position:relative;counter-reset:l}
+.article pre::before{content:"";position:absolute;left:0;top:0;bottom:0;width:36px;border-right:1px dashed rgba(244,236,214,.3);background:rgba(244,236,214,.04)}
+.article pre code{background:transparent;border:0;color:#f4ecd6;padding:0;display:block;counter-increment:l;position:relative}
+.article pre code::before{content:counter(l,decimal-leading-zero);position:absolute;left:-50px;width:30px;text-align:right;color:rgba(244,236,214,.4);font-family:"JetBrains Mono",monospace;font-size:11px}
+.article pre .k{color:#ffd6a5}
+.article pre .s{color:#c5e1a5}
+.article pre .c{color:rgba(244,236,214,.4);font-style:italic}
+.article pre .f{color:#a3c4f3}
+.article pre .n{color:#ffb3ba}
+
+.callout{display:flex;gap:14px;align-items:flex-start;background:var(--postit);border:2px solid var(--ink);border-radius:8px;padding:14px 18px;margin:20px 0;box-shadow:3px 3px 0 var(--ink);transform:rotate(-.4deg)}
+.callout.warn{background:var(--postit-pink);border-color:var(--marker-red);box-shadow:3px 3px 0 var(--marker-red)}
+.callout.tip{background:var(--postit-mint)}
+.callout-icon{font-family:var(--hand);font-size:30px;line-height:1;flex:none}
+.callout-body b{font-family:var(--hand);font-size:22px;color:var(--ink);font-weight:400;display:block;margin-bottom:4px}
+.callout-body{font-family:var(--body);font-size:16px;color:var(--ink);line-height:1.45}
+
+table.spec{width:100%;border-collapse:separate;border-spacing:0;background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;overflow:hidden;margin:18px 0;box-shadow:3px 3px 0 var(--ink);font-family:var(--body);font-size:15px}
+table.spec thead{background:#f6ecc8;border-bottom:2px solid var(--ink)}
+table.spec th{font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil);text-align:left;padding:9px 14px;border-bottom:1.5px solid var(--ink)}
+table.spec td{padding:9px 14px;border-bottom:1px dashed var(--line);color:var(--ink)}
+table.spec tr:last-child td{border-bottom:0}
+table.spec td code{font-size:13px}
+table.spec td.req{color:var(--marker-red);font-family:var(--hand);font-size:18px}
+
+.next-prev{display:flex;justify-content:space-between;align-items:center;margin-top:36px;padding-top:18px;border-top:2px dashed var(--ink);gap:12px}
+.next-prev a{font-family:var(--hand);font-size:24px;color:var(--ink-soft);display:flex;align-items:center;gap:8px}
+.next-prev a:hover{color:var(--marker-red)}
+.next-prev a.next{margin-left:auto}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>est. 2026</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="templates.html">Templates</a>
+      <a href="demo.html">Demo</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="signin.html">Sign in</a>
+      <a class="btn btn-primary" href="signin.html">Connect wallet</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head"><span>Docs · the handbook</span><span class="date">May 10, 2026</span></div>
+    <div class="docs-grid">
+
+      <aside class="toc">
+        <h4>The handbook</h4>
+        <small>v0.7 · last edit 3d ago</small>
+        <ol id="toc">
+          <li class="on" data-h="welcome">Welcome</li>
+          <li data-h="quickstart">Quickstart (90s)</li>
+          <li data-h="data-model">Data model</li>
+          <li data-h="seal">Sealed fields</li>
+          <li data-h="walrus">Walrus &amp; Quilt</li>
+          <li data-h="gating">Token gating</li>
+          <li data-h="webhooks">Webhooks</li>
+          <li data-h="self-host">Self-hosting</li>
+          <li data-h="cli">CLI reference</li>
+          <li data-h="faq">FAQ</li>
+        </ol>
+        <div class="toc-foot">
+          <a href="https://github.com" target="_blank">GitHub ↗</a>
+          <a href="#">Discord ↗</a>
+          <a href="#">Whitepaper PDF ↗</a>
+        </div>
+      </aside>
+
+      <article class="article">
+        <div class="crumbs">docs <span>›</span> getting started <span>›</span> welcome</div>
+        <h1 style="font-family:var(--hand);font-weight:700;font-size:64px;line-height:.95;margin:0 0 12px;color:var(--ink)">The catat <span style="color:var(--marker-red)">handbook</span>.</h1>
+        <p class="lede" style="font-size:19px">A short, opinionated tour of how to ship verifiable forms on Sui + Walrus + Seal — written like notes, not specs.</p>
+
+        <h2 id="welcome"><span class="num">01</span>Welcome</h2>
+        <p>catat is three things stacked: a <em>builder</em> that lays out fields, a <em>runner</em> that signs and submits replies, and an <em>admin</em> that decrypts what only you can read. It runs in the browser. There is no server. We host the UI on Walrus Sites; Sui keeps form state; Walrus stores blobs; Seal handles per-field keys.</p>
+        <p>If you can use Typeform, you already know catat. If you can read a Move module, you already know its guts. Read on for the parts that aren&rsquo;t obvious.</p>
+
+        <div class="callout">
+          <div class="callout-icon">📖</div>
+          <div class="callout-body">
+            <b>Reading order</b>
+            Skim Quickstart, then jump to whatever section matches the question you have. Specs live at the back; we won&rsquo;t be offended.
+          </div>
+        </div>
+
+        <h2 id="quickstart"><span class="num">02</span>Quickstart (90s)</h2>
+        <p>Connect a Sui wallet on testnet, fork a template, hit publish. Three commands also work:</p>
+
+<pre><code><span class="c"># 1. install the cli</span>
+<span class="k">$</span> npm i -g <span class="s">@catat/cli</span>
+
+<span class="c"># 2. mint a form from a template</span>
+<span class="k">$</span> catat <span class="f">new</span> <span class="s">bug-report</span> --network testnet
+<span class="c">→ form 0x4a2c…b91 minted on sui</span>
+<span class="c">→ schema bafy…2x9 written to walrus</span>
+
+<span class="c"># 3. share the link</span>
+<span class="k">$</span> catat <span class="f">link</span> <span class="n">0x4a2c…b91</span>
+<span class="c">→ https://catat.wal.app/f/0x4a2c…b91</span></code></pre>
+
+        <p>That&rsquo;s the whole loop. From here, every reply emits a <code>SubmissionAdded</code> event and stores a Quilt-batched Walrus blob.</p>
+
+        <h2 id="data-model"><span class="num">03</span>Data model</h2>
+        <p>A <code>Form</code> is a Sui shared object pointing at a <code>schema</code> blob on Walrus. Each <code>Submission</code> is a separate event tied to that form, with its own Walrus pointer. Sealed fields hold ciphertext + a <code>SealKeyId</code>; everything else is plaintext JSON.</p>
+
+        <table class="spec">
+          <thead><tr><th>field</th><th>type</th><th>required</th><th>note</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td><code>ObjectID</code></td><td class="req">*</td><td>shared object on sui</td></tr>
+            <tr><td><code>schema</code></td><td><code>BlobId</code></td><td class="req">*</td><td>walrus pointer to the form spec</td></tr>
+            <tr><td><code>owner</code></td><td><code>address</code></td><td class="req">*</td><td>only this address can decrypt sealed fields</td></tr>
+            <tr><td><code>token_gate</code></td><td><code>Option&lt;ObjectID&gt;</code></td><td>—</td><td>require holding this coin/NFT</td></tr>
+            <tr><td><code>epochs</code></td><td><code>u32</code></td><td>—</td><td>walrus retention, default 12</td></tr>
+            <tr><td><code>count</code></td><td><code>u64</code></td><td>—</td><td>monotonic submission counter</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="seal"><span class="num">04</span>Sealed fields</h2>
+        <p>Toggle 🔒 on any field to encrypt its body before it leaves the browser. catat derives a per-field Seal key id of the form <code>formId/fieldId</code>, encrypts client-side, and stores ciphertext in the Walrus blob. Decryption requires a <em>2-of-3</em> threshold against your wallet.</p>
+
+        <div class="callout warn">
+          <div class="callout-icon">🔒</div>
+          <div class="callout-body">
+            <b>Important</b>
+            Once a field is sealed, you cannot change the policy retroactively. Past submissions stay sealed under the original key id.
+          </div>
+        </div>
+
+        <p>Encrypt a field with the SDK directly:</p>
+
+<pre><code><span class="k">import</span> { sealField } <span class="k">from</span> <span class="s">"@catat/sdk"</span>;
+
+<span class="k">const</span> ct = <span class="k">await</span> <span class="f">sealField</span>({
+  <span class="n">formId</span>: <span class="s">"0x4a2c…b91"</span>,
+  <span class="n">fieldId</span>: <span class="s">"email"</span>,
+  <span class="n">plaintext</span>: <span class="s">"hex@catat.io"</span>,
+  <span class="n">threshold</span>: <span class="s">"2-of-3"</span>,
+});</code></pre>
+
+        <h2 id="walrus"><span class="num">05</span>Walrus &amp; Quilt</h2>
+        <p>One submission can have many fields, including files. Naively, that would be one Walrus write per file. Instead we batch the whole submission into a single <em>Quilt</em> — one atomic write, one blob id, one tx event. The math:</p>
+
+        <table class="spec">
+          <thead><tr><th>shape</th><th>writes</th><th>cost (testnet)</th><th>relative</th></tr></thead>
+          <tbody>
+            <tr><td>5 fields, 2 attachments — naive</td><td>7</td><td>~0.018 SUI</td><td>1×</td></tr>
+            <tr><td>5 fields, 2 attachments — quilt</td><td>1</td><td>~0.00021 SUI</td><td><b style="color:var(--marker-red)">~85× cheaper</b></td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="gating"><span class="num">06</span>Token gating</h2>
+        <p>Set <code>token_gate</code> on a form to require holding a specific coin or NFT. The form runner checks the wallet&rsquo;s holdings on Sui state before allowing submit. Allowlists work the same way — each address holding a 1-of-N <em>InvitePass</em> NFT.</p>
+
+        <div class="callout tip">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <b>Tip</b>
+            Combine gating with <code>once_per_wallet=true</code> for proposal votes: 1 wallet, 1 vote, no off-chain plumbing.
+          </div>
+        </div>
+
+        <h2 id="webhooks"><span class="num">07</span>Webhooks</h2>
+        <p>On the Notebook plan, configure a webhook URL per form. We&rsquo;ll <code>POST</code> a signed payload on every submit:</p>
+
+<pre><code>{
+  <span class="n">"event"</span>: <span class="s">"submission.added"</span>,
+  <span class="n">"form_id"</span>: <span class="s">"0x4a2c…b91"</span>,
+  <span class="n">"tx_hash"</span>: <span class="s">"0xeb1d…c2f"</span>,
+  <span class="n">"blob_id"</span>: <span class="s">"bafy…h1k"</span>,
+  <span class="n">"submitter"</span>: <span class="s">"0x9f1a…e2c"</span>,
+  <span class="n">"sealed_fields"</span>: [<span class="s">"email"</span>, <span class="s">"screenshot"</span>],
+  <span class="n">"signature"</span>: <span class="s">"ed25519:…"</span>
+}</code></pre>
+
+        <h2 id="self-host"><span class="num">08</span>Self-hosting</h2>
+        <p>The whole frontend is a static bundle. Fork the repo, point <code>VITE_PACKAGE_ID</code> at your deployed Move package, and deploy to Walrus Sites with one command. No backend. No database. Your fork — forever.</p>
+
+        <h2 id="cli"><span class="num">09</span>CLI reference</h2>
+        <table class="spec">
+          <thead><tr><th>command</th><th>does</th></tr></thead>
+          <tbody>
+            <tr><td><code>catat new &lt;template&gt;</code></td><td>fork a template into a new form</td></tr>
+            <tr><td><code>catat publish &lt;form&gt;</code></td><td>upload schema to walrus, mint sui object</td></tr>
+            <tr><td><code>catat seal &lt;form.field&gt;</code></td><td>flip a field to sealed</td></tr>
+            <tr><td><code>catat list &lt;form&gt;</code></td><td>list submissions (sealed bodies stay sealed)</td></tr>
+            <tr><td><code>catat decrypt &lt;sub&gt;</code></td><td>decrypt sealed fields with your wallet</td></tr>
+            <tr><td><code>catat export &lt;form&gt;</code></td><td>dump everything to <code>./out.json</code></td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="faq"><span class="num">10</span>FAQ</h2>
+        <p>Everything else lives at <a href="pricing.html#faq">pricing › FAQ</a>. If you can&rsquo;t find what you need, <a href="#">open an issue</a> or <a href="#">ping us on Discord</a> — answers usually come within a day.</p>
+
+        <div class="next-prev">
+          <a href="catat.html">← Back to home</a>
+          <a class="next" href="demo.html">Try the live demo →</a>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script>
+const toc = document.querySelectorAll('#toc li');
+toc.forEach(li=>li.addEventListener('click',()=>{
+  const t=document.getElementById(li.dataset.h);if(!t)return;
+  toc.forEach(x=>x.classList.remove('on'));li.classList.add('on');
+  t.scrollIntoView({behavior:'smooth',block:'start'});
+}));
+</script>
+<script src="tweaks-global.js"></script>
+</body>
+</html>

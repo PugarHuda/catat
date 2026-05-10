@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — connect wallet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.signin{max-width:1080px;margin:30px auto;display:grid;grid-template-columns:1.1fr 1fr;gap:36px;align-items:flex-start}
+@media(max-width:920px){.signin{grid-template-columns:1fr}}
+
+.welcome .sheet{padding:36px 36px 36px 78px}
+.welcome h1{font-family:var(--hand);font-weight:700;font-size:64px;line-height:.95;margin:0 0 12px;color:var(--ink)}
+.welcome h1 .marker{color:var(--marker-red)}
+.welcome p{font-family:var(--body);font-size:18px;line-height:1.5;color:var(--ink-soft);margin:0 0 14px}
+
+.bullets{list-style:none;padding:0;margin:18px 0 0;display:flex;flex-direction:column;gap:8px}
+.bullets li{font-family:var(--body);font-size:16px;color:var(--ink);display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--line)}
+.bullets li::before{content:"✓";font-family:var(--hand);font-size:24px;color:var(--marker-green);line-height:1;flex:none;width:22px}
+
+/* connect card */
+.conn-card{background:var(--paper-2);border:2.5px solid var(--ink);border-radius:10px;padding:30px 32px;box-shadow:8px 8px 0 var(--ink);position:relative;transform:rotate(-.6deg)}
+.conn-card .corner{position:absolute;top:-22px;right:-26px;font-family:var(--hand);font-size:30px;font-weight:700;color:var(--marker-red);border:4px double var(--marker-red);padding:6px 18px;border-radius:8px;transform:rotate(8deg);background:rgba(244,236,214,.6);letter-spacing:.04em}
+.conn-card h3{font-family:var(--hand);font-size:42px;margin:0 0 6px;line-height:1;color:var(--ink)}
+.conn-card .sub{font-family:var(--body);font-size:16px;color:var(--ink-soft);margin:0 0 22px}
+
+.tabs-net{display:inline-flex;gap:0;border:2px solid var(--ink);border-radius:8px;background:var(--paper);overflow:hidden;margin-bottom:16px}
+.tabs-net button{padding:6px 14px;font-family:var(--body);font-size:14px;color:var(--ink);border-right:1.5px solid var(--ink);background:transparent}
+.tabs-net button:last-child{border-right:0}
+.tabs-net button.on{background:var(--ink);color:var(--paper);font-family:var(--hand);font-size:18px}
+
+.wallet-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.wallet-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--paper);border:2px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:transform .12s,box-shadow .12s,background .12s}
+.wallet-item:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink);background:var(--postit)}
+.wallet-item.featured{background:var(--postit);transform:rotate(-.4deg)}
+.wallet-item .logo{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;font-family:var(--hand);font-size:24px;font-weight:700;color:var(--paper);flex:none}
+.wallet-item .logo.sui{background:linear-gradient(135deg,#4ca2ff,#1a52a8)}
+.wallet-item .logo.suiet{background:#8b5cf6}
+.wallet-item .logo.phantom{background:#ab9ff2;color:#211b14}
+.wallet-item .logo.ledger{background:#211b14}
+.wallet-item .logo.surf{background:#ff8a4c}
+.wallet-item .name{font-family:var(--hand);font-size:24px;color:var(--ink);line-height:1}
+.wallet-item .meta{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.04em}
+.wallet-item .arrow{margin-left:auto;font-family:var(--hand);font-size:24px;color:var(--marker-red)}
+.wallet-item .pill{font-family:var(--type);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border:1.2px solid var(--ink);border-radius:99px;background:var(--paper-edge);margin-left:auto}
+.wallet-item.featured .pill{background:var(--marker-red);color:var(--paper);border-color:var(--marker-red)}
+.wallet-item .col{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+
+.divider{position:relative;text-align:center;font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.14em;margin:14px 0;text-transform:uppercase}
+.divider::before,.divider::after{content:"";position:absolute;top:50%;width:38%;height:1px;border-top:1.5px dashed var(--line)}
+.divider::before{left:0}.divider::after{right:0}
+
+.alt-list{display:flex;gap:8px;flex-wrap:wrap}
+.alt{padding:8px 14px;font-family:var(--body);font-size:14px;border:1.8px dashed var(--ink);background:var(--paper);border-radius:99px;color:var(--ink);cursor:pointer}
+.alt:hover{background:var(--postit)}
+
+.fine{margin-top:18px;font-family:var(--body);font-size:14px;color:var(--ink-soft);line-height:1.5;border-top:1.5px dashed var(--ink);padding-top:14px}
+.fine a{color:var(--marker-red);text-decoration:underline wavy}
+
+/* state mock */
+.state-stack{margin-top:18px;background:var(--paper);border:2px dashed var(--ink);border-radius:8px;padding:14px 16px;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);transform:rotate(.4deg)}
+.state-stack .row{padding:3px 0;display:flex;justify-content:space-between;border-bottom:1px dotted var(--line)}
+.state-stack .row:last-child{border-bottom:0}
+.state-stack .row b{font-family:var(--hand);font-size:18px;color:var(--marker-red);font-weight:400}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>est. 2026</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="templates.html">Templates</a>
+      <a href="demo.html">Demo</a>
+      <a href="docs.html">Docs</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="#">Already in?</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="signin">
+    <section class="welcome">
+      <div class="sheet">
+        <div class="sheet-head"><span>Sign in · welcome</span><span class="date">May 10, 2026</span></div>
+        <span class="section-eyebrow">— no email, no password —</span>
+        <h1>Sign in with the <span class="marker">key in your pocket</span>.</h1>
+        <p>catat doesn&rsquo;t have a sign-up form. Your Sui wallet <em>is</em> your account. Connect it once and you can build forms, decrypt sealed answers, and sign every submission you make.</p>
+
+        <ul class="bullets">
+          <li>No email. No password. No reset link to lose.</li>
+          <li>Sealed answers stay sealed — only your wallet can decrypt.</li>
+          <li>You own your data. Migrate any time. We can&rsquo;t lock you in.</li>
+          <li>Open source. Fork it, self-host on Walrus Sites, never see us again.</li>
+        </ul>
+
+        <div class="state-stack">
+          <div class="row"><span># sui address</span><b>0x__________________…</b></div>
+          <div class="row"><span># pubkey (ed25519)</span><b>—</b></div>
+          <div class="row"><span># network</span><b>testnet</b></div>
+          <div class="row"><span># forms owned</span><b>—</b></div>
+          <div class="row"><span># sealed keys</span><b>—</b></div>
+        </div>
+
+        <div class="postit" style="background:var(--postit);transform:rotate(-1.5deg);margin-top:18px;max-width:380px">
+          <b>new to sui?</b>
+          Install <a href="#" style="color:var(--marker-red);text-decoration:underline wavy">Sui Wallet</a> or <a href="#" style="color:var(--marker-red);text-decoration:underline wavy">Suiet</a> in 30 seconds. The faucet has free testnet SUI for trying catat.
+        </div>
+      </div>
+    </section>
+
+    <aside class="conn-card">
+      <span class="corner">connect ↘</span>
+      <h3>Pick a wallet</h3>
+      <p class="sub">We&rsquo;ll request a one-time signature to prove the address is yours. No coins move.</p>
+
+      <div class="tabs-net">
+        <button class="on">testnet</button>
+        <button>mainnet</button>
+        <button>devnet</button>
+      </div>
+
+      <div class="wallet-list">
+        <div class="wallet-item featured">
+          <div class="logo sui">S</div>
+          <div class="col">
+            <span class="name">Sui Wallet</span>
+            <span class="meta">official · most used · v0.92</span>
+          </div>
+          <span class="pill">recommended</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="wallet-item">
+          <div class="logo suiet">⛵</div>
+          <div class="col">
+            <span class="name">Suiet</span>
+            <span class="meta">community · social login</span>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+        <div class="wallet-item">
+          <div class="logo phantom">👻</div>
+          <div class="col">
+            <span class="name">Phantom</span>
+            <span class="meta">multi-chain · solana too</span>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+        <div class="wallet-item">
+          <div class="logo surf">🌊</div>
+          <div class="col">
+            <span class="name">Surf Wallet</span>
+            <span class="meta">mobile-first · iOS &amp; Android</span>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+        <div class="wallet-item">
+          <div class="logo ledger">L</div>
+          <div class="col">
+            <span class="name">Ledger</span>
+            <span class="meta">hardware · cold-signing</span>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+      </div>
+
+      <div class="divider">— or —</div>
+
+      <div class="alt-list">
+        <span class="alt">📷 Scan QR (mobile)</span>
+        <span class="alt">🔗 WalletConnect</span>
+        <span class="alt">🛠 zkLogin (Google)</span>
+        <span class="alt">🔑 Use private key</span>
+      </div>
+
+      <p class="fine">By connecting, you agree to our short, plain-language <a href="#">terms</a> and <a href="#">privacy</a> notes. Your wallet pays gas for catat actions; you can disconnect any time.</p>
+    </aside>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script src="tweaks-global.js"></script>
+</body>
+</html>

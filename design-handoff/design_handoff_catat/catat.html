@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>catat — sketched on real paper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=Gloria+Hallelujah&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#f4ecd6;
+  --paper-edge:#e9dfc1;
+  --paper-dark:#e2d6b1;
+  --ink:#211b14;
+  --ink-soft:#3a3128;
+  --pencil:#6b665e;
+  --pencil-soft:#9c958a;
+  --line:#cdbf94;
+  --line-soft:#dccfa8;
+  --rule:#a3c4d4;          /* notebook ruled line, faded blue */
+  --margin:#d68a8a;        /* margin red line */
+  --marker-red:#c0392b;
+  --marker-blue:#2c5282;
+  --highlight:#ffea7a;
+  --postit:#fff3a6;
+  --postit-pink:#ffd1d9;
+  --postit-mint:#c7e9d0;
+  --tape:rgba(255, 230, 140, .65);
+  --shadow: 0 1px 0 rgba(0,0,0,.04), 0 14px 30px -16px rgba(50,30,10,.28), 0 2px 6px -2px rgba(50,30,10,.12);
+  --hand: "Caveat", "Patrick Hand", cursive;
+  --hand2: "Kalam", "Patrick Hand", cursive;
+  --type:"Special Elite", "Courier New", monospace;
+  --body:"Patrick Hand", "Kalam", system-ui, sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--body);
+  font-size:18px;
+  line-height:1.55;
+  color:var(--ink);
+  background:var(--paper);
+  background-image:
+    /* paper grain (noise) */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.13  0 0 0 0 0.10  0 0 0 0 0.07  0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>"),
+    /* fibres */
+    radial-gradient(circle at 20% 30%, rgba(120,90,40,.08), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(80,60,20,.06), transparent 40%),
+    /* warm cream gradient */
+    linear-gradient(180deg,#f6eed8 0%, var(--paper) 35%, var(--paper-edge) 100%);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::selection{background:var(--highlight);color:var(--ink)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+
+/* SVG filters live in body — used as filter:url(#wobble) on hand-drawn borders */
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+/* ---------- nav ---------- */
+.nav{
+  position:sticky;top:0;z-index:30;
+  padding:14px 0;
+  background:linear-gradient(180deg, color-mix(in oklab, var(--paper) 92%, transparent) 0%, color-mix(in oklab, var(--paper) 70%, transparent) 100%);
+  backdrop-filter:blur(6px);
+  border-bottom:1px dashed var(--line);
+}
+.nav-row{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--hand);font-size:30px;font-weight:700;letter-spacing:-.01em;line-height:1}
+.brand .glyph{
+  width:38px;height:38px;border-radius:9px;
+  background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;
+  transform:rotate(-3deg);
+  box-shadow:2px 2px 0 0 var(--marker-red);
+}
+.brand .glyph svg{width:22px;height:22px}
+.brand small{font-family:var(--type);font-size:11px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;margin-left:4px;transform:translateY(2px)}
+.nav-links{display:flex;gap:28px;font-family:var(--body);font-size:18px}
+.nav-links a{position:relative;padding:4px 2px}
+.nav-links a:hover{color:var(--marker-red)}
+.nav-links a:hover::after{
+  content:"";position:absolute;left:-2px;right:-2px;bottom:-1px;height:6px;
+  background:var(--highlight);z-index:-1;mix-blend-mode:multiply;
+  border-radius:30% 70% 50% 50%/40% 60% 40% 60%;
+}
+@media (max-width:880px){.nav-links{display:none}}
+.nav-cta{display:flex;gap:10px;align-items:center}
+
+/* sketch button */
+.btn{
+  position:relative;display:inline-flex;align-items:center;gap:8px;
+  padding:10px 18px;
+  font-family:var(--body);font-size:17px;font-weight:400;
+  background:var(--paper);color:var(--ink);
+  border:0;
+  border-radius:8px;
+  box-shadow:
+    inset 0 0 0 2px var(--ink),
+    3px 3px 0 0 var(--ink);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:inset 0 0 0 2px var(--ink), 4px 4px 0 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:inset 0 0 0 2px var(--ink), 1px 1px 0 0 var(--ink)}
+.btn-primary{background:var(--marker-red);color:var(--paper);box-shadow:inset 0 0 0 2px var(--ink), 3px 3px 0 0 var(--ink)}
+.btn-ghost{background:transparent;box-shadow:inset 0 0 0 1.5px var(--pencil-soft);color:var(--ink-soft);font-style:italic}
+.btn-ghost:hover{box-shadow:inset 0 0 0 1.5px var(--ink); color:var(--ink); transform:none}
+
+.tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--type);font-size:11px;text-transform:uppercase;letter-spacing:.14em;
+  padding:4px 10px;
+  border:1.5px dashed var(--ink);
+  border-radius:999px;
+  background:var(--paper);
+  color:var(--ink-soft);
+}
+.tag .dot{width:6px;height:6px;border-radius:50%;background:var(--marker-red);box-shadow:0 0 0 2px var(--paper)}
+
+/* ---------- hero ---------- */
+.hero{padding:48px 0 80px;position:relative}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center}
+@media (max-width:1020px){.hero-grid{grid-template-columns:1fr}}
+
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--type);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--pencil);
+  margin-bottom:20px;
+}
+.eyebrow .chip{
+  padding:3px 9px;border:1.5px solid var(--ink);border-radius:999px;
+  font-weight:400;letter-spacing:.1em;
+  background:var(--paper);
+  transform:rotate(-1deg);
+}
+.eyebrow .chip.sui{background:#cfe2f7;border-color:#2c5282}
+.eyebrow .chip.walrus{background:var(--postit-mint);border-color:#2f7a5b}
+.eyebrow .chip.seal{background:var(--postit-pink);border-color:#9b3a5b;transform:rotate(1deg)}
+
+h1.title{
+  font-family:var(--hand);
+  font-weight:700;
+  font-size:clamp(44px, 7.4vw, 132px);
+  line-height:1.02;
+  letter-spacing:-.02em;
+  margin:0 0 32px;
+  color:var(--ink);
+  text-wrap:balance;
+}
+h1.title .underline{position:relative;display:inline-block;white-space:nowrap}
+h1.title .underline::after{
+  content:"";position:absolute;left:-4px;right:-6px;bottom:6px;height:18px;
+  background:var(--highlight);
+  z-index:-1;mix-blend-mode:multiply;
+  border-radius:60% 40% 50% 50%/30% 60% 40% 70%;
+  transform:rotate(-1deg);
+}
+h1.title .marker{color:var(--marker-red);font-style:italic}
+h1.title .strike{position:relative;color:var(--pencil);font-weight:500;font-size:.7em}
+h1.title .strike::after{
+  content:"";position:absolute;left:-4px;right:-4px;top:55%;height:5px;
+  background:var(--marker-red);
+  border-radius:50% 50% 50% 50% / 80% 50% 80% 50%;
+  transform:rotate(-2deg);
+}
+.lede{
+  font-family:var(--body);
+  font-size:21px;line-height:1.55;
+  max-width:54ch;margin:0 0 32px;
+  color:var(--ink-soft);
+  text-wrap:pretty;
+}
+.lede em{
+  font-style:normal;
+  background:var(--postit);
+  padding:0 4px;
+  border-radius:3px;
+  box-decoration-break:clone;
+  -webkit-box-decoration-break:clone;
+}
+
+.cta-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:28px}
+.handnote{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--hand);font-size:22px;color:var(--marker-red);
+  transform:rotate(-2deg);
+}
+.handnote svg{width:36px;height:24px}
+
+.signoff{
+  display:flex;align-items:center;gap:14px;
+  padding-top:18px;border-top:1px dashed var(--line);
+  font-family:var(--type);font-size:12px;color:var(--pencil);letter-spacing:.04em;
+  max-width:600px;flex-wrap:wrap;
+}
+.signoff b{font-family:var(--body);font-weight:400;color:var(--ink);font-size:15px}
+.signoff .div{opacity:.5}
+
+/* ---------- the form sketch (right side) ---------- */
+.stage{position:relative;min-height:560px}
+
+/* notebook page card */
+.notebook{
+  position:relative;
+  background:#fbf5dc;
+  background-image:
+    /* ruled lines */
+    repeating-linear-gradient(180deg, transparent 0 31px, var(--rule) 31px 32px),
+    /* margin red line */
+    linear-gradient(90deg, transparent 0 56px, var(--margin) 56px 57px, transparent 57px 100%);
+  border-radius:4px 14px 4px 14px;
+  padding:38px 30px 32px 70px;
+  box-shadow:
+    /* paper edge */
+    0 0 0 1px var(--paper-dark),
+    /* stack of pages */
+    2px 2px 0 -1px #efe5c5,
+    4px 4px 0 -1px #e9dec0,
+    6px 6px 0 -1px #e3d8b8,
+    /* cast shadow */
+    8px 30px 50px -20px rgba(50,30,10,.35),
+    18px 60px 80px -40px rgba(50,30,10,.3);
+  transform:rotate(-1.2deg);
+  max-width:520px;
+  margin-left:auto;
+}
+.notebook::before{
+  /* punched holes top */
+  content:"";position:absolute;left:14px;top:30px;width:14px;height:14px;border-radius:50%;
+  background:var(--paper-edge);
+  box-shadow: 0 80px 0 var(--paper-edge), 0 160px 0 var(--paper-edge), 0 240px 0 var(--paper-edge), 0 320px 0 var(--paper-edge);
+  box-shadow:
+    0 80px 0 var(--paper-edge),
+    0 160px 0 var(--paper-edge),
+    0 240px 0 var(--paper-edge),
+    0 320px 0 var(--paper-edge),
+    inset 1px 1px 2px rgba(0,0,0,.2);
+}
+
+.np-head{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--pencil);
+  margin-bottom:14px;padding-bottom:6px;
+  border-bottom:1.5px solid var(--ink);
+}
+.np-head .date{font-family:var(--hand);font-size:18px;color:var(--ink);text-transform:none;letter-spacing:0}
+
+.np-title{
+  font-family:var(--hand);font-size:36px;font-weight:700;line-height:1;margin:0 0 6px;color:var(--ink);
+  display:flex;align-items:center;gap:10px;
+}
+.np-title .chk{
+  width:22px;height:22px;flex:none;
+  border:2px solid var(--ink);border-radius:5px;
+  display:grid;place-items:center;
+  background:var(--paper);
+  transform:rotate(-3deg);
+}
+.np-title .chk svg{width:18px;height:18px;color:var(--marker-red)}
+.np-sub{font-family:var(--body);font-size:16px;color:var(--ink-soft);margin:0 0 18px}
+
+.fld{margin-bottom:18px}
+.fld-label{
+  font-family:var(--type);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--pencil);
+  margin-bottom:4px;display:flex;align-items:center;gap:8px;
+}
+.req{color:var(--marker-red);font-family:var(--hand);font-size:18px}
+.lock-tag{
+  font-family:var(--type);font-size:10px;letter-spacing:.1em;
+  padding:2px 7px;border:1.2px solid var(--marker-red);background:var(--postit-pink);color:var(--marker-red);
+  border-radius:6px;display:inline-flex;align-items:center;gap:4px;
+  transform:rotate(1.5deg);
+}
+.lock-tag svg{width:11px;height:11px}
+
+.input{
+  width:100%;
+  font-family:var(--hand);font-size:24px;color:var(--ink);
+  padding:0 6px 4px;
+  background:transparent;
+  border:0;border-bottom:2px solid var(--ink);
+  border-bottom-style:solid;
+  outline:0;
+}
+.dropdown{
+  display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:6px;border-bottom:2px solid var(--ink);
+  font-family:var(--hand);font-size:24px;color:var(--ink);
+}
+.dropdown .pill-sev{
+  display:inline-flex;align-items:center;gap:8px;padding:2px 10px;
+  background:var(--postit-pink);border:1.5px solid var(--marker-red);border-radius:999px;
+  font-size:18px;color:var(--marker-red);
+  transform:rotate(-1.5deg);
+}
+.sev-dot{width:8px;height:8px;border-radius:50%;background:var(--marker-red)}
+
+.encrypted{
+  position:relative;
+  padding:12px 14px;
+  background:
+    repeating-linear-gradient(45deg, rgba(192,57,43,.08) 0 6px, transparent 6px 12px),
+    var(--postit-pink);
+  border:1.8px dashed var(--marker-red);
+  border-radius:8px;
+  transform:rotate(-.6deg);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-family:var(--type);font-size:14px;color:var(--marker-red);
+  box-shadow:2px 2px 0 var(--ink);
+}
+.encrypted .ghost{letter-spacing:.18em}
+.encrypted .badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--type);font-size:10px;letter-spacing:.1em;
+  padding:3px 8px;background:var(--ink);color:var(--paper);border-radius:4px;
+}
+
+.signature{
+  margin-top:24px;padding-top:16px;border-top:2px dashed var(--ink);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+}
+.signature .meta{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.06em}
+.submit-stamp{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--hand);font-size:24px;
+  background:var(--marker-red);color:var(--paper);
+  padding:8px 18px;
+  border-radius:6px;
+  box-shadow:3px 3px 0 var(--ink);
+  transform:rotate(-2deg);
+}
+
+/* ---- post-it / sticky callouts around the notebook ---- */
+.postit{
+  position:absolute;
+  padding:14px 16px;
+  font-family:var(--hand);font-size:18px;line-height:1.25;
+  color:var(--ink);
+  background:var(--postit);
+  box-shadow:var(--shadow);
+  z-index:3;
+  border-radius:2px 8px 2px 8px;
+}
+.postit::before{
+  content:"";position:absolute;top:-12px;left:50%;transform:translateX(-50%) rotate(-4deg);
+  width:64px;height:18px;background:var(--tape);
+  border:1px solid rgba(150,110,30,.2);
+  border-radius:2px;
+  box-shadow:0 1px 2px rgba(0,0,0,.08);
+}
+.postit b{font-family:var(--body);font-size:14px;color:var(--pencil);font-weight:400;display:block;margin-bottom:2px;letter-spacing:.06em;text-transform:uppercase}
+.postit small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em;display:block;margin-top:4px}
+
+.postit.tx{top:6%;left:-4%;background:var(--postit-mint);transform:rotate(-5deg);max-width:200px}
+.postit.blob{bottom:8%;left:-8%;background:var(--postit);transform:rotate(4deg);max-width:200px}
+.postit.seal{top:32%;right:-6%;background:var(--postit-pink);transform:rotate(3deg);max-width:200px}
+.postit code{font-family:var(--type);font-size:13px;color:var(--ink);background:rgba(255,255,255,.5);padding:1px 4px;border-radius:3px}
+
+/* hand-drawn arrow connectors (positioned absolute over the stage) */
+.arrow{position:absolute;color:var(--marker-red);z-index:4;pointer-events:none}
+
+/* ---------- divider band ---------- */
+.band{
+  border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);
+  background:var(--ink);color:var(--paper);
+  padding:16px 0;position:relative;
+}
+.band::before, .band::after{
+  content:"";display:block;position:absolute;left:0;right:0;height:6px;
+  background-image:repeating-linear-gradient(45deg, var(--paper) 0 6px, transparent 6px 12px);
+}
+.band::before{top:-8px}
+.band::after{bottom:-8px;transform:scaleY(-1)}
+.band-row{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;font-family:var(--type);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.band-stat{display:flex;align-items:baseline;gap:8px}
+.band-stat b{font-family:var(--hand);font-size:30px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--paper)}
+.band-stat span{color:rgba(244,236,214,.7)}
+
+/* ---------- features ---------- */
+section.features{padding:90px 0}
+.section-eyebrow{font-family:var(--type);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--pencil);margin-bottom:6px}
+.section-title{
+  font-family:var(--hand);font-weight:700;
+  font-size:clamp(40px,5vw,72px);line-height:1;letter-spacing:-.01em;
+  margin:0 0 16px;
+  color:var(--ink);max-width:24ch;text-wrap:balance;
+}
+.section-sub{font-family:var(--body);font-size:19px;color:var(--ink-soft);max-width:60ch;margin:0 0 50px;line-height:1.5}
+
+.cards{display:grid;grid-template-columns:repeat(12,1fr);gap:22px}
+.card{
+  grid-column:span 4;
+  position:relative;
+  background:#fbf6e1;
+  border:2px solid var(--ink);
+  border-radius:8px;
+  padding:26px 24px 24px;
+  box-shadow:5px 5px 0 var(--ink);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.card:nth-child(1){transform:rotate(-.6deg)}
+.card:nth-child(2){transform:rotate(.4deg)}
+.card:nth-child(3){transform:rotate(-.3deg)}
+.card:nth-child(4){transform:rotate(.6deg)}
+.card:nth-child(5){transform:rotate(-.4deg)}
+.card.wide{grid-column:span 8}
+.card.wide-r{grid-column:span 8}
+.card:hover{transform:translate(-2px,-2px) rotate(0deg);box-shadow:7px 7px 0 var(--ink)}
+@media(max-width:960px){.card,.card.wide,.card.wide-r{grid-column:span 12}}
+
+.card-h{
+  display:flex;align-items:center;gap:12px;margin-bottom:14px;
+  padding-bottom:10px;border-bottom:1.5px dashed var(--line);
+}
+.card-num{
+  width:42px;height:42px;flex:none;
+  background:var(--ink);color:var(--paper);
+  border-radius:50%;display:grid;place-items:center;
+  font-family:var(--hand);font-size:24px;font-weight:700;
+  transform:rotate(-4deg);
+}
+.card.feat-2 .card-num{background:var(--marker-red)}
+.card.feat-3 .card-num{background:var(--marker-blue)}
+.card.feat-4 .card-num{background:var(--ink);color:var(--highlight)}
+.card.feat-5 .card-num{background:var(--postit);color:var(--ink);border:2px solid var(--ink)}
+.card-tag{font-family:var(--type);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pencil)}
+
+.card h3{font-family:var(--hand);font-weight:700;font-size:30px;line-height:1.05;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
+.card p{font-family:var(--body);font-size:17px;line-height:1.5;color:var(--ink-soft);margin:0}
+.card .note{
+  margin-top:14px;
+  font-family:var(--hand);font-size:18px;color:var(--marker-red);
+  display:flex;align-items:center;gap:8px;
+}
+
+/* mini squiggly chart */
+.squiggle-chart{margin-top:18px;height:64px;display:flex;align-items:flex-end;gap:5px}
+.squiggle-chart .bar{
+  flex:1;
+  background:var(--ink);
+  border-radius:1px 3px 1px 3px;
+}
+.squiggle-chart .bar.now{background:var(--marker-red)}
+.squiggle-chart .bar:nth-child(odd){transform:rotate(-1deg)}
+
+/* tape strips for cards */
+.card .tape{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%) rotate(-3deg);
+  width:70px;height:18px;background:var(--tape);
+  border:1px solid rgba(150,110,30,.18);border-radius:2px;
+  box-shadow:0 1px 2px rgba(0,0,0,.1);
+}
+
+/* ---------- how it works ---------- */
+section.how{padding:80px 0;border-top:2px dashed var(--line)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+@media(max-width:880px){.steps{grid-template-columns:1fr}}
+.step{
+  position:relative;padding:30px 24px;
+  background:#fbf5dc;
+  border:2px solid var(--ink);
+  border-radius:8px;
+  box-shadow:5px 5px 0 var(--ink);
+}
+.step:nth-child(1){transform:rotate(-1deg)}
+.step:nth-child(2){transform:rotate(.6deg);background:var(--postit)}
+.step:nth-child(3){transform:rotate(-.4deg);background:var(--postit-mint)}
+.step-num{
+  font-family:var(--hand);font-size:80px;font-weight:700;
+  color:var(--marker-red);line-height:.85;margin:-6px 0 4px;
+  text-shadow:3px 3px 0 var(--ink);
+}
+.step h4{font-family:var(--hand);font-weight:700;font-size:32px;margin:0 0 6px;line-height:1.05;color:var(--ink)}
+.step p{font-family:var(--body);font-size:17px;line-height:1.5;color:var(--ink-soft);margin:0 0 18px}
+.step-art{
+  border-top:1.5px dashed var(--ink);padding-top:14px;
+  font-family:var(--type);font-size:12px;color:var(--ink-soft);line-height:1.6;
+}
+.step-art .tx-line{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
+.step-art .tx-line b{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400}
+
+/* ---------- final CTA ---------- */
+section.cta{padding:90px 0}
+.envelope{
+  position:relative;
+  background:#f8efce;
+  border:2.5px solid var(--ink);
+  border-radius:10px;
+  padding:56px 60px;
+  box-shadow:8px 8px 0 var(--ink);
+  display:grid;grid-template-columns:1.4fr 1fr;gap:40px;align-items:center;
+  overflow:hidden;
+}
+@media(max-width:880px){.envelope{grid-template-columns:1fr;padding:40px 30px}}
+.envelope::before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 0% 0%, var(--postit-pink) 0%, transparent 25%),
+    radial-gradient(circle at 100% 100%, var(--postit-mint) 0%, transparent 25%);
+  opacity:.5;z-index:0;pointer-events:none;
+}
+.envelope > *{position:relative;z-index:1}
+.envelope h2{
+  font-family:var(--hand);font-weight:700;
+  font-size:clamp(40px,5vw,68px);line-height:1;
+  margin:0 0 14px;color:var(--ink);
+  text-wrap:balance;
+}
+.envelope h2 .marker{color:var(--marker-red)}
+.envelope p{font-family:var(--body);font-size:19px;line-height:1.5;color:var(--ink-soft);max-width:42ch;margin:0 0 24px}
+
+.receipt{
+  background:var(--paper);
+  border:2px dashed var(--ink);
+  border-radius:6px;
+  padding:22px;
+  font-family:var(--type);font-size:13px;color:var(--ink);
+  position:relative;transform:rotate(1.2deg);
+  box-shadow:var(--shadow);
+}
+.receipt::before{
+  content:"";position:absolute;left:50%;top:-13px;transform:translateX(-50%) rotate(2deg);
+  width:84px;height:20px;background:var(--tape);
+  border:1px solid rgba(150,110,30,.2);border-radius:2px;
+}
+.receipt-title{font-family:var(--hand);font-size:24px;color:var(--marker-red);margin-bottom:10px;display:flex;align-items:center;gap:8px;border-bottom:1.5px dashed var(--ink);padding-bottom:8px}
+.receipt-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line)}
+.receipt-row:last-child{border-bottom:0}
+.receipt-row b{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400}
+
+/* ---------- footer ---------- */
+footer{padding:50px 0 40px;border-top:2px dashed var(--line);font-family:var(--type);font-size:12px;color:var(--pencil);letter-spacing:.04em}
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.foot a:hover{color:var(--marker-red)}
+.signature-line{font-family:var(--hand);font-size:24px;color:var(--ink-soft);margin-top:8px}
+
+/* doodles in margins */
+.doodle{position:absolute;color:var(--pencil);opacity:.55;pointer-events:none;z-index:0}
+.doodle.d1{top:380px;left:-40px;transform:rotate(-12deg)}
+.doodle.d2{top:140px;right:-30px;transform:rotate(8deg)}
+</style>
+</head>
+<body>
+
+<!-- shared SVG: rough wobble filter -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="wobble">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="2"/>
+      <feDisplacementMap in="SourceGraphic" scale="2.5"/>
+    </filter>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="#">
+      <span class="glyph">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 7.5A8 8 0 1 0 19 16.5"/>
+          <path d="M11 12.2l2.4 2.4 5.6-6"/>
+        </svg>
+      </span>
+      catat
+      <small>est. 2026</small>
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="demo.html">Live demo ↗</a>
+      <a href="#docs">Docs</a>
+      <a href="#oss">Open source</a>
+    </nav>
+    <div class="nav-cta">
+      <button class="btn btn-ghost">Sign in</button>
+      <button class="btn btn-primary">Connect wallet
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <div class="eyebrow">
+        <span>built on</span>
+        <span class="chip sui">SUI</span>
+        <span class="chip walrus">WALRUS</span>
+        <span class="chip seal">SEAL</span>
+      </div>
+
+      <h1 class="title">
+        Forms with <span class="marker">cryptographic</span><br/>
+        <span class="underline">proof</span>, not <span class="strike">vendor</span> promises.
+      </h1>
+
+      <p class="lede">
+        catat is a feedback &amp; survey notebook for the on-chain era. Toggle a 🔒 on any field
+        to seal it with <em>Seal</em>, save every reply as a <em>Walrus blob</em>, and let anyone
+        verify your numbers straight from <em>Sui</em>.
+      </p>
+
+      <div class="cta-row">
+        <button class="btn btn-primary">Start a notebook
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+        <button class="btn">See live demo</button>
+        <span class="handnote">
+          <svg viewBox="0 0 60 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 22 C 14 5, 30 4, 50 16"/>
+            <path d="M44 8 L52 16 L44 22"/>
+          </svg>
+          ← free on testnet!
+        </span>
+      </div>
+
+      <div class="signoff">
+        <span><b>2-of-3</b> Seal threshold</span>
+        <span class="div">·</span>
+        <span><b>~100×</b> cheaper via Quilt</span>
+        <span class="div">·</span>
+        <span><b>Hosted on</b> Walrus Sites</span>
+      </div>
+    </div>
+
+    <!-- form sketch -->
+    <div class="stage">
+      <!-- doodle: scribble star -->
+      <svg class="doodle d2" width="60" height="60" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M30 6 L34 24 L52 26 L38 38 L42 56 L30 46 L18 56 L22 38 L8 26 L26 24 Z"/>
+      </svg>
+
+      <article class="notebook">
+        <div class="np-head">
+          <span>Form #017 / draft</span>
+          <span class="date">May 10, 2026</span>
+        </div>
+        <h3 class="np-title">
+          <span class="chk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l5 5L20 7"/></svg>
+          </span>
+          Walrus bug report
+        </h3>
+        <p class="np-sub">Help us track issues across the testnet.</p>
+
+        <div class="fld">
+          <div class="fld-label">Title <span class="req">*</span></div>
+          <div class="input">Aggregator timeout on epoch rollover</div>
+        </div>
+
+        <div class="fld">
+          <div class="fld-label">Severity <span class="req">*</span></div>
+          <div class="dropdown">
+            <span class="pill-sev"><span class="sev-dot"></span> high — blocking</span>
+            <span style="font-size:18px">▾</span>
+          </div>
+        </div>
+
+        <div class="fld">
+          <div class="fld-label">
+            Reporter email
+            <span class="lock-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              sealed
+            </span>
+          </div>
+          <div class="encrypted">
+            <span class="ghost">▒▒▒▒-▒▒▒▒-▒▒-▒▒▒▒▒▒▒</span>
+            <span class="badge">SEAL · 2-of-3</span>
+          </div>
+        </div>
+
+        <div class="signature">
+          <span class="meta">3 fields · 1 sealed · ready to submit</span>
+          <span class="submit-stamp">
+            submit ↵
+          </span>
+        </div>
+      </article>
+
+      <!-- post-it callouts -->
+      <div class="postit tx">
+        <b>tx hash</b>
+        <code>0x4a2c…b91</code>
+        <small>verified on Sui ✓</small>
+      </div>
+      <div class="postit blob">
+        <b>walrus blob</b>
+        <code>bafy…h1k</code>
+        <small>12 storage epochs</small>
+      </div>
+      <div class="postit seal">
+        <b>seal</b>
+        <code>2-of-3</code>
+        <small>per-field key 🔒</small>
+      </div>
+
+      <!-- doodle: arrow squiggle from tx postit toward notebook -->
+      <svg class="arrow" width="120" height="80" style="top:14%; left:18%" viewBox="0 0 120 80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 10 C 30 30, 60 40, 100 60"/>
+        <path d="M88 50 L100 60 L86 64"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- BAND -->
+<div class="band">
+  <div class="wrap band-row">
+    <div class="band-stat"><b>0x4a2c…b91</b><span>last submission</span></div>
+    <div class="band-stat"><b>517</b><span>verifiable replies</span></div>
+    <div class="band-stat"><b>2-of-3</b><span>seal threshold</span></div>
+    <div class="band-stat"><b>~100×</b><span>cheaper writes</span></div>
+    <div class="band-stat"><b>12</b><span>storage epochs</span></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="wrap">
+    <span class="section-eyebrow">— what makes catat different —</span>
+    <h2 class="section-title">Form software, finally honest about its data.</h2>
+    <p class="section-sub">Tally and Typeform ask you to <em>trust</em> their dashboards. catat hands you the receipts: every submission has a Sui tx hash, every byte lives in Walrus, every secret is sealed with a 2-of-3 key.</p>
+
+    <div class="cards">
+      <article class="card wide feat-1">
+        <div class="tape"></div>
+        <div class="card-h">
+          <span class="card-num">01</span>
+          <span class="card-tag">Privacy · Seal</span>
+        </div>
+        <h3>Per-field encryption with Seal.</h3>
+        <p>Toggle 🔒 on any field. Email and screenshots stay sealed end-to-end with threshold encryption — only the form owner&rsquo;s wallet can decrypt, in the browser, never on a server.</p>
+        <div class="note">id = formId · fieldId &nbsp;— granular like nothing else.</div>
+      </article>
+
+      <article class="card feat-2">
+        <div class="card-h">
+          <span class="card-num">02</span>
+          <span class="card-tag">Provable</span>
+        </div>
+        <h3>On-chain proof, every time.</h3>
+        <p>Every submission emits a Sui event &amp; registers a blob ID. Your &ldquo;500 responses&rdquo; is a fact, not a claim.</p>
+        <div class="squiggle-chart" aria-hidden="true">
+          <span class="bar" style="height:30%"></span>
+          <span class="bar" style="height:42%"></span>
+          <span class="bar" style="height:38%"></span>
+          <span class="bar" style="height:55%"></span>
+          <span class="bar" style="height:48%"></span>
+          <span class="bar" style="height:62%"></span>
+          <span class="bar" style="height:58%"></span>
+          <span class="bar" style="height:75%"></span>
+          <span class="bar" style="height:70%"></span>
+          <span class="bar" style="height:85%"></span>
+          <span class="bar" style="height:80%"></span>
+          <span class="bar now" style="height:96%"></span>
+        </div>
+      </article>
+
+      <article class="card feat-3">
+        <div class="card-h">
+          <span class="card-num">03</span>
+          <span class="card-tag">Storage · Quilt</span>
+        </div>
+        <h3>Walrus storage, Quilt-batched.</h3>
+        <p>One submission + all attachments → one Quilt → one write. ~100× cheaper than naive blob-per-file.</p>
+        <div class="note">12 epochs default · extendable</div>
+      </article>
+
+      <article class="card feat-4">
+        <div class="card-h">
+          <span class="card-num">04</span>
+          <span class="card-tag">Gating</span>
+        </div>
+        <h3>Token-gated by default.</h3>
+        <p>token_gate = 0x… — only NFT or coin holders can submit. No off-chain allowlist plumbing.</p>
+      </article>
+
+      <article class="card wide-r feat-5">
+        <div class="tape"></div>
+        <div class="card-h">
+          <span class="card-num">05</span>
+          <span class="card-tag">Self-host · OSS</span>
+        </div>
+        <h3>Hosted on Walrus Sites — yours forever.</h3>
+        <p>The whole app is a decentralized site. Fork the repo, point at your testnet package ID, deploy. No backend, no database, no monthly bill — just Sui state + Walrus bytes + Seal keys.</p>
+        <div class="note">MIT licensed · 100% open source</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="wrap">
+    <span class="section-eyebrow">— how it works —</span>
+    <h2 class="section-title">Three steps. No backend.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h4>Build</h4>
+        <p>Drag-drop fields, toggle 🔒 per field, set a token gate. Schema lands on Walrus, a Sui shared object is minted.</p>
+        <div class="step-art">
+          <div class="tx-line"><span>title field</span><b>added</b></div>
+          <div class="tx-line"><span>email · sealed</span><b>🔒 on</b></div>
+          <div class="tx-line"><span>schema → walrus</span><b>bafy…2x9</b></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h4>Share</h4>
+        <p>Drop a link, embed the form in your docs, paste a QR onto a poster. Optionally token-gate.</p>
+        <div class="step-art">
+          <div class="tx-line"><span>catat.wal.app/f/</span><b>0x4a2c…b91</b></div>
+          <div class="tx-line"><span>QR generated</span><b>✓</b></div>
+          <div class="tx-line"><span>token gate</span><b>off</b></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h4>Verify</h4>
+        <p>Every reply ships with a Sui tx hash + Walrus blob ID. Anyone can recompute your counts straight from chain.</p>
+        <div class="step-art">
+          <div class="tx-line"><span>SubmissionAdded</span><b>✓</b></div>
+          <div class="tx-line"><span>tx</span><b>0x4a2c…b91</b></div>
+          <div class="tx-line"><span>count</span><b>517</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA ENVELOPE -->
+<section class="cta">
+  <div class="wrap">
+    <div class="envelope">
+      <div>
+        <h2>Ship the first form on <span class="marker">Walrus.</span></h2>
+        <p>Free on testnet. Connect a Sui wallet, pick a template, and have a verifiable form live in 90 seconds.</p>
+        <div class="cta-row">
+          <button class="btn btn-primary">Open the notebook
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+          <button class="btn">View on GitHub</button>
+        </div>
+      </div>
+      <div class="receipt">
+        <div class="receipt-title">📝 receipt — what you get</div>
+        <div class="receipt-row"><span>form runner</span><b>walrus blob</b></div>
+        <div class="receipt-row"><span>schema</span><b>walrus blob</b></div>
+        <div class="receipt-row"><span>registry</span><b>sui shared obj</b></div>
+        <div class="receipt-row"><span>per-field keys</span><b>seal · 2-of-3</b></div>
+        <div class="receipt-row"><span>hosting</span><b>walrus sites</b></div>
+        <div class="receipt-row" style="margin-top:8px;border-top:1.5px dashed var(--ink);padding-top:8px"><span>price</span><b style="color:var(--marker-red)">free.</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div>
+      <div>© 2026 catat · MIT · built on Sui &amp; Walrus</div>
+      <div class="signature-line">— sketched on real paper, served from Walrus.</div>
+    </div>
+    <div style="display:flex;gap:24px">
+      <a href="#">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a>
+    </div>
+  </div>
+</footer>
+
+<script src="tweaks-global.js"></script>
+</body>
+</html>

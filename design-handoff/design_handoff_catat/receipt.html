@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>submitted ✓ — catat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+body{padding:0}
+.thinbar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px dashed var(--line);font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase;background:linear-gradient(180deg,color-mix(in oklab,var(--paper) 92%,transparent),color-mix(in oklab,var(--paper) 70%,transparent));backdrop-filter:blur(6px);position:sticky;top:0;z-index:20}
+.thinbar .brand-mini{display:flex;align-items:center;gap:8px;font-family:var(--hand);font-size:24px;color:var(--ink);text-transform:none;letter-spacing:0}
+.thinbar .brand-mini .glyph{width:30px;height:30px;background:var(--ink);color:var(--paper);border-radius:7px;display:grid;place-items:center;transform:rotate(-3deg);box-shadow:2px 2px 0 var(--marker-red)}
+.thinbar .brand-mini .glyph svg{width:18px;height:18px}
+
+.r-wrap{max-width:760px;margin:50px auto 80px;padding:0 24px;text-align:center}
+
+/* big check */
+.bigcheck{margin:0 auto 18px;width:140px;height:140px;border:4px double var(--marker-green);border-radius:50%;display:grid;place-items:center;color:var(--marker-green);background:var(--postit-mint);transform:rotate(-3deg);box-shadow:6px 6px 0 var(--ink);position:relative}
+.bigcheck svg{width:80px;height:80px}
+.bigcheck::after{content:"submitted!";position:absolute;left:50%;top:-22px;transform:translateX(-50%) rotate(-6deg);font-family:var(--hand);font-weight:700;font-size:22px;color:var(--marker-red);background:var(--paper);padding:1px 10px;border:2px solid var(--marker-red);border-radius:6px;letter-spacing:.04em;text-transform:lowercase}
+
+.r-wrap h1{font-family:var(--hand);font-weight:700;font-size:64px;line-height:1;margin:14px 0 8px;color:var(--ink);text-align:center}
+.r-wrap h1 .marker{color:var(--marker-red)}
+.r-wrap .lede{font-family:var(--body);font-size:19px;line-height:1.45;color:var(--ink);max-width:560px;margin:0 auto 26px;text-wrap:pretty}
+.r-wrap .lede em{background:var(--postit);font-style:normal;padding:0 4px;border-radius:3px}
+
+/* receipt sheet */
+.rsheet{background:var(--paper-2);border:2.5px solid var(--ink);border-radius:12px;box-shadow:8px 8px 0 var(--ink);padding:28px 36px 30px;text-align:left;position:relative;background-image:repeating-linear-gradient(180deg,transparent 0 35px,rgba(163,196,212,.4) 35px 36px),linear-gradient(180deg,transparent,transparent),var(--paper-2)}
+.rsheet::before{content:"";position:absolute;left:50%;top:-14px;transform:translateX(-50%) rotate(-1deg);width:130px;height:24px;background:var(--tape);box-shadow:0 2px 4px rgba(0,0,0,.08)}
+.rsheet h3{font-family:var(--hand);font-weight:700;font-size:30px;margin:0 0 4px;line-height:1;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rsheet h3 .seq{font-family:var(--type);font-size:12px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase;font-weight:400}
+.rsheet .form-line{font-family:var(--body);font-size:16px;color:var(--ink-soft);margin:0 0 14px;border-bottom:1.5px dashed var(--ink);padding-bottom:10px}
+
+/* receipt rows */
+.rr{display:grid;grid-template-columns:140px 1fr auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line)}
+.rr:last-of-type{border-bottom:0}
+.rr .k{font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil)}
+.rr .v{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);word-break:break-all}
+.rr .v.hand{font-family:var(--hand);font-size:22px}
+.rr .v.green{color:var(--marker-green);font-family:var(--hand);font-size:22px}
+.rr .copy{font-family:var(--hand);font-size:16px;color:var(--marker-red);background:var(--paper);border:1.5px solid var(--ink);padding:3px 10px;border-radius:99px;cursor:pointer}
+.rr .copy:hover{background:var(--postit)}
+@media(max-width:620px){.rr{grid-template-columns:1fr}.rr .copy{justify-self:flex-start}}
+
+/* sealed summary */
+.sealed-list{margin:14px 0 18px;padding:14px 16px;background:var(--postit-pink);border:2px dashed var(--marker-red);border-radius:10px;font-family:var(--body);font-size:15px;color:var(--ink);position:relative}
+.sealed-list b{font-family:var(--hand);font-size:24px;color:var(--marker-red);font-weight:700;display:block;margin-bottom:8px;line-height:1.15}
+.sealed-list ul{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:5px}
+.sealed-list ul li{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-family:var(--hand);font-size:18px;border-bottom:1px dashed rgba(192,57,43,.3);padding:3px 0}
+.sealed-list ul li > span:first-child{flex:1;min-width:0}
+.sealed-list ul li:last-child{border-bottom:0}
+.sealed-list ul li code{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--marker-red);background:rgba(244,236,214,.6);padding:2px 6px;border-radius:4px}
+
+/* timeline */
+.tline{margin:18px 0 4px;padding:14px 16px;background:var(--paper);border:1.5px dashed var(--ink);border-radius:8px}
+.tline-head{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.tline-row{display:flex;justify-content:space-between;font-family:var(--body);font-size:14px;color:var(--ink);padding:3px 0;border-bottom:1px dotted var(--line)}
+.tline-row:last-child{border-bottom:0}
+.tline-row .when{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--pencil)}
+.tline-row .what{font-family:var(--hand);font-size:18px;line-height:1.1}
+
+/* actions */
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.actions a,.actions button{font-family:var(--hand);font-size:20px;color:var(--ink);background:var(--paper);padding:8px 18px;border:2px solid var(--ink);border-radius:99px;box-shadow:3px 3px 0 var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .12s,box-shadow .12s}
+.actions a:hover,.actions button:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.actions .primary{background:var(--marker-red);color:var(--paper)}
+.actions .primary:hover{box-shadow:5px 5px 0 var(--ink)}
+
+/* qr/proof note */
+.proof-note{display:flex;gap:18px;align-items:center;background:var(--postit);border:2px dashed var(--ink);border-radius:10px;padding:14px 16px;margin-top:18px;text-align:left;transform:rotate(-.5deg)}
+.qr{width:80px;height:80px;background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;flex:none;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);padding:6px;gap:1px}
+.qr i{background:var(--ink)}
+.qr i.off{background:transparent}
+.proof-note .pn-body{font-family:var(--body);font-size:14px;color:var(--ink);line-height:1.4}
+.proof-note .pn-body b{font-family:var(--hand);font-size:22px;color:var(--ink);font-weight:400;display:block;line-height:1;margin-bottom:2px}
+
+.signoff{font-family:var(--hand);font-size:24px;color:var(--marker-red);margin-top:30px;text-align:center;line-height:1.2}
+.signoff small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:4px}
+
+.what-next{margin-top:28px;padding:18px 20px;background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;text-align:left;box-shadow:4px 4px 0 var(--ink);transform:rotate(.4deg)}
+.what-next h4{font-family:var(--hand);font-size:24px;margin:0 0 6px;color:var(--ink);line-height:1}
+.what-next ol{margin:6px 0 0;padding:0;list-style:none;counter-reset:s}
+.what-next ol li{counter-increment:s;font-family:var(--body);font-size:15px;color:var(--ink);padding:5px 0 5px 28px;position:relative;border-bottom:1px dashed var(--line)}
+.what-next ol li:last-child{border-bottom:0}
+.what-next ol li::before{content:counter(s);font-family:var(--hand);font-size:20px;color:var(--marker-red);position:absolute;left:4px;top:3px;font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="thinbar">
+  <a class="brand-mini" href="catat.html">
+    <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+    catat
+  </a>
+  <span style="font-family:var(--type);font-size:10px">FORM 0x4a2c…b91 · receipt</span>
+</div>
+
+<main class="r-wrap">
+  <div class="bigcheck">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+  </div>
+  <h1>Got it. <span class="marker">Saved forever</span>.</h1>
+  <p class="lede">Your bug report is on Sui, the body sits on Walrus, and your two sealed fields are <em>locked client-side</em> — nobody at catat can read them. Below is your receipt.</p>
+
+  <div class="rsheet">
+    <h3>Submission #413 <span class="seq">walrus bug report · v4</span></h3>
+    <p class="form-line">From <b style="font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400">walrus.builder.sui</b> · May 10, 2026 · 11:42:17 UTC · Asia/Jakarta</p>
+
+    <div class="rr"><span class="k">tx hash</span><span class="v">0x4a2c4e7d8b91eba03c9f10a7d2b6849cd1e2f3a47b8c0d5e6f9a23c4b5e6f7b91e</span><button class="copy">copy</button></div>
+    <div class="rr"><span class="k">walrus blob</span><span class="v">bafybeic7w2hhx3kzqf4pvmb6d8p5yg9rkpwzvmh1k</span><button class="copy">copy</button></div>
+    <div class="rr"><span class="k">quilt children</span><span class="v hand">2 — body.json + screenshot.mp4</span><span style="font-family:var(--type);font-size:11px;color:var(--pencil)">1 atomic write</span></div>
+    <div class="rr"><span class="k">epochs</span><span class="v hand">12 · expires Nov 14, 2026</span><span style="font-family:var(--type);font-size:11px;color:var(--pencil)">extendable</span></div>
+    <div class="rr"><span class="k">gas paid</span><span class="v hand">0.0021 SUI <span style="font-family:var(--type);font-size:11px;color:var(--pencil)">(~$0.0042)</span></span><span style="font-family:var(--type);font-size:11px;color:var(--pencil)">paid by you</span></div>
+    <div class="rr"><span class="k">signature</span><span class="v">ed25519:fb3a1d…7c9e2a · valid</span><span class="copy">verify</span></div>
+    <div class="rr"><span class="k">body sha-256</span><span class="v">a8f3 9c7e 1b22 4d8a 7066 5d11 c419 3f8e 2c19 — matches event</span><button class="copy">copy</button></div>
+    <div class="rr"><span class="k">status</span><span class="v green">✓ on-chain · ✓ blob written · ✓ event emitted</span><span style="font-family:var(--type);font-size:11px;color:var(--pencil)">finality 0.6s</span></div>
+
+    <div class="sealed-list">
+      <b>🔒 2 fields sealed — only the form owner&rsquo;s wallet can decrypt</b>
+      Encrypted with Seal · 2-of-3 threshold · key derived from <code>0x4a2c…b91</code>
+      <ul>
+        <li><span>Q9 — screenshot</span><code>14.2 MB · ▒▒▒▒</code></li>
+        <li><span>Q10 — contact</span><code>17 chars · ▒▒▒▒</code></li>
+      </ul>
+    </div>
+
+    <div class="tline">
+      <div class="tline-head">timeline</div>
+      <div class="tline-row"><span class="what">browser sealed 2 fields with Seal</span><span class="when">+0.0s</span></div>
+      <div class="tline-row"><span class="what">submission Quilt-batched on Walrus</span><span class="when">+0.4s</span></div>
+      <div class="tline-row"><span class="what">SubmissionAdded event on Sui</span><span class="when">+0.6s</span></div>
+      <div class="tline-row"><span class="what">success receipt rendered</span><span class="when">+0.7s</span></div>
+    </div>
+
+    <div class="proof-note">
+      <div class="qr" id="qr"></div>
+      <div class="pn-body">
+        <b>Save the proof</b>
+        Scan or bookmark <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(244,236,214,.6);padding:1px 4px;border-radius:3px">verify.html?tx=0x4a2c…b91</code> — anyone can recompute the receipt without trusting catat. We don&rsquo;t hold the data; you do.
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a class="primary" href="verify.html">View public proof →</a>
+    <button onclick="window.print()">🖨 Print receipt</button>
+    <button>⤓ Download proof JSON</button>
+    <button>🔗 Copy verify URL</button>
+    <a href="f.html">Submit another</a>
+  </div>
+
+  <div class="what-next">
+    <h4>What happens next?</h4>
+    <ol>
+      <li>Form owner gets a webhook ping <em>(if configured)</em> within seconds.</li>
+      <li>If they decrypt your sealed fields, you&rsquo;ll see it on the verify page timeline.</li>
+      <li>Walrus keeps the blob for 12 epochs (~6 mo). They can extend, you keep your copy.</li>
+      <li>Anyone in the world can recompute this receipt — no catat servers required.</li>
+    </ol>
+  </div>
+
+  <p class="signoff">
+    Thanks for the report 🙏
+    <small>— sketched on real paper, served from Walrus</small>
+  </p>
+</main>
+
+<script>
+// generate a fake but visually-plausible QR
+const qr = document.getElementById('qr');
+const seed = 'catat-0x4a2c-b91-413';
+let h=0;for(const c of seed) h=((h<<5)-h+c.charCodeAt(0))|0;
+function rng(){h=(h*1103515245+12345)&0x7fffffff;return h/0x7fffffff}
+for(let i=0;i<64;i++){
+  const e=document.createElement('i');
+  // 3 corners always filled big patches, edges always full
+  const x=i%8,y=Math.floor(i/8);
+  const inCorner=(x<3&&y<3)||(x>4&&y<3)||(x<3&&y>4);
+  if(inCorner){e.className=((x===0||x===2||y===0||y===2||x===5||x===7||y===5||y===7)?'':'off');qr.appendChild(e);continue}
+  e.className=rng()>0.5?'':'off';qr.appendChild(e);
+}
+</script>
+
+<script src="tweaks-global.js"></script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — templates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.tpl-toolbar{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:24px}
+.tpl-search{position:relative;flex:1;max-width:360px}
+.tpl-search input{width:100%;font-family:var(--hand);font-size:22px;color:var(--ink);padding:6px 6px 6px 38px;background:transparent;border:0;border-bottom:2px solid var(--ink);outline:0}
+.tpl-search svg{position:absolute;left:6px;top:9px;width:22px;height:22px;color:var(--ink)}
+.tpl-cats{display:flex;gap:8px;flex-wrap:wrap}
+.tpl-cats .chip{cursor:pointer;font-size:12px;padding:5px 12px}
+.tpl-cats .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);transform:rotate(-1deg)}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px}
+.tpl{grid-column:span 4;position:relative;background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;padding:20px 22px;box-shadow:5px 5px 0 var(--ink);transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;gap:10px;min-height:260px}
+.tpl:hover{transform:translate(-2px,-2px) rotate(0);box-shadow:7px 7px 0 var(--ink)}
+.tpl:nth-child(odd){transform:rotate(-.6deg)}.tpl:nth-child(even){transform:rotate(.4deg)}
+.tpl.hl{background:var(--postit)}
+.tpl.mint{background:var(--postit-mint)}
+.tpl.pink{background:var(--postit-pink)}
+.tpl.blue{background:var(--postit-blue)}
+.tpl.purp{background:var(--postit-purple)}
+@media(max-width:960px){.tpl{grid-column:span 6}}
+@media(max-width:640px){.tpl{grid-column:span 12}}
+
+.tpl .corner-dog{position:absolute;top:-8px;right:-8px;width:46px;height:46px;background:var(--paper-edge);border:2px solid var(--ink);border-radius:0 8px 0 50%;transform:rotate(0);box-shadow:-2px 2px 0 rgba(0,0,0,.06)}
+.tpl-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.tpl-icon{width:42px;height:42px;border-radius:8px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-family:var(--hand);font-size:24px;font-weight:700;flex:none;transform:rotate(-4deg)}
+.tpl-tags{display:flex;gap:6px;flex-wrap:wrap}
+.tpl h3{font-family:var(--hand);font-size:30px;font-weight:700;margin:0;line-height:1.05;letter-spacing:-.01em;color:var(--ink)}
+.tpl p{font-family:var(--body);font-size:15px;color:var(--ink-soft);margin:0;line-height:1.45}
+.tpl-meta{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1.5px dashed var(--ink);font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em}
+.tpl-meta b{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400}
+.tpl .use{font-family:var(--hand);font-size:18px;color:var(--marker-red);text-decoration:underline wavy}
+
+.starter-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+.starter-row .chipline{font-family:var(--type);font-size:11px;color:var(--pencil);padding:3px 8px;border:1px dashed var(--ink);border-radius:4px}
+.tpl-blank{grid-column:span 4;background:transparent;border:2px dashed var(--ink);box-shadow:none;display:flex;align-items:center;justify-content:center;font-family:var(--hand);font-size:28px;color:var(--ink-soft);min-height:260px;cursor:pointer;transition:background .12s,color .12s}
+.tpl-blank:hover{background:var(--postit);color:var(--ink)}
+@media(max-width:960px){.tpl-blank{grid-column:span 6}}
+@media(max-width:640px){.tpl-blank{grid-column:span 12}}
+
+.section-title-row{display:flex;justify-content:space-between;align-items:flex-end;margin:50px 0 22px;flex-wrap:wrap;gap:14px}
+.section-title-row h2{font-family:var(--hand);font-weight:700;font-size:48px;margin:0;line-height:1;letter-spacing:-.01em;color:var(--ink)}
+.section-title-row span{font-family:var(--body);font-size:16px;color:var(--ink-soft)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>est. 2026</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="templates.html" class="active">Templates</a>
+      <a href="demo.html">Demo</a>
+      <a href="docs.html">Docs</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="signin.html">Sign in</a>
+      <a class="btn btn-primary" href="signin.html">Connect wallet</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head">
+      <span>Templates · drawer</span>
+      <span class="date">May 10, 2026</span>
+    </div>
+    <span class="section-eyebrow">— pick a starting page —</span>
+    <h1>Templates, sketched <span class="marker">for you</span>.</h1>
+    <p class="lede">Twelve form recipes pre-wired with the right Seal toggles, Quilt batching, and token gates. Click <em>use</em> to fork into the Builder — every template is just a Walrus blob you can edit.</p>
+
+    <div class="tpl-toolbar">
+      <div class="tpl-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input placeholder="search templates…" />
+      </div>
+      <div class="tpl-cats" id="cats">
+        <span class="chip on" data-c="all">all · 12</span>
+        <span class="chip" data-c="dao">dao</span>
+        <span class="chip" data-c="dev">dev</span>
+        <span class="chip" data-c="event">event</span>
+        <span class="chip" data-c="hr">hr / nps</span>
+        <span class="chip" data-c="airdrop">airdrop</span>
+        <span class="chip" data-c="bug">bug report</span>
+      </div>
+    </div>
+
+    <div class="section-title-row">
+      <h2>Featured</h2>
+      <span>curated by the catat team — sealed where it matters</span>
+    </div>
+
+    <div class="grid">
+      <article class="tpl hl">
+        <div class="corner-dog"></div>
+        <div class="tpl-h">
+          <span class="tpl-icon">🐛</span>
+          <div class="tpl-tags"><span class="chip red">bug</span><span class="chip">5 fields</span></div>
+        </div>
+        <h3>Walrus bug report</h3>
+        <p>Title, severity, repro, sealed email + sealed screenshot. The default issue tracker for protocols.</p>
+        <div class="starter-row">
+          <span class="chipline">🔒 email</span><span class="chipline">🔒 screenshot</span><span class="chipline">no gate</span>
+        </div>
+        <div class="tpl-meta"><span>used by <b>1.2k</b> teams</span><span class="use">use →</span></div>
+      </article>
+
+      <article class="tpl mint">
+        <div class="tpl-h">
+          <span class="tpl-icon">🗳️</span>
+          <div class="tpl-tags"><span class="chip purple">dao</span><span class="chip">3 fields</span></div>
+        </div>
+        <h3>Token-gated proposal vote</h3>
+        <p>One vote per wallet, gated to a coin or NFT. Public count, sealed reasoning. Verifiable from chain.</p>
+        <div class="starter-row">
+          <span class="chipline">gate · 0x4a…b9</span><span class="chipline">🔒 reason</span><span class="chipline">1-per-wallet</span>
+        </div>
+        <div class="tpl-meta"><span>used by <b>340</b> daos</span><span class="use">use →</span></div>
+      </article>
+
+      <article class="tpl pink">
+        <div class="tpl-h">
+          <span class="tpl-icon">💧</span>
+          <div class="tpl-tags"><span class="chip blue">airdrop</span><span class="chip">4 fields</span></div>
+        </div>
+        <h3>Airdrop application</h3>
+        <p>Wallet, alt-chain proof, sealed twitter, sealed reasoning. Zero PII leaks while you screen.</p>
+        <div class="starter-row">
+          <span class="chipline">🔒 twitter</span><span class="chipline">🔒 reason</span><span class="chipline">sig required</span>
+        </div>
+        <div class="tpl-meta"><span>used by <b>89</b> protocols</span><span class="use">use →</span></div>
+      </article>
+
+      <article class="tpl blue">
+        <div class="tpl-h">
+          <span class="tpl-icon">🎤</span>
+          <div class="tpl-tags"><span class="chip yellow">event</span><span class="chip">6 fields</span></div>
+        </div>
+        <h3>Conference RSVP</h3>
+        <p>Name, role, dietary, sealed email, optional t-shirt size. NFT ticket gate optional.</p>
+        <div class="starter-row">
+          <span class="chipline">🔒 email</span><span class="chipline">opt-NFT gate</span><span class="chipline">QR link</span>
+        </div>
+        <div class="tpl-meta"><span>used by <b>210</b> events</span><span class="use">use →</span></div>
+      </article>
+
+      <article class="tpl">
+        <div class="tpl-h">
+          <span class="tpl-icon">⭐</span>
+          <div class="tpl-tags"><span class="chip green">nps</span><span class="chip">2 fields</span></div>
+        </div>
+        <h3>Community NPS</h3>
+        <p>0–10 score + open feedback. Sealed feedback so respondents speak freely. Aggregates verifiable on-chain.</p>
+        <div class="starter-row">
+          <span class="chipline">🔒 feedback</span><span class="chipline">public score</span><span class="chipline">no PII</span>
+        </div>
+        <div class="tpl-meta"><span>used by <b>540</b> teams</span><span class="use">use →</span></div>
+      </article>
+
+      <article class="tpl purp">
+        <div class="tpl-h">
+          <span class="tpl-icon">🧰</span>
+          <div class="tpl-tags"><span class="chip">dev</span><span class="chip">7 fields</span></div>
+        </div>
+        <h3>Smart-contract audit intake</h3>
+        <p>Repo URL, codebase size, deadline, scope, sealed budget, sealed contact, deliverable format.</p>
+        <div class="starter-row">
+          <span class="chipline">🔒 budget</span><span class="chipline">🔒 contact</span><span class="chipline">attach repo</span>
+        </div>
+        <div class="tpl-meta"><span>used by <b>62</b> firms</span><span class="use">use →</span></div>
+      </article>
+    </div>
+
+    <div class="section-title-row">
+      <h2>Quick starts</h2>
+      <span>two-field forms you can ship in a minute</span>
+    </div>
+
+    <div class="grid">
+      <article class="tpl mint">
+        <div class="tpl-h"><span class="tpl-icon">📧</span><span class="chip">2 fields</span></div>
+        <h3>Newsletter signup</h3>
+        <p>Wallet + sealed email. No mailer service required — export to CSV when ready.</p>
+        <div class="tpl-meta"><span><b>2 fields</b> · 1 sealed</span><span class="use">use →</span></div>
+      </article>
+      <article class="tpl">
+        <div class="tpl-h"><span class="tpl-icon">📋</span><span class="chip">3 fields</span></div>
+        <h3>Hackathon registration</h3>
+        <p>Team name, github, sealed contact email. Free testnet hosting on Walrus Sites.</p>
+        <div class="tpl-meta"><span><b>3 fields</b> · 1 sealed</span><span class="use">use →</span></div>
+      </article>
+      <article class="tpl hl">
+        <div class="tpl-h"><span class="tpl-icon">🎁</span><span class="chip">2 fields</span></div>
+        <h3>Allowlist signup</h3>
+        <p>Wallet + sealed twitter. Verify all wallets are unique, on-chain, before mint day.</p>
+        <div class="tpl-meta"><span><b>2 fields</b> · 1 sealed</span><span class="use">use →</span></div>
+      </article>
+      <article class="tpl pink">
+        <div class="tpl-h"><span class="tpl-icon">🎨</span><span class="chip">4 fields</span></div>
+        <h3>Brand survey</h3>
+        <p>Multi-choice + free response, sealed open answers. Aggregate counts public.</p>
+        <div class="tpl-meta"><span><b>4 fields</b> · 1 sealed</span><span class="use">use →</span></div>
+      </article>
+      <article class="tpl blue">
+        <div class="tpl-h"><span class="tpl-icon">🏷️</span><span class="chip">3 fields</span></div>
+        <h3>Domain claim</h3>
+        <p>Desired name, wallet address, sealed reasoning. Built for SuiNS-style intakes.</p>
+        <div class="tpl-meta"><span><b>3 fields</b> · 1 sealed</span><span class="use">use →</span></div>
+      </article>
+      <a class="tpl-blank" href="demo.html">＋ start blank →</a>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script>
+document.querySelectorAll('#cats .chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('#cats .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on');
+}));
+</script>
+<script src="tweaks-global.js"></script>
+</body>
+</html>

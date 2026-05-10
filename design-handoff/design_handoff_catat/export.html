@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — export</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.exp-grid{display:grid;grid-template-columns:1fr 360px;gap:30px;align-items:flex-start;margin-top:8px}
+@media(max-width:980px){.exp-grid{grid-template-columns:1fr}}
+
+.section-card{background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:22px 26px;box-shadow:5px 5px 0 var(--ink);margin-bottom:20px}
+.section-card h3{font-family:var(--hand);font-size:30px;margin:0 0 4px;line-height:1;color:var(--ink);display:flex;align-items:center;gap:8px}
+.section-card h3 .num{width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-family:var(--hand);font-size:18px;font-weight:700;flex:none}
+.section-card .desc{font-family:var(--body);font-size:15px;color:var(--ink-soft);margin:0 0 16px;border-bottom:1px dashed var(--ink);padding-bottom:10px}
+
+/* form picker */
+.form-pick{display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--paper);border:2px solid var(--ink);border-radius:10px;font-family:var(--body);font-size:15px;color:var(--ink);cursor:pointer}
+.form-pick:hover{background:var(--postit)}
+.form-pick .ico{width:42px;height:42px;background:var(--postit-pink);border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-size:22px;flex:none;transform:rotate(-3deg)}
+.form-pick b{font-family:var(--hand);font-size:24px;color:var(--ink);font-weight:400;line-height:1;display:block}
+.form-pick small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.04em}
+.form-pick .arr{margin-left:auto;font-family:var(--hand);font-size:24px;color:var(--marker-red)}
+
+/* format radio */
+.formats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:780px){.formats{grid-template-columns:repeat(2,1fr)}}
+.fmt{position:relative;background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:14px 12px 12px;cursor:pointer;text-align:left;transition:transform .1s,box-shadow .1s}
+.fmt:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+.fmt.on{background:var(--postit);box-shadow:4px 4px 0 var(--marker-red);transform:rotate(-1deg)}
+.fmt .ext{font-family:"JetBrains Mono",monospace;font-size:14px;font-weight:600;color:var(--marker-red);background:var(--paper-edge);padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:5px;border:1px dashed var(--ink)}
+.fmt b{font-family:var(--hand);font-size:22px;color:var(--ink);display:block;line-height:1.05;font-weight:400}
+.fmt small{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.04em;line-height:1.3;display:block;margin-top:3px}
+.fmt .check{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;background:var(--marker-red);color:var(--paper);display:none;place-items:center;border:2px solid var(--ink)}
+.fmt.on .check{display:grid}
+.fmt .check svg{width:14px;height:14px}
+
+/* date range */
+.range-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.range-row button{padding:6px 14px;font-family:var(--body);font-size:14px;color:var(--ink);background:var(--paper);border:1.8px solid var(--ink);border-radius:99px;cursor:pointer}
+.range-row button.on{background:var(--ink);color:var(--paper);font-family:var(--hand);font-size:18px}
+.range-pickers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.range-pickers label{display:flex;flex-direction:column;font-family:var(--type);font-size:10px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;gap:4px}
+.range-pickers input{font-family:var(--hand);font-size:22px;padding:6px 10px;border:1.8px solid var(--ink);background:var(--paper);border-radius:8px;color:var(--ink)}
+
+/* filters */
+.filt-row{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.filt-row:last-child{border-bottom:0}
+.filt-row .k{font-family:var(--type);font-size:11px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;min-width:100px}
+.filt-row .chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip-t{padding:4px 11px;font-family:var(--hand);font-size:18px;background:var(--paper);border:1.5px solid var(--ink);border-radius:99px;cursor:pointer;line-height:1}
+.chip-t.on{background:var(--postit);box-shadow:2px 2px 0 var(--marker-red)}
+.chip-t.red.on{background:var(--postit-pink);color:var(--marker-red);border-color:var(--marker-red)}
+.chip-t.green.on{background:var(--postit-mint);color:var(--marker-green);border-color:var(--marker-green)}
+
+/* columns */
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:780px){.cols{grid-template-columns:repeat(2,1fr)}}
+.col-row{display:flex;align-items:center;gap:8px;padding:7px 11px;background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;cursor:pointer;font-family:var(--body);font-size:14px;color:var(--ink)}
+.col-row:hover{background:var(--postit)}
+.col-row.on{background:var(--postit);box-shadow:2px 2px 0 var(--ink)}
+.col-row .b{width:18px;height:18px;border:2px solid var(--ink);border-radius:4px;display:grid;place-items:center;background:var(--paper);flex:none}
+.col-row.on .b{background:var(--marker-red);border-color:var(--marker-red);color:var(--paper)}
+.col-row.on .b::after{content:"✓";font-family:var(--hand);font-size:14px;line-height:1}
+.col-row .lk{font-family:var(--type);font-size:9px;color:var(--marker-red);letter-spacing:.06em;margin-left:auto;text-transform:uppercase}
+
+/* sealed handling */
+.sealed-opts{display:flex;flex-direction:column;gap:8px}
+.s-opt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--paper);border:1.8px solid var(--ink);border-radius:8px;cursor:pointer}
+.s-opt:hover{background:var(--postit)}
+.s-opt.on{background:var(--postit-mint);box-shadow:3px 3px 0 var(--marker-green);border-color:var(--marker-green)}
+.s-opt .r{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);flex:none;margin-top:2px}
+.s-opt.on .r{border-color:var(--marker-green);background:var(--marker-green)}
+.s-opt.on .r::after{content:"";display:block;width:8px;height:8px;background:var(--paper);border-radius:50%;margin:3px 0 0 3px}
+.s-opt b{font-family:var(--hand);font-size:20px;color:var(--ink);font-weight:400;display:block;line-height:1.05}
+.s-opt small{font-family:var(--body);font-size:13px;color:var(--ink-soft);line-height:1.35}
+
+/* preview/sticky */
+.summary{position:sticky;top:90px;background:var(--paper-2);border:2.5px solid var(--ink);border-radius:10px;padding:22px 24px;box-shadow:6px 6px 0 var(--ink);transform:rotate(.4deg)}
+.summary h4{font-family:var(--hand);font-size:30px;margin:0 0 6px;line-height:1}
+.summary .sum-line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-family:var(--body);font-size:14px}
+.summary .sum-line:last-child{border-bottom:0}
+.summary .sum-line .k{font-family:var(--type);font-size:11px;letter-spacing:.06em;color:var(--pencil);text-transform:uppercase}
+.summary .sum-line .v{font-family:var(--hand);font-size:20px;color:var(--ink);text-align:right}
+.summary .sum-line .v.red{color:var(--marker-red)}
+.summary .sum-line .v.green{color:var(--marker-green)}
+.bigvalue{font-family:var(--hand);font-size:64px;line-height:.95;color:var(--marker-red);font-weight:700;margin:8px 0;text-align:center;letter-spacing:-.02em}
+.bigvalue small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.1em;display:block;text-transform:uppercase;font-weight:400}
+
+.preview-card{margin-top:16px;background:#211b14;color:#f4ecd6;border-radius:8px;padding:12px 14px;font-family:"JetBrains Mono",monospace;font-size:11px;line-height:1.55;border:2px solid var(--ink);max-height:200px;overflow-y:auto}
+.preview-card .k{color:#ffd6a5}
+.preview-card .s{color:#c5e1a5}
+.preview-card .c{color:rgba(244,236,214,.45)}
+
+.go{display:flex;flex-direction:column;gap:8px;margin-top:18px;padding-top:14px;border-top:2px dashed var(--ink)}
+.btn-export{font-family:var(--hand);font-size:26px;font-weight:700;color:var(--paper);background:var(--marker-red);padding:12px 22px;border:2.5px solid var(--ink);border-radius:10px;box-shadow:5px 5px 0 var(--ink);transform:rotate(-.6deg);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;line-height:1}
+.btn-export:hover{transform:rotate(-.6deg) translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+.btn-export svg{width:20px;height:20px}
+.go small{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.06em;text-align:center;line-height:1.4}
+
+/* recent exports */
+.exp-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px dashed var(--line);font-family:var(--body);font-size:14px}
+.exp-row:last-child{border-bottom:0}
+.exp-row .ext-b{padding:3px 8px;font-family:"JetBrains Mono",monospace;font-size:11px;background:var(--paper-edge);border:1px dashed var(--ink);border-radius:4px;color:var(--marker-red)}
+.exp-row b{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400}
+.exp-row small{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.06em}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>· export</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="demo.html">Demo</a>
+      <a href="analytics.html">Analytics</a>
+      <a href="docs.html">Docs</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="account.html">Account</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head"><span>Export · build a download</span><span class="date">May 10, 2026</span></div>
+    <span class="section-eyebrow">— take it with you —</span>
+    <h1>Pack <span class="marker">your data</span> into a tidy file.</h1>
+    <p class="lede">All catat data is already on Sui + Walrus, so <em>export is just convenience</em> — you can always re-derive it yourself. This page bundles answers (and optionally decrypted sealed bodies) into the format you need.</p>
+
+    <div class="exp-grid">
+      <section>
+        <div class="section-card">
+          <h3><span class="num">1</span>Source</h3>
+          <p class="desc">Which form (or forms) to include.</p>
+          <div class="form-pick">
+            <span class="ico">📓</span>
+            <div>
+              <b>walrus bug report</b>
+              <small>0x4a2c…b91 · 517 submissions · 10 questions · 2 sealed</small>
+            </div>
+            <span class="arr">change ↗</span>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3><span class="num">2</span>Format</h3>
+          <p class="desc">Pick the file shape that fits the next tool in your pipeline.</p>
+          <div class="formats">
+            <div class="fmt on" data-fmt="csv">
+              <span class="ext">.csv</span>
+              <b>CSV</b>
+              <small>spreadsheet · one row per submission · easiest for Sheets / Excel</small>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+            </div>
+            <div class="fmt" data-fmt="json">
+              <span class="ext">.json</span>
+              <b>JSON Lines</b>
+              <small>one object per line · pipe into <code style="font-family:'JetBrains Mono',monospace;font-size:11px">jq</code> or postgres</small>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+            </div>
+            <div class="fmt" data-fmt="parquet">
+              <span class="ext">.parquet</span>
+              <b>Parquet</b>
+              <small>columnar · for warehouses · DuckDB &amp; Snowflake friendly</small>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+            </div>
+            <div class="fmt" data-fmt="walrus">
+              <span class="ext">.walrus</span>
+              <b>Re-publish to Walrus</b>
+              <small>sign + write the export itself as a new public blob · share by id</small>
+              <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3><span class="num">3</span>Date range</h3>
+          <p class="desc">Filter by submission timestamp (UTC).</p>
+          <div class="range-row" id="ranges">
+            <button>last 24h</button>
+            <button>last 7d</button>
+            <button class="on">last 30d</button>
+            <button>last 90d</button>
+            <button>all time</button>
+            <button>custom…</button>
+          </div>
+          <div class="range-pickers">
+            <label>from<input type="text" value="Apr 10, 2026" /></label>
+            <label>to<input type="text" value="May 10, 2026" /></label>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3><span class="num">4</span>Filters</h3>
+          <p class="desc">Narrow the rows. Filters AND together; chips within a row OR.</p>
+          <div class="filt-row">
+            <span class="k">priority</span>
+            <div class="chips">
+              <span class="chip-t red on">high</span>
+              <span class="chip-t">medium</span>
+              <span class="chip-t">low</span>
+              <span class="chip-t red on">critical</span>
+            </div>
+          </div>
+          <div class="filt-row">
+            <span class="k">status</span>
+            <div class="chips">
+              <span class="chip-t on">new</span>
+              <span class="chip-t on">in review</span>
+              <span class="chip-t">queued</span>
+              <span class="chip-t green on">fixed</span>
+              <span class="chip-t">wontfix</span>
+              <span class="chip-t">spam</span>
+            </div>
+          </div>
+          <div class="filt-row">
+            <span class="k">tags</span>
+            <div class="chips">
+              <span class="chip-t on">aggregator</span>
+              <span class="chip-t">cli</span>
+              <span class="chip-t">faucet</span>
+              <span class="chip-t on">testnet</span>
+              <span class="chip-t">+ add</span>
+            </div>
+          </div>
+          <div class="filt-row">
+            <span class="k">verified</span>
+            <div class="chips">
+              <span class="chip-t green on">verified ✓</span>
+              <span class="chip-t">tampered</span>
+              <span class="chip-t">unverified</span>
+            </div>
+          </div>
+          <div class="filt-row">
+            <span class="k">submitter</span>
+            <div class="chips">
+              <span class="chip-t">all</span>
+              <span class="chip-t on">WAL holders only</span>
+              <span class="chip-t">first-time</span>
+              <span class="chip-t">repeat (≥3)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3><span class="num">5</span>Columns</h3>
+          <p class="desc">Pick which fields end up as columns. Required tx + blob always come along so the file stays verifiable.</p>
+          <div class="cols">
+            <div class="col-row on"><span class="b"></span>submission_id<span class="lk">always</span></div>
+            <div class="col-row on"><span class="b"></span>submitted_at<span class="lk">always</span></div>
+            <div class="col-row on"><span class="b"></span>tx_hash<span class="lk">always</span></div>
+            <div class="col-row on"><span class="b"></span>walrus_blob<span class="lk">always</span></div>
+            <div class="col-row on"><span class="b"></span>submitter</div>
+            <div class="col-row on"><span class="b"></span>q1 — title</div>
+            <div class="col-row on"><span class="b"></span>q2 — area</div>
+            <div class="col-row on"><span class="b"></span>q3 — severity</div>
+            <div class="col-row on"><span class="b"></span>q4 — networks</div>
+            <div class="col-row on"><span class="b"></span>q5 — what happened</div>
+            <div class="col-row"><span class="b"></span>q6 — docs rating</div>
+            <div class="col-row on"><span class="b"></span>q7 — NPS</div>
+            <div class="col-row"><span class="b"></span>q8 — link</div>
+            <div class="col-row on"><span class="b"></span>q9 — screenshot 🔒</div>
+            <div class="col-row"><span class="b"></span>q10 — contact 🔒</div>
+            <div class="col-row on"><span class="b"></span>priority &amp; status</div>
+            <div class="col-row on"><span class="b"></span>tags</div>
+            <div class="col-row"><span class="b"></span>admin notes</div>
+            <div class="col-row"><span class="b"></span>activity log</div>
+            <div class="col-row"><span class="b"></span>signature</div>
+            <div class="col-row"><span class="b"></span>body sha-256</div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3><span class="num">6</span>Sealed fields</h3>
+          <p class="desc">Decryption requires your wallet to sign — and only fields you actually own can be decrypted. Pick what to do with sealed bodies in the export.</p>
+          <div class="sealed-opts">
+            <div class="s-opt on" data-seal="ct"><span class="r"></span>
+              <div><b>Keep as ciphertext</b><small>safest · file stays sealed for everyone but you · export is shareable</small></div>
+            </div>
+            <div class="s-opt" data-seal="hash"><span class="r"></span>
+              <div><b>Replace with body hash + length</b><small>preserves analytics shape without leaking content</small></div>
+            </div>
+            <div class="s-opt" data-seal="plain"><span class="r"></span>
+              <div><b>Decrypt &amp; include plaintext</b><small>your wallet signs once · plaintext only lives in this download</small></div>
+            </div>
+            <div class="s-opt" data-seal="omit"><span class="r"></span>
+              <div><b>Omit sealed columns entirely</b><small>removes the columns from the file — useful for sharing</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3><span class="num">7</span>Recent exports</h3>
+          <div class="exp-row"><span class="ext-b">.csv</span><div><b>walrus-bugs · last 7d · 312 rows</b><br><small>3 days ago · 84 KB · sealed = ciphertext</small></div><div style="display:flex;gap:6px"><button class="btn btn-sm">re-run</button><button class="btn btn-sm">download</button></div></div>
+          <div class="exp-row"><span class="ext-b">.json</span><div><b>community NPS · all time · 188 rows</b><br><small>9 days ago · 41 KB · sealed = omit</small></div><div style="display:flex;gap:6px"><button class="btn btn-sm">re-run</button><button class="btn btn-sm">download</button></div></div>
+          <div class="exp-row"><span class="ext-b">.walrus</span><div><b>quarterly digest · q1 · public</b><br><small>23 days ago · blob bafy…dq1 · 412 rows</small></div><div style="display:flex;gap:6px"><button class="btn btn-sm">re-run</button><button class="btn btn-sm">share</button></div></div>
+        </div>
+
+      </section>
+
+      <aside class="summary">
+        <h4>Summary</h4>
+        <p style="font-family:var(--body);font-size:14px;color:var(--ink-soft);margin:0 0 4px">Live preview of what you&rsquo;ll download. Updates as you tweak.</p>
+        <div class="bigvalue" id="rowCount">152
+          <small>matching rows</small>
+        </div>
+        <div class="sum-line"><span class="k">format</span><span class="v" id="sumFmt">CSV</span></div>
+        <div class="sum-line"><span class="k">columns</span><span class="v">14 of 21</span></div>
+        <div class="sum-line"><span class="k">sealed</span><span class="v" id="sumSeal">ciphertext</span></div>
+        <div class="sum-line"><span class="k">file size</span><span class="v">~ 38 KB</span></div>
+        <div class="sum-line"><span class="k">checksum</span><span class="v green">sha-256 ✓</span></div>
+        <div class="sum-line"><span class="k">cost</span><span class="v">free · 0 SUI</span></div>
+
+        <div class="preview-card">
+<span class="c"># walrus-bugs · 30d · sealed=ciphertext</span>
+<span class="c"># sha-256: a8f3…2c19</span>
+<span class="k">submission_id</span>,<span class="k">submitted_at</span>,<span class="k">tx_hash</span>,<span class="k">submitter</span>,<span class="k">title</span>,<span class="k">severity</span>,<span class="k">nps</span>,<span class="k">q9_screenshot</span>
+<span class="s">413</span>,<span class="s">2026-05-10T11:42Z</span>,<span class="s">0x4a2c…b91</span>,<span class="s">walrus.builder</span>,<span class="s">"Aggregator timeout…"</span>,<span class="s">high</span>,<span class="s">9</span>,<span class="s">SEAL:▒▒▒▒▒▒</span>
+<span class="s">412</span>,<span class="s">2026-05-10T10:18Z</span>,<span class="s">0xeb1d…c2f</span>,<span class="s">mover.sui</span>,<span class="s">"Faucet returns 502 occasionally"</span>,<span class="s">medium</span>,<span class="s">8</span>,<span class="s">SEAL:▒▒▒▒▒▒</span>
+<span class="s">411</span>,<span class="s">2026-05-10T09:52Z</span>,<span class="s">0x7c19…a02</span>,<span class="s">devnet-anon</span>,<span class="s">"CLI hangs on stale cache"</span>,<span class="s">high</span>,<span class="s">7</span>,<span class="s">SEAL:▒▒▒▒▒▒</span>
+<span class="c"># … 149 more rows</span>
+        </div>
+
+        <div class="go">
+          <button class="btn-export">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="M6 12l6 6 6-6"/><path d="M5 22h14"/></svg>
+            Sign &amp; download
+          </button>
+          <button class="btn btn-sm">⏰ Schedule weekly export</button>
+          <small>Wallet signs the download header — recipients can prove the file came from you and hasn&rsquo;t been edited.</small>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script>
+const fmtMap={csv:'CSV',json:'JSON Lines',parquet:'Parquet',walrus:'Walrus blob'};
+document.querySelectorAll('.fmt').forEach(f=>f.addEventListener('click',()=>{
+  document.querySelectorAll('.fmt').forEach(x=>x.classList.remove('on'));
+  f.classList.add('on');
+  document.getElementById('sumFmt').textContent=fmtMap[f.dataset.fmt];
+}));
+const sealMap={ct:'ciphertext',hash:'hash + len',plain:'plaintext (your decrypt)',omit:'omitted'};
+document.querySelectorAll('.s-opt').forEach(o=>o.addEventListener('click',()=>{
+  document.querySelectorAll('.s-opt').forEach(x=>x.classList.remove('on'));
+  o.classList.add('on');
+  document.getElementById('sumSeal').textContent=sealMap[o.dataset.seal];
+}));
+document.querySelectorAll('#ranges button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#ranges button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  const m={'last 24h':18,'last 7d':84,'last 30d':152,'last 90d':318,'all time':517,'custom…':152};
+  document.getElementById('rowCount').firstChild.textContent=m[b.textContent.trim()]||152;
+}));
+document.querySelectorAll('.col-row').forEach(c=>c.addEventListener('click',()=>{
+  if(c.querySelector('.lk'))return;
+  c.classList.toggle('on');
+}));
+document.querySelectorAll('.chip-t').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on')));
+</script>
+<script src="tweaks-global.js"></script>
+</body>
+</html>

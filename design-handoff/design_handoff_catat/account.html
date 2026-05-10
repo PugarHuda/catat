@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — account &amp; settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.acc-grid{display:grid;grid-template-columns:240px 1fr;gap:36px;align-items:flex-start}
+@media(max-width:920px){.acc-grid{grid-template-columns:1fr}}
+
+/* sidebar */
+.acc-side{position:sticky;top:90px;background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;padding:18px;box-shadow:4px 4px 0 var(--ink);transform:rotate(-.5deg)}
+.profile-card{padding-bottom:14px;border-bottom:1.5px dashed var(--ink);margin-bottom:14px}
+.avatar{width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,#ffb6b9,#ffea7a,#c7e9d0);border:2.5px solid var(--ink);display:grid;place-items:center;font-family:var(--hand);font-size:30px;font-weight:700;color:var(--ink);transform:rotate(-3deg);margin-bottom:8px}
+.profile-card .name{font-family:var(--hand);font-size:28px;line-height:1;color:var(--ink)}
+.profile-card .addr{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--pencil);margin-top:4px}
+.profile-card .net{display:inline-flex;align-items:center;gap:6px;font-family:var(--type);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border:1.5px dashed var(--marker-green);background:var(--postit-mint);color:var(--marker-green);border-radius:99px;margin-top:8px}
+.profile-card .net .dot{width:7px;height:7px;border-radius:50%;background:var(--marker-green)}
+
+.menu{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.menu li{font-family:var(--body);font-size:15px;color:var(--ink-soft);padding:7px 10px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.menu li:hover{background:var(--postit);color:var(--ink)}
+.menu li.on{background:var(--ink);color:var(--paper);font-family:var(--hand);font-size:18px}
+.menu li .ico{width:22px;height:22px;display:grid;place-items:center;font-size:14px}
+
+/* main column */
+.acc-main{display:flex;flex-direction:column;gap:22px}
+.section-card{background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:24px 28px;box-shadow:5px 5px 0 var(--ink);position:relative}
+.section-card h2{font-family:var(--hand);font-size:36px;margin:0 0 4px;line-height:1;color:var(--ink)}
+.section-card .desc{font-family:var(--body);font-size:15px;color:var(--ink-soft);margin:0 0 18px;border-bottom:1px dashed var(--ink);padding-bottom:12px}
+
+.field-line{display:grid;grid-template-columns:160px 1fr auto;align-items:center;gap:14px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.field-line:last-child{border-bottom:0}
+.field-line .key{font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil)}
+.field-line .val{font-family:var(--hand);font-size:22px;color:var(--ink)}
+.field-line input.txt{width:100%;font-family:var(--hand);font-size:22px;color:var(--ink);border:0;border-bottom:1.8px solid var(--ink);background:transparent;outline:0;padding:2px 4px}
+.field-line .right{display:flex;gap:6px;align-items:center;justify-self:end}
+.field-line .mono{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);word-break:break-all}
+@media(max-width:680px){.field-line{grid-template-columns:1fr}.field-line .right{justify-self:flex-start}}
+
+/* toggle */
+.toggle{position:relative;width:46px;height:24px;border:1.8px solid var(--ink);background:var(--paper);border-radius:999px;cursor:pointer;transition:background .15s;flex:none}
+.toggle::after{content:"";position:absolute;top:1.5px;left:2px;width:18px;height:18px;background:var(--ink);border-radius:50%;transition:left .15s}
+.toggle.on{background:var(--marker-red)}
+.toggle.on::after{left:24px;background:var(--paper)}
+
+/* keys list */
+.keys{display:flex;flex-direction:column;gap:10px}
+.key-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px 14px;background:var(--paper);border:1.8px solid var(--ink);border-radius:8px}
+.key-row .badge{width:34px;height:34px;border-radius:8px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-family:var(--hand);font-weight:700;font-size:18px;flex:none}
+.key-row .badge.red{background:var(--marker-red)}
+.key-row .badge.blue{background:var(--marker-blue)}
+.key-row .info b{font-family:var(--hand);font-size:22px;color:var(--ink);font-weight:400;display:block;line-height:1}
+.key-row .info small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em}
+
+/* sessions */
+.sess{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:11px 14px;border-bottom:1px dashed var(--line)}
+.sess:last-child{border-bottom:0}
+.sess .dev{width:36px;height:36px;background:var(--paper);border:1.8px solid var(--ink);border-radius:8px;display:grid;place-items:center;font-size:18px;flex:none}
+.sess .meta b{font-family:var(--hand);font-size:20px;color:var(--ink);font-weight:400;display:block;line-height:1}
+.sess .meta small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.04em}
+.sess .now{font-family:var(--type);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;background:var(--postit-mint);border:1px dashed var(--marker-green);color:var(--marker-green);border-radius:99px}
+
+/* danger zone */
+.danger{background:var(--postit-pink);border:2.5px solid var(--marker-red);box-shadow:5px 5px 0 var(--marker-red)}
+.danger h2{color:var(--marker-red)}
+.danger .desc{color:var(--ink);border-color:var(--marker-red)}
+
+/* usage stat */
+.usage{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+@media(max-width:780px){.usage{grid-template-columns:repeat(2,1fr)}}
+.us{padding:12px 14px;background:var(--paper);border:1.8px solid var(--ink);border-radius:8px;text-align:left}
+.us .lbl{font-family:var(--type);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--pencil);margin-bottom:2px}
+.us b{font-family:var(--hand);font-size:30px;color:var(--ink);line-height:1;display:block}
+.us small{font-family:var(--body);font-size:13px;color:var(--ink-soft)}
+
+.bar{height:14px;background:var(--paper-edge);border:1.5px solid var(--ink);border-radius:99px;overflow:hidden;flex:1;margin:6px 0 4px}
+.bar .f{height:100%;background:var(--marker-red);border-right:1.5px solid var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>· account</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="templates.html">Templates</a>
+      <a href="demo.html">Demo</a>
+      <a href="docs.html">Docs</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-sm" href="#">Disconnect</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head"><span>Account · settings</span><span class="date">May 10, 2026</span></div>
+    <span class="section-eyebrow">— your notebook, your rules —</span>
+    <h1>Account &amp; <span class="marker">settings</span>.</h1>
+    <p class="lede">Tweak your display name, manage Seal keys, review active sessions, and (if you must) shut the whole thing down. Everything here is signed by your wallet — we don&rsquo;t hold a copy.</p>
+
+    <div class="acc-grid">
+      <aside class="acc-side">
+        <div class="profile-card">
+          <div class="avatar">WB</div>
+          <div class="name">walrus.builder</div>
+          <div class="addr">0xA1c2…F09e</div>
+          <span class="net"><span class="dot"></span>sui mainnet</span>
+        </div>
+        <ul class="menu">
+          <li class="on"><span class="ico">👤</span>Profile</li>
+          <li><span class="ico">📊</span>Plan &amp; usage</li>
+          <li><span class="ico">🔒</span>Seal keys</li>
+          <li><span class="ico">🪝</span>Webhooks</li>
+          <li><span class="ico">🔔</span>Notifications</li>
+          <li><span class="ico">📱</span>Sessions</li>
+          <li><span class="ico">📤</span>Export &amp; data</li>
+          <li><span class="ico">⚠️</span>Danger zone</li>
+        </ul>
+      </aside>
+
+      <div class="acc-main">
+
+        <section class="section-card">
+          <h2>Profile</h2>
+          <p class="desc">How you appear on submission receipts and verify pages. Display name is optional and editable any time — your wallet address is canonical.</p>
+          <div class="field-line">
+            <span class="key">display name</span>
+            <input class="txt" value="walrus.builder" />
+            <div class="right"><button class="btn btn-sm">Save</button></div>
+          </div>
+          <div class="field-line">
+            <span class="key">sui address</span>
+            <span class="mono">0xA1c2 4d8e 7f10 9b2c 3f5a 67e8 d910 ab23 — F09e</span>
+            <div class="right"><button class="btn btn-sm">Copy</button></div>
+          </div>
+          <div class="field-line">
+            <span class="key">avatar</span>
+            <span class="val">auto-generated from wallet</span>
+            <div class="right"><button class="btn btn-sm">Upload</button></div>
+          </div>
+          <div class="field-line">
+            <span class="key">contact email</span>
+            <span class="val" style="font-family:var(--hand);color:var(--marker-red)">🔒 sealed · only catat can&rsquo;t see it</span>
+            <div class="right"><button class="btn btn-sm">Edit</button></div>
+          </div>
+          <div class="field-line">
+            <span class="key">timezone</span>
+            <span class="val">Asia / Jakarta — UTC+7</span>
+            <div class="right"><button class="btn btn-sm">Change</button></div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <h2>Plan &amp; usage</h2>
+          <p class="desc">You&rsquo;re on the <b style="color:var(--marker-red);font-family:var(--hand);font-size:20px">Notebook</b> plan. On-chain costs are billed at-cost from your wallet; the subscription covers hosted dashboard + custom domain.</p>
+
+          <div class="usage">
+            <div class="us"><div class="lbl">forms</div><b>4 / ∞</b><small>nothing capped</small></div>
+            <div class="us"><div class="lbl">submissions</div><b>517</b><small>this month</small></div>
+            <div class="us"><div class="lbl">walrus storage</div><b>3.2 MB</b><small>across 4 forms</small></div>
+            <div class="us"><div class="lbl">team members</div><b>2 / 5</b><small>3 seats free</small></div>
+          </div>
+
+          <div class="field-line">
+            <span class="key">storage cost mtd</span>
+            <span class="val">0.041 SUI <span style="font-family:var(--type);font-size:11px;color:var(--pencil)">(~$0.08)</span></span>
+            <div class="right"><span class="chip green">at-cost</span></div>
+          </div>
+          <div class="field-line">
+            <span class="key">gas cost mtd</span>
+            <span class="val">1.21 SUI <span style="font-family:var(--type);font-size:11px;color:var(--pencil)">(~$2.40)</span></span>
+            <div class="right"><span class="chip green">at-cost</span></div>
+          </div>
+          <div class="field-line">
+            <span class="key">subscription</span>
+            <span class="val">Notebook · $19/mo · renews May 28</span>
+            <div class="right"><button class="btn btn-sm">Change plan</button><button class="btn btn-sm">Receipts</button></div>
+          </div>
+          <div class="field-line">
+            <span class="key">storage usage</span>
+            <span><div class="bar"><div class="f" style="width:32%"></div></div><span style="font-family:var(--type);font-size:11px;color:var(--pencil)">3.2 MB / 10 MB before next epoch</span></span>
+            <div class="right"><button class="btn btn-sm">Extend epochs</button></div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <h2>Seal keys</h2>
+          <p class="desc">Each form gets its own Seal key, derived from your wallet at form creation. Rotating creates a new key and re-encrypts going forward — past submissions stay readable under the old one.</p>
+
+          <div class="keys">
+            <div class="key-row">
+              <span class="badge red">🔒</span>
+              <div class="info"><b>walrus bug report</b><small>2-of-3 · key 0x4a2c…b91/email · 412 sealed answers</small></div>
+              <div style="display:flex;gap:6px"><button class="btn btn-sm">Rotate</button><button class="btn btn-sm">Export pubkey</button></div>
+            </div>
+            <div class="key-row">
+              <span class="badge blue">🔒</span>
+              <div class="info"><b>community NPS</b><small>2-of-3 · key 0x7c19…a02/feedback · 188 sealed answers</small></div>
+              <div style="display:flex;gap:6px"><button class="btn btn-sm">Rotate</button><button class="btn btn-sm">Export pubkey</button></div>
+            </div>
+            <div class="key-row">
+              <span class="badge">🔒</span>
+              <div class="info"><b>conference RSVP</b><small>2-of-3 · key 0xb209…3f1/email · 22 sealed answers</small></div>
+              <div style="display:flex;gap:6px"><button class="btn btn-sm">Rotate</button><button class="btn btn-sm">Export pubkey</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <h2>Webhooks</h2>
+          <p class="desc">Subscribe an HTTPS endpoint to <code style="font-family:var(--type);font-size:13px">submission.added</code> events. We sign every payload with your form&rsquo;s pubkey so you can verify it&rsquo;s us.</p>
+          <div class="field-line">
+            <span class="key">endpoint</span>
+            <input class="txt" value="https://hooks.bugs.acme.org/catat" />
+            <div class="right"><span class="chip green">live</span></div>
+          </div>
+          <div class="field-line">
+            <span class="key">signing secret</span>
+            <span class="mono">whsec_4a2c…b91eF09e</span>
+            <div class="right"><button class="btn btn-sm">Reveal</button><button class="btn btn-sm">Rotate</button></div>
+          </div>
+          <div class="field-line">
+            <span class="key">last delivery</span>
+            <span class="val">12 min ago · 200 OK · 87ms</span>
+            <div class="right"><button class="btn btn-sm">Send test</button></div>
+          </div>
+          <div class="field-line">
+            <span class="key">retry policy</span>
+            <span class="val">5 retries · exponential</span>
+            <div class="right"><div class="toggle on"></div></div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <h2>Notifications</h2>
+          <p class="desc">Get a ping when a sealed field is decrypted, or when storage is about to expire.</p>
+          <div class="field-line"><span class="key">email digest</span><span class="val">weekly · Mondays 9am</span><div class="right"><div class="toggle on"></div></div></div>
+          <div class="field-line"><span class="key">decrypt alerts</span><span class="val">when anyone decrypts a sealed field</span><div class="right"><div class="toggle on"></div></div></div>
+          <div class="field-line"><span class="key">storage expiring</span><span class="val">14 days before any blob expires</span><div class="right"><div class="toggle on"></div></div></div>
+          <div class="field-line"><span class="key">marketing</span><span class="val">product news, no more than monthly</span><div class="right"><div class="toggle"></div></div></div>
+        </section>
+
+        <section class="section-card">
+          <h2>Active sessions</h2>
+          <p class="desc">Devices currently signed in with this wallet.</p>
+          <div class="sess">
+            <div class="dev">💻</div>
+            <div class="meta"><b>MacBook Pro · Safari 17</b><small>Jakarta, ID · 192.168.•.• · since 11:42 today</small></div>
+            <span class="now">this device</span>
+          </div>
+          <div class="sess">
+            <div class="dev">📱</div>
+            <div class="meta"><b>iPhone 15 · Sui Wallet app</b><small>Bandung, ID · last active 4 hours ago</small></div>
+            <button class="btn btn-sm">Revoke</button>
+          </div>
+          <div class="sess">
+            <div class="dev">🖥</div>
+            <div class="meta"><b>Linux · Firefox 128</b><small>Singapore · last active 2 days ago</small></div>
+            <button class="btn btn-sm">Revoke</button>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <h2>Export &amp; data</h2>
+          <p class="desc">Your data is on Sui + Walrus — you don&rsquo;t need us to access it. These shortcuts just bundle it nicely.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn">Export all forms (JSON)</button>
+            <button class="btn">Export submissions (CSV)</button>
+            <button class="btn">Export sealed bodies (only your wallet can)</button>
+            <button class="btn btn-ghost">Read the export spec ↗</button>
+          </div>
+        </section>
+
+        <section class="section-card danger">
+          <h2>Danger zone</h2>
+          <p class="desc">These actions can&rsquo;t be undone. Walrus blobs may persist until their epoch expires — Sui events are forever.</p>
+          <div class="field-line"><span class="key">archive workspace</span><span class="val">stops new submissions, keeps data readable</span><div class="right"><button class="btn btn-sm">Archive</button></div></div>
+          <div class="field-line"><span class="key">disconnect wallet</span><span class="val">log out everywhere</span><div class="right"><button class="btn btn-sm">Disconnect</button></div></div>
+          <div class="field-line"><span class="key">delete catat profile</span><span class="val">removes display name &amp; webhook config (on-chain stays)</span><div class="right"><button class="btn btn-sm" style="background:var(--marker-red);color:var(--paper);box-shadow:inset 0 0 0 1.6px var(--ink),2px 2px 0 var(--ink)">Delete</button></div></div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script>
+document.querySelectorAll('.toggle').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+document.querySelectorAll('.menu li').forEach(li=>li.addEventListener('click',()=>{
+  document.querySelectorAll('.menu li').forEach(x=>x.classList.remove('on'));li.classList.add('on');
+}));
+</script>
+<script src="tweaks-global.js"></script>
+</body>
+</html>

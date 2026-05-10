@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — verify a submission</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.verify-grid{display:grid;grid-template-columns:1fr 360px;gap:30px;align-items:flex-start;margin-top:8px}
+@media(max-width:980px){.verify-grid{grid-template-columns:1fr}}
+
+.lookup{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:18px 20px;box-shadow:5px 5px 0 var(--ink);margin-bottom:24px}
+.lookup label{font-family:var(--type);font-size:11px;letter-spacing:.12em;color:var(--pencil);text-transform:uppercase}
+.lookup input{flex:1;min-width:240px;font-family:"JetBrains Mono",monospace;font-size:15px;border:0;border-bottom:2px solid var(--ink);background:transparent;outline:0;padding:6px 4px;color:var(--ink)}
+
+/* steps stamp */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:780px){.steps{grid-template-columns:repeat(2,1fr)}}
+.step{position:relative;background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;padding:14px 16px;box-shadow:3px 3px 0 var(--ink)}
+.step:nth-child(1){transform:rotate(-1deg);background:var(--postit-mint)}
+.step:nth-child(2){transform:rotate(.6deg);background:var(--postit-mint)}
+.step:nth-child(3){transform:rotate(-.4deg);background:var(--postit-mint)}
+.step:nth-child(4){transform:rotate(.4deg);background:var(--postit-mint)}
+.step .label{font-family:var(--type);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--pencil);margin-bottom:2px}
+.step h5{font-family:var(--hand);font-size:24px;line-height:1.05;margin:0 0 4px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.step h5 .ck{width:26px;height:26px;border-radius:50%;background:var(--marker-green);color:var(--paper);display:grid;place-items:center;font-family:var(--hand);font-size:18px;flex:none}
+.step p{font-family:var(--body);font-size:14px;color:var(--ink-soft);line-height:1.4;margin:0}
+
+/* main proof card */
+.proof-card{background:var(--paper-2);border:2.5px solid var(--ink);border-radius:10px;padding:30px 32px;box-shadow:6px 6px 0 var(--ink);position:relative;transform:rotate(-.3deg)}
+.proof-card .stamp{position:absolute;top:-22px;right:-26px;font-family:var(--hand);font-size:36px;font-weight:700;color:var(--marker-green);border:4px double var(--marker-green);padding:6px 18px;border-radius:8px;transform:rotate(8deg);background:rgba(244,236,214,.5);letter-spacing:.04em}
+.proof-h{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px dashed var(--ink);padding-bottom:8px;margin-bottom:16px;font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil);flex-wrap:wrap;gap:8px}
+.proof-h .id{font-family:var(--hand);font-size:24px;color:var(--ink);text-transform:none;letter-spacing:0}
+.proof-card h2{font-family:var(--hand);font-weight:700;font-size:36px;line-height:1.05;margin:0 0 8px;color:var(--ink)}
+.proof-card .sub{font-family:var(--body);font-size:16px;color:var(--ink-soft);margin:0 0 18px}
+
+.proof-row{display:grid;grid-template-columns:160px 1fr auto;gap:14px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line)}
+.proof-row:last-child{border-bottom:0}
+.proof-row .key{font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil)}
+.proof-row .val{font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--ink);word-break:break-all}
+.proof-row .val.hand{font-family:var(--hand);font-size:22px}
+.proof-row .check{font-family:var(--hand);font-size:20px;color:var(--marker-green);justify-self:end;display:flex;align-items:center;gap:4px;flex:none}
+.proof-row .check.fail{color:var(--marker-red)}
+.proof-row .check svg{width:18px;height:18px}
+@media(max-width:680px){.proof-row{grid-template-columns:1fr;gap:2px}.proof-row .check{justify-self:flex-start}}
+
+.fields-block{margin-top:24px;padding-top:18px;border-top:2px dashed var(--ink)}
+.fields-block h3{font-family:var(--hand);font-size:28px;margin:0 0 12px;color:var(--ink)}
+.fld-line{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px dashed var(--line);align-items:center;flex-wrap:wrap}
+.fld-line:last-child{border-bottom:0}
+.fld-line .q{font-family:var(--type);font-size:11px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;flex:none;width:120px}
+.fld-line .a{font-family:var(--hand);font-size:22px;color:var(--ink);flex:1;min-width:200px}
+.fld-line .a.sealed{font-family:"JetBrains Mono",monospace;font-size:14px;background:var(--postit-pink);border:1.5px dashed var(--marker-red);color:var(--marker-red);padding:4px 10px;border-radius:6px;letter-spacing:.18em;display:inline-block}
+.fld-line .a.box{background:var(--postit);border:1.5px solid var(--ink);padding:6px 10px;border-radius:6px;font-size:18px;display:inline-block}
+
+.actions{margin-top:24px;padding-top:18px;border-top:2px dashed var(--ink);display:flex;gap:10px;flex-wrap:wrap}
+
+/* sidebar trust */
+.trust-list{display:flex;flex-direction:column;gap:14px}
+.trust-card{background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;padding:18px;box-shadow:4px 4px 0 var(--ink);transform:rotate(.5deg)}
+.trust-card:nth-child(2){transform:rotate(-.5deg)}
+.trust-card h4{font-family:var(--hand);font-size:24px;margin:0 0 6px;color:var(--ink)}
+.trust-card p{font-family:var(--body);font-size:15px;color:var(--ink-soft);margin:0 0 10px;line-height:1.45}
+.trust-card .row{display:flex;justify-content:space-between;font-family:var(--type);font-size:12px;color:var(--pencil);padding:3px 0;border-top:1px dashed var(--line)}
+.trust-card .row b{font-family:var(--hand);font-size:16px;color:var(--ink);font-weight:400}
+
+.timeline{position:relative;padding-left:24px;margin-top:8px}
+.timeline::before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--ink);background-image:repeating-linear-gradient(180deg,var(--ink) 0 4px,transparent 4px 8px)}
+.timeline .t-row{position:relative;padding:6px 0}
+.timeline .t-row::before{content:"";position:absolute;left:-22px;top:11px;width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--marker-red)}
+.timeline .t-row .when{font-family:var(--type);font-size:10px;letter-spacing:.08em;color:var(--pencil);text-transform:uppercase}
+.timeline .t-row .what{font-family:var(--hand);font-size:18px;color:var(--ink);line-height:1.15}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>est. 2026</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="templates.html">Templates</a>
+      <a href="demo.html">Demo</a>
+      <a href="docs.html">Docs</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="verify.html" class="active">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="signin.html">Sign in</a>
+      <a class="btn btn-primary" href="signin.html">Connect wallet</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head"><span>Verify · public proof page</span><span class="date">May 10, 2026</span></div>
+    <span class="section-eyebrow">— recompute the receipt —</span>
+    <h1>Trust, but <span class="marker">verify.</span></h1>
+    <p class="lede">Paste any catat tx hash or Walrus blob id. We&rsquo;ll fetch the data straight from Sui &amp; Walrus, recompute the hash, and tell you whether it matches what was signed. No catat servers in the loop.</p>
+
+    <div class="lookup">
+      <label>tx hash / blob id</label>
+      <input value="0x4a2c…b91e" />
+      <button class="btn btn-primary btn-sm">Verify ↵</button>
+      <button class="btn btn-sm">Paste</button>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="label">step 01</div>
+        <h5><span class="ck">✓</span>Found tx</h5>
+        <p>Located on Sui mainnet, block 8,221,092.</p>
+      </div>
+      <div class="step">
+        <div class="label">step 02</div>
+        <h5><span class="ck">✓</span>Fetched blob</h5>
+        <p>Walrus returned 4.2 KB Quilt, 2 children.</p>
+      </div>
+      <div class="step">
+        <div class="label">step 03</div>
+        <h5><span class="ck">✓</span>Hash matches</h5>
+        <p>SHA-256 of body == event payload.</p>
+      </div>
+      <div class="step">
+        <div class="label">step 04</div>
+        <h5><span class="ck">✓</span>Sig valid</h5>
+        <p>ed25519 verifies under submitter pubkey.</p>
+      </div>
+    </div>
+
+    <div class="verify-grid">
+      <div class="proof-card">
+        <div class="stamp">verified ✓</div>
+        <div class="proof-h">
+          <span>submission #1 · walrus bug report</span>
+          <span class="id">May 10, 11:42 UTC</span>
+        </div>
+        <h2>Aggregator timeout on epoch rollover</h2>
+        <p class="sub">Submitted by <b>0x9f1a…e2c</b> · severity <b>high</b> · sealed fields decrypted client-side only by form owner.</p>
+
+        <div class="proof-row"><span class="key">tx hash</span><span class="val">0x4a2c4e7d8b91eba03c9f10a7d2b6849cd1e2f3a47b8c0d5e6f9a23c4b5e6f7b91e</span><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>match</span></div>
+        <div class="proof-row"><span class="key">walrus blob</span><span class="val">bafybeic7w2hhx3kzqf4pvmb6d8p5yg9rkpwzvmh1k</span><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>found</span></div>
+        <div class="proof-row"><span class="key">form id</span><span class="val">0x4a2c4e7…b91 (walrus bug report)</span><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>match</span></div>
+        <div class="proof-row"><span class="key">submitter</span><span class="val">0x9f1aab2c4d…e2c · walrus.builder.sui</span><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>signed</span></div>
+        <div class="proof-row"><span class="key">signature</span><span class="val">ed25519:fb3a1d…7c9e2a</span><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>valid</span></div>
+        <div class="proof-row"><span class="key">body sha-256</span><span class="val">a8f3…2c19 (== event.body_hash)</span><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>match</span></div>
+        <div class="proof-row"><span class="key">epochs</span><span class="val hand">12 · expires Nov 14, 2026</span><span class="check">in storage</span></div>
+        <div class="proof-row"><span class="key">seal threshold</span><span class="val hand">2-of-3 · 2 fields sealed</span><span class="check">client-only</span></div>
+
+        <div class="fields-block">
+          <h3>Fields, as stored.</h3>
+          <div class="fld-line"><span class="q">Q1 title</span><span class="a">Aggregator timeout on epoch rollover</span></div>
+          <div class="fld-line"><span class="q">Q2 severity</span><span class="a"><span class="chip red">high — blocking</span></span></div>
+          <div class="fld-line"><span class="q">Q3 description</span><span class="a">At epoch boundary the aggregator returns 504 for 30-90s before recovering.</span></div>
+          <div class="fld-line"><span class="q">Q4 email <span class="lock-tag" style="margin-left:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>sealed</span></span><span class="a sealed">▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒</span></div>
+          <div class="fld-line"><span class="q">Q5 attachment <span class="lock-tag" style="margin-left:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>sealed</span></span><span class="a sealed">▒▒▒▒ aggregator-504.png</span></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-sm">Open on Sui Explorer ↗</button>
+          <button class="btn btn-sm">Open on Walrus ↗</button>
+          <button class="btn btn-sm">Copy verify URL</button>
+          <button class="btn btn-sm">Download proof JSON</button>
+        </div>
+      </div>
+
+      <aside class="trust-list">
+        <div class="trust-card">
+          <h4>What does &ldquo;verified&rdquo; mean here?</h4>
+          <p>It means three independent things matched: the on-chain event, the actual Walrus blob, and the submitter&rsquo;s signature. If any one disagrees, this page would say <b style="color:var(--marker-red)">tampered</b>.</p>
+          <div class="row"><span>checks done</span><b>4 / 4</b></div>
+          <div class="row"><span>roundtrip</span><b>~640ms</b></div>
+          <div class="row"><span>servers in loop</span><b>0</b></div>
+        </div>
+
+        <div class="trust-card">
+          <h4>Timeline</h4>
+          <p>Every state change of this submission, on-chain.</p>
+          <div class="timeline">
+            <div class="t-row"><div class="when">May 10 · 11:42:17 UTC</div><div class="what">SubmissionAdded · tx 0x4a2c…b91</div></div>
+            <div class="t-row"><div class="when">May 10 · 11:42:18 UTC</div><div class="what">Walrus blob written, quilt of 2</div></div>
+            <div class="t-row"><div class="when">May 10 · 11:42:21 UTC</div><div class="what">SuccessReceipt event emitted</div></div>
+            <div class="t-row"><div class="when">May 10 · 11:54:02 UTC</div><div class="what">Owner decrypted Q4 (this device)</div></div>
+          </div>
+        </div>
+
+        <div class="postit" style="background:var(--postit-pink);transform:rotate(-2deg)">
+          <b>note</b>
+          Sealed bodies stay sealed even on this page. Only the form owner&rsquo;s wallet can produce the 2-of-3 share to decrypt.
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script src="tweaks-global.js"></script>
+</body>
+</html>

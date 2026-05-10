@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:30px}
+@media(max-width:960px){.plans{grid-template-columns:1fr}}
+.plan{position:relative;background:var(--paper-2);border:2.5px solid var(--ink);border-radius:10px;padding:30px 28px;box-shadow:6px 6px 0 var(--ink);display:flex;flex-direction:column;gap:14px;transition:transform .15s,box-shadow .15s}
+.plan:hover{transform:translate(-2px,-2px) rotate(0);box-shadow:8px 8px 0 var(--ink)}
+.plan:nth-child(1){transform:rotate(-1deg)}
+.plan:nth-child(2){transform:rotate(.4deg);background:var(--postit)}
+.plan:nth-child(3){transform:rotate(-.4deg);background:var(--postit-mint)}
+.plan.popular{box-shadow:6px 6px 0 var(--marker-red)}
+.plan .ribbon{position:absolute;top:-14px;right:14px;font-family:var(--hand);font-size:18px;color:var(--paper);background:var(--marker-red);padding:4px 14px;border-radius:6px;transform:rotate(4deg);box-shadow:2px 2px 0 var(--ink)}
+.plan .pill{font-family:var(--type);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--pencil)}
+.plan h3{font-family:var(--hand);font-size:42px;font-weight:700;margin:0;line-height:1;color:var(--ink)}
+.plan .price{display:flex;align-items:baseline;gap:6px;border-bottom:2px dashed var(--ink);padding-bottom:14px;margin-bottom:4px}
+.plan .price b{font-family:var(--hand);font-size:64px;font-weight:700;line-height:.9;color:var(--ink)}
+.plan .price .num{color:var(--marker-red)}
+.plan .price small{font-family:var(--body);font-size:16px;color:var(--ink-soft)}
+.plan p.tagline{font-family:var(--body);font-size:16px;color:var(--ink-soft);margin:0;line-height:1.4}
+.plan ul{list-style:none;padding:0;margin:6px 0;display:flex;flex-direction:column;gap:8px;flex:1}
+.plan ul li{font-family:var(--body);font-size:16px;color:var(--ink);display:flex;align-items:flex-start;gap:9px;line-height:1.35}
+.plan ul li::before{content:"";flex:none;width:18px;height:18px;border:2px solid var(--ink);border-radius:4px;background:var(--paper);transform:rotate(-3deg);margin-top:2px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c0392b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12l5 5L20 7'/></svg>");background-size:14px;background-repeat:no-repeat;background-position:center}
+.plan ul li.no::before{background-image:none;border-style:dashed;opacity:.55}
+.plan ul li.no{color:var(--pencil);text-decoration:line-through;text-decoration-color:var(--pencil-soft)}
+.plan .price-foot{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.04em;margin-top:auto;padding-top:10px;border-top:1px dashed var(--ink)}
+.plan .btn{justify-content:center}
+
+.compare{margin-top:60px;background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:0;box-shadow:5px 5px 0 var(--ink);overflow:hidden}
+.compare-h{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:14px 22px;background:#f6ecc8;border-bottom:2px solid var(--ink);font-family:var(--type);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pencil);align-items:center;gap:8px}
+.compare-h b{font-family:var(--hand);font-size:22px;color:var(--ink);font-weight:400;text-transform:none;letter-spacing:0}
+.compare-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:13px 22px;border-bottom:1px dashed var(--line);align-items:center;gap:8px}
+.compare-row:last-child{border-bottom:0}
+.compare-row .feat{font-family:var(--body);font-size:16px;color:var(--ink)}
+.compare-row .v{font-family:var(--hand);font-size:22px;color:var(--ink);text-align:center}
+.compare-row .v.dim{color:var(--pencil-soft)}
+.compare-row .v.red{color:var(--marker-red)}
+.compare-row.head{background:#f6ecc8;font-family:var(--type);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil);border-bottom:1.5px solid var(--ink)}
+@media(max-width:780px){.compare-h,.compare-row{grid-template-columns:1.4fr .8fr .8fr .8fr;font-size:14px;padding:11px 14px}}
+
+.faq{margin-top:60px}
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}
+@media(max-width:780px){.faq-grid{grid-template-columns:1fr}}
+.faq details{background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;padding:14px 18px;box-shadow:3px 3px 0 var(--ink)}
+.faq details:nth-child(odd){transform:rotate(-.4deg)}
+.faq details:nth-child(even){transform:rotate(.3deg)}
+.faq summary{font-family:var(--hand);font-size:24px;color:var(--ink);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.faq summary::after{content:"+";font-family:var(--hand);font-size:30px;color:var(--marker-red);line-height:.7}
+.faq details[open] summary::after{content:"−"}
+.faq p{font-family:var(--body);font-size:16px;color:var(--ink-soft);margin:8px 0 0;line-height:1.5}
+
+.cost-call{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+.cost-call .postit{flex:1;min-width:220px}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>est. 2026</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="templates.html">Templates</a>
+      <a href="demo.html">Demo</a>
+      <a href="docs.html">Docs</a>
+      <a href="pricing.html" class="active">Pricing</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="signin.html">Sign in</a>
+      <a class="btn btn-primary" href="signin.html">Connect wallet</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head"><span>Pricing · receipt</span><span class="date">May 10, 2026</span></div>
+    <span class="section-eyebrow">— honest, on-chain pricing —</span>
+    <h1>Free where it should be. <span class="marker">Cheap</span> where it can&rsquo;t.</h1>
+    <p class="lede">Software is free. The only money you spend is the on-chain stuff: a few cents of SUI for gas, a few more for Walrus storage. We don&rsquo;t mark it up — you pay the protocols, not us.</p>
+
+    <div class="plans">
+      <article class="plan">
+        <span class="pill">— for hackers —</span>
+        <h3>Sketchpad</h3>
+        <div class="price"><b>$<span class="num">0</span></b><small>/ forever</small></div>
+        <p class="tagline">All features. Pay only the on-chain costs you incur. Hosted on Walrus Sites.</p>
+        <ul>
+          <li>Unlimited forms &amp; submissions</li>
+          <li>Per-field Seal encryption</li>
+          <li>Quilt-batched Walrus writes</li>
+          <li>Token gating &amp; allowlists</li>
+          <li>Public verify page</li>
+          <li class="no">Custom domain</li>
+          <li class="no">Team workspaces</li>
+        </ul>
+        <a class="btn" href="signin.html">Connect wallet →</a>
+        <span class="price-foot">on-chain only · ~$0.002 / submission</span>
+      </article>
+
+      <article class="plan popular">
+        <span class="ribbon">most picked!</span>
+        <span class="pill">— for teams —</span>
+        <h3>Notebook</h3>
+        <div class="price"><b>$<span class="num">19</span></b><small>/ workspace · month</small></div>
+        <p class="tagline">Add team mates, custom domain, branded receipts. Same on-chain costs at cost.</p>
+        <ul>
+          <li>Everything in Sketchpad</li>
+          <li>Up to 5 team members</li>
+          <li>Custom domain (yours.wal.app or your own)</li>
+          <li>Branded submission receipts</li>
+          <li>Webhook on submit</li>
+          <li>Priority Discord support</li>
+          <li class="no">SSO / SAML</li>
+        </ul>
+        <a class="btn btn-primary" href="signin.html">Start free trial →</a>
+        <span class="price-foot">14-day free trial · cancel anytime</span>
+      </article>
+
+      <article class="plan">
+        <span class="pill">— for protocols —</span>
+        <h3>Archive</h3>
+        <div class="price"><b style="font-size:48px">talk to us</b></div>
+        <p class="tagline">Multi-team workspaces, dedicated Walrus storage, custom Seal threshold ceremonies, audit help.</p>
+        <ul>
+          <li>Everything in Notebook</li>
+          <li>Unlimited team members</li>
+          <li>SSO / SAML</li>
+          <li>Custom Seal threshold (3-of-5, 5-of-7…)</li>
+          <li>Dedicated Walrus storage subnet</li>
+          <li>SLA + on-call support</li>
+          <li>White-label deployment</li>
+        </ul>
+        <a class="btn" href="mailto:hi@catat.io">Email us →</a>
+        <span class="price-foot">custom contracts · annual</span>
+      </article>
+    </div>
+
+    <div class="cost-call">
+      <div class="postit" style="background:var(--postit-blue);transform:rotate(-1deg)">
+        <b>tip</b>
+        Walrus storage is paid up-front per epoch (~2 weeks). 12 epochs costs roughly the same as a coffee for ~10k submissions. Extend or let it expire.
+      </div>
+      <div class="postit" style="background:var(--postit-mint);transform:rotate(1deg)">
+        <b>tip</b>
+        Sui gas per submission is ~0.0021 SUI (about $0.002 today). Quilt batching makes attachments effectively free.
+      </div>
+      <div class="postit" style="background:var(--postit-pink);transform:rotate(-.6deg)">
+        <b>tip</b>
+        Self-hosting? It&rsquo;s 100% open source. Fork on GitHub, deploy to Walrus Sites yourself, never pay us a dime.
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-h">
+        <span>compare plans</span>
+        <b style="text-align:center">Sketchpad</b>
+        <b style="text-align:center">Notebook</b>
+        <b style="text-align:center">Archive</b>
+      </div>
+      <div class="compare-row head"><span>features</span><span style="text-align:center">free</span><span style="text-align:center">$19/mo</span><span style="text-align:center">custom</span></div>
+      <div class="compare-row"><span class="feat">Unlimited forms</span><span class="v">✓</span><span class="v">✓</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">Unlimited submissions</span><span class="v">✓</span><span class="v">✓</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">Per-field Seal encryption</span><span class="v">✓</span><span class="v">✓</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">Token gating</span><span class="v">✓</span><span class="v">✓</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">Team members</span><span class="v">solo</span><span class="v red">5</span><span class="v red">∞</span></div>
+      <div class="compare-row"><span class="feat">Custom domain</span><span class="v dim">—</span><span class="v">✓</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">Branded receipts</span><span class="v dim">—</span><span class="v">✓</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">Webhooks</span><span class="v dim">—</span><span class="v">✓</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">SSO / SAML</span><span class="v dim">—</span><span class="v dim">—</span><span class="v">✓</span></div>
+      <div class="compare-row"><span class="feat">Custom Seal threshold</span><span class="v dim">2-of-3</span><span class="v dim">2-of-3</span><span class="v">any</span></div>
+      <div class="compare-row"><span class="feat">SLA &amp; on-call</span><span class="v dim">—</span><span class="v dim">—</span><span class="v">✓</span></div>
+    </div>
+
+    <section class="faq">
+      <span class="section-eyebrow">— FAQ —</span>
+      <h2 class="section-title" style="font-size:48px">Q&amp;A on the back of a napkin.</h2>
+
+      <div class="faq-grid">
+        <details open>
+          <summary>Is the software really free?</summary>
+          <p>Yes. The whole app is open-source MIT and runs from Walrus Sites. We charge for Notebook + Archive because teams want hosted dashboards, branded domains, and someone to call. Solo hackers pay nothing forever.</p>
+        </details>
+        <details>
+          <summary>Why is Walrus 100× cheaper?</summary>
+          <p>One submission can have many fields and attachments. Naive blob storage = one Walrus write per file. Quilt lets us batch the whole submission into a single atomic write — gas + storage cost drops accordingly.</p>
+        </details>
+        <details>
+          <summary>What happens after 12 epochs?</summary>
+          <p>By default we set a 12-epoch (~6 month) lifetime on stored blobs. Before they expire we&rsquo;ll prompt you to extend, archive, or let them lapse. Sealed metadata stays on Sui forever — only the body is on Walrus.</p>
+        </details>
+        <details>
+          <summary>Can I migrate off?</summary>
+          <p>Always. Your data is just Walrus blobs + Sui state. We have a one-command export tool that hands you the raw schema, blobs, and decrypted submissions in JSON. No lock-in.</p>
+        </details>
+        <details>
+          <summary>Do you accept fiat?</summary>
+          <p>For Notebook + Archive, yes (Stripe). For on-chain costs, no — you&rsquo;ll need a Sui wallet with some SUI in it. Use the in-app on-ramp.</p>
+        </details>
+        <details>
+          <summary>What about non-profits?</summary>
+          <p>Email <code>hi@catat.io</code>. Notebook is free for verified non-profits, public good projects, and student hackathons.</p>
+        </details>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script src="tweaks-global.js"></script>
+</body>
+</html>

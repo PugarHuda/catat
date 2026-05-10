@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>walrus bug report — catat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+body{padding:0}
+.thinbar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px dashed var(--line);font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase;background:linear-gradient(180deg,color-mix(in oklab,var(--paper) 92%,transparent),color-mix(in oklab,var(--paper) 70%,transparent));backdrop-filter:blur(6px);position:sticky;top:0;z-index:20}
+.thinbar .brand-mini{display:flex;align-items:center;gap:8px;font-family:var(--hand);font-size:24px;color:var(--ink);text-transform:none;letter-spacing:0}
+.thinbar .brand-mini .glyph{width:30px;height:30px;background:var(--ink);color:var(--paper);border-radius:7px;display:grid;place-items:center;transform:rotate(-3deg);box-shadow:2px 2px 0 var(--marker-red)}
+.thinbar .brand-mini .glyph svg{width:18px;height:18px}
+.thinbar .right{display:flex;align-items:center;gap:14px}
+.thinbar .conn{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border:1.5px solid var(--ink);background:var(--postit-mint);border-radius:99px;color:var(--marker-green);text-transform:none;font-family:var(--hand);font-size:16px;letter-spacing:0}
+.thinbar .conn .dot{width:7px;height:7px;border-radius:50%;background:var(--marker-green)}
+
+.form-wrap{max-width:780px;margin:38px auto 80px;padding:0 24px}
+
+/* form sheet */
+.fsheet{background:var(--paper-2);border:2.5px solid var(--ink);border-radius:12px;padding:48px 60px 56px;box-shadow:8px 8px 0 var(--ink);position:relative;background-image:repeating-linear-gradient(180deg,transparent 0 39px,rgba(163,196,212,.45) 39px 40px),linear-gradient(180deg,transparent,transparent),var(--paper-2);background-size:auto,auto,auto}
+.fsheet::before{content:"";position:absolute;left:60px;top:0;bottom:0;width:1.5px;background:var(--margin);opacity:.6}
+.fsheet::after{content:"";position:absolute;left:50%;top:-14px;transform:translateX(-50%) rotate(-2deg);width:120px;height:24px;background:var(--tape);border-left:1px dashed rgba(0,0,0,.1);border-right:1px dashed rgba(0,0,0,.1);box-shadow:0 2px 4px rgba(0,0,0,.08)}
+@media(max-width:680px){.fsheet{padding:36px 24px 40px}.fsheet::before{display:none}}
+
+.fhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;border-bottom:2px dashed var(--ink);padding-bottom:16px;flex-wrap:wrap;gap:10px}
+.fhead .meta{font-family:var(--type);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--pencil);line-height:1.5}
+.fhead .meta b{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400;letter-spacing:0;text-transform:none;display:block}
+.fhead .stamp{font-family:var(--hand);font-weight:700;font-size:18px;color:var(--marker-red);border:2.5px double var(--marker-red);padding:4px 12px;border-radius:6px;transform:rotate(4deg);letter-spacing:.04em}
+
+.ftitle{font-family:var(--hand);font-weight:700;font-size:54px;line-height:.98;color:var(--ink);margin:6px 0 6px}
+.ftitle .marker{color:var(--marker-red)}
+.fdesc{font-family:var(--body);font-size:18px;color:var(--ink);margin:0 0 6px;text-wrap:pretty}
+.fdesc em{background:var(--postit);font-style:normal;padding:0 4px;border-radius:3px}
+.byline{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em;margin:6px 0 28px;border-top:1px dashed var(--line);padding-top:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+/* progress */
+.progress{margin:22px 0 28px;display:flex;align-items:center;gap:10px;font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.08em;text-transform:uppercase}
+.progress .bar{flex:1;height:10px;background:var(--paper-edge);border:1.5px solid var(--ink);border-radius:99px;overflow:hidden}
+.progress .bar .f{height:100%;background:var(--marker-red);border-right:1.5px solid var(--ink);width:50%;transition:width .25s}
+
+/* questions */
+.q{margin-bottom:26px;padding:0 0 0 6px;position:relative}
+.qhead{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.qhead .num{font-family:var(--type);font-size:11px;letter-spacing:.14em;color:var(--marker-red);text-transform:uppercase;flex:none}
+.qhead h3{font-family:var(--hand);font-weight:700;font-size:26px;line-height:1.1;margin:0;color:var(--ink)}
+.qhead .req{font-family:var(--hand);font-size:22px;color:var(--marker-red);line-height:1}
+.qhead .seal{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;font-family:var(--type);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--postit-pink);border:1.5px dashed var(--marker-red);color:var(--marker-red);border-radius:99px}
+.qhead .seal svg{width:11px;height:11px}
+.qhint{font-family:var(--body);font-size:15px;color:var(--ink-soft);margin:-4px 0 10px;line-height:1.4}
+
+/* inputs */
+.in-text{width:100%;font-family:var(--hand);font-size:24px;color:var(--ink);background:transparent;border:0;border-bottom:2px solid var(--ink);outline:0;padding:6px 4px;line-height:1.3}
+.in-text:focus{border-bottom-color:var(--marker-red)}
+.in-text::placeholder{color:var(--pencil-soft);font-style:italic}
+
+textarea.in-rich{width:100%;min-height:130px;font-family:var(--hand);font-size:22px;color:var(--ink);line-height:1.45;padding:14px 16px;background:var(--paper);border:1.8px solid var(--ink);border-radius:8px;resize:vertical;outline:0;background-image:repeating-linear-gradient(180deg,transparent 0 30px,rgba(163,196,212,.5) 30px 31px);background-size:100% 31px;background-position:0 6px}
+textarea.in-rich:focus{border-color:var(--marker-red);box-shadow:3px 3px 0 var(--marker-red)}
+.rich-tools{display:flex;gap:4px;margin-bottom:6px}
+.rich-tools button{padding:4px 9px;font-family:var(--body);font-size:14px;color:var(--ink);border:1.5px solid var(--ink);background:var(--paper);border-radius:6px;line-height:1}
+.rich-tools button:hover{background:var(--postit)}
+.rich-tools button.b{font-weight:700}
+.rich-tools button.i{font-style:italic;font-family:var(--hand)}
+.rich-tools button.u{text-decoration:underline}
+.rich-tools button.c{font-family:"JetBrains Mono",monospace;font-size:12px}
+.rich-tools .div{width:1px;height:18px;background:var(--line);margin:0 4px;align-self:center}
+
+/* dropdown */
+.in-select{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--paper);border:1.8px solid var(--ink);border-radius:99px;padding:8px 16px;font-family:var(--hand);font-size:22px;color:var(--ink);min-width:240px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
+.in-select:hover{box-shadow:3px 3px 0 var(--ink)}
+.in-select::after{content:"";margin-left:auto;width:0;height:0;border:5px solid transparent;border-top-color:var(--ink);transform:translateY(2px)}
+
+/* checkbox / radio */
+.opts{display:flex;flex-direction:column;gap:8px}
+.opts.row{flex-direction:row;flex-wrap:wrap;gap:8px}
+.opt{display:flex;align-items:center;gap:10px;padding:9px 14px;font-family:var(--hand);font-size:22px;color:var(--ink);background:var(--paper);border:1.8px solid var(--ink);border-radius:8px;cursor:pointer;line-height:1;transition:transform .1s,box-shadow .1s,background .1s}
+.opt:hover{background:var(--postit)}
+.opt.on{background:var(--postit);box-shadow:3px 3px 0 var(--marker-red)}
+.opt .box{width:20px;height:20px;border:2px solid var(--ink);border-radius:5px;background:var(--paper);display:grid;place-items:center;flex:none}
+.opt .box.round{border-radius:50%}
+.opt.on .box::after{content:"✓";font-family:var(--hand);font-size:18px;color:var(--marker-red);line-height:1}
+.opt.on .box.round::after{content:"";width:10px;height:10px;background:var(--marker-red);border-radius:50%}
+.opts.row .opt{padding:7px 16px}
+
+/* star rating */
+.stars{display:inline-flex;gap:6px;align-items:center}
+.stars .star{width:38px;height:38px;cursor:pointer;color:var(--pencil);transition:transform .1s,color .12s}
+.stars .star:hover{transform:scale(1.12)}
+.stars .star.on{color:var(--marker-red)}
+.stars .star svg{width:100%;height:100%;fill:currentColor;stroke:var(--ink);stroke-width:1.5px}
+.stars .lbl{font-family:var(--hand);font-size:22px;color:var(--ink);margin-left:8px}
+
+/* slider */
+.slider-wrap{display:flex;align-items:center;gap:16px;font-family:var(--hand);font-size:22px;color:var(--ink)}
+.slider-wrap input[type="range"]{flex:1;-webkit-appearance:none;appearance:none;height:8px;background:var(--paper-edge);border:1.5px solid var(--ink);border-radius:99px;outline:0}
+.slider-wrap input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:var(--marker-red);border:2px solid var(--ink);border-radius:50%;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+.slider-wrap input[type="range"]::-moz-range-thumb{width:24px;height:24px;background:var(--marker-red);border:2px solid var(--ink);border-radius:50%;cursor:pointer}
+.slider-wrap b{font-family:var(--hand);font-size:30px;color:var(--marker-red);font-weight:700;line-height:1;min-width:48px;text-align:right}
+
+/* file drop */
+.drop{border:2.5px dashed var(--ink);border-radius:10px;padding:22px;background:var(--paper);display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .15s,transform .1s}
+.drop:hover{background:var(--postit);transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+.drop .pic{width:54px;height:54px;background:var(--postit);border:2px solid var(--ink);border-radius:8px;display:grid;place-items:center;flex:none;transform:rotate(-3deg)}
+.drop .pic svg{width:28px;height:28px;color:var(--ink)}
+.drop .meta b{font-family:var(--hand);font-size:24px;color:var(--ink);display:block;line-height:1}
+.drop .meta small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em}
+.drop .meta small em{font-style:normal;color:var(--marker-red)}
+
+/* video drop */
+.video-drop{display:flex;gap:14px;align-items:flex-start;background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:14px}
+.video-drop .preview{width:140px;aspect-ratio:16/9;background:var(--ink);color:var(--paper);border-radius:6px;border:2px solid var(--ink);position:relative;overflow:hidden;display:grid;place-items:center;flex:none}
+.video-drop .preview::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 6px,transparent 6px 14px)}
+.video-drop .preview .play{width:38px;height:38px;border-radius:50%;background:var(--marker-red);border:2px solid var(--paper);display:grid;place-items:center;position:relative;z-index:2}
+.video-drop .preview .play::after{content:"";border:7px solid transparent;border-left:11px solid var(--paper);margin-left:3px}
+.video-drop .info{flex:1;min-width:0}
+.video-drop .info b{font-family:var(--hand);font-size:22px;color:var(--ink);display:block;line-height:1.1;word-break:break-all}
+.video-drop .info small{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.04em}
+.video-drop .info .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;font-family:var(--type);font-size:11px;color:var(--pencil)}
+.video-drop .x{font-family:var(--hand);font-size:18px;color:var(--marker-red);background:none;border:0;cursor:pointer}
+
+/* url input with prefix */
+.in-url{display:flex;align-items:center;background:var(--paper);border:1.8px solid var(--ink);border-radius:8px;overflow:hidden;font-family:"JetBrains Mono",monospace;box-shadow:2px 2px 0 var(--ink)}
+.in-url .pfx{padding:8px 12px;background:var(--paper-edge);border-right:1.5px solid var(--ink);color:var(--pencil);font-size:14px;letter-spacing:.04em}
+.in-url input{flex:1;padding:8px 12px;border:0;background:transparent;font-family:"JetBrains Mono",monospace;font-size:15px;color:var(--ink);outline:0}
+.in-url input::placeholder{color:var(--pencil-soft)}
+
+/* signature / sealed pill on field */
+.q.sealed{padding-left:14px;border-left:3px dashed var(--marker-red)}
+
+/* footer / submit */
+.fsubmit{margin-top:36px;padding-top:24px;border-top:2px dashed var(--ink);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.fsubmit .meta-line{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em;line-height:1.5;max-width:60%}
+.fsubmit .meta-line svg{vertical-align:-2px;width:13px;height:13px;color:var(--marker-red);margin-right:4px}
+.btn-submit{font-family:var(--hand);font-size:28px;font-weight:700;color:var(--paper);background:var(--marker-red);padding:14px 30px;border:2.5px solid var(--ink);border-radius:10px;box-shadow:5px 5px 0 var(--ink);transform:rotate(-1deg);display:inline-flex;align-items:center;gap:10px;line-height:1;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.btn-submit:hover{transform:rotate(-1deg) translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+.btn-submit svg{width:22px;height:22px}
+
+.gas-tip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px dashed var(--ink);background:var(--postit);border-radius:99px;font-family:var(--hand);font-size:18px;color:var(--ink)}
+.gas-tip b{color:var(--marker-red);font-weight:700}
+
+/* powered-by */
+.powered{text-align:center;margin-top:30px;font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase}
+.powered b{font-family:var(--hand);font-size:18px;color:var(--marker-red);font-weight:400;text-transform:none;letter-spacing:0}
+.powered a{color:var(--ink-soft);text-decoration:underline wavy;text-underline-offset:3px;text-decoration-thickness:1px}
+
+/* invite gate / closed states would live here too */
+.gate-line{font-family:var(--hand);font-size:18px;color:var(--ink);background:var(--postit-mint);border:1.5px dashed var(--marker-green);padding:6px 12px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;margin-bottom:14px}
+.gate-line svg{width:14px;height:14px;color:var(--marker-green)}
+</style>
+</head>
+<body>
+
+<div class="thinbar">
+  <a class="brand-mini" href="catat.html">
+    <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+    catat
+  </a>
+  <div class="right">
+    <span style="font-family:var(--type);font-size:10px">FORM 0x4a2c…b91</span>
+    <span class="conn"><span class="dot"></span>walrus.builder.sui</span>
+  </div>
+</div>
+
+<main class="form-wrap">
+  <form class="fsheet" id="form" onsubmit="event.preventDefault();window.location.href='receipt.html'">
+    <div class="fhead">
+      <div class="meta">
+        Form receipt · <b>walrus bug report</b>
+        owner 0xA1c2…F09e · 412 submissions before yours
+      </div>
+      <span class="stamp">live · open ✎</span>
+    </div>
+
+    <h1 class="ftitle">Tell us what <span class="marker">broke</span>.</h1>
+    <p class="fdesc">Quick bug report for Walrus — the more specific the better. Sealed fields (🔒) only the form owner can decrypt; <em>everything else is public on-chain</em>. Should take ~90 seconds.</p>
+    <div class="byline">
+      <span>by walrus.builder.sui · last updated 3 days ago · v4</span>
+      <span>10 questions · 4 required · 2 sealed</span>
+    </div>
+
+    <span class="gate-line">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>
+      You hold WAL — you can submit
+    </span>
+
+    <div class="progress">
+      <span>question 5 of 10</span>
+      <div class="bar"><div class="f" id="pf" style="width:50%"></div></div>
+      <span>50%</span>
+    </div>
+
+    <!-- Q1 short text -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q1 · short text</span>
+        <h3>Give it a one-line title</h3>
+        <span class="req">*</span>
+      </div>
+      <p class="qhint">Like a commit message — be specific. <em>Aggregator timeout on epoch rollover</em> beats <em>broken</em>.</p>
+      <input class="in-text" placeholder="Aggregator timeout on epoch rollover…" />
+    </div>
+
+    <!-- Q2 dropdown -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q2 · dropdown</span>
+        <h3>Which area?</h3>
+        <span class="req">*</span>
+      </div>
+      <div class="in-select">📦 Storage / Walrus aggregator</div>
+    </div>
+
+    <!-- Q3 single-choice -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q3 · severity</span>
+        <h3>How bad is it?</h3>
+        <span class="req">*</span>
+      </div>
+      <div class="opts row" data-single="">
+        <button type="button" class="opt"><span class="box round"></span>low</button>
+        <button type="button" class="opt"><span class="box round"></span>medium</button>
+        <button type="button" class="opt on"><span class="box round"></span>high — blocking</button>
+        <button type="button" class="opt"><span class="box round"></span>critical</button>
+      </div>
+    </div>
+
+    <!-- Q4 checkboxes -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q4 · multi-select</span>
+        <h3>Where does it happen?</h3>
+      </div>
+      <div class="opts" data-multi="">
+        <button type="button" class="opt on"><span class="box"></span>testnet</button>
+        <button type="button" class="opt"><span class="box"></span>mainnet</button>
+        <button type="button" class="opt on"><span class="box"></span>devnet</button>
+        <button type="button" class="opt"><span class="box"></span>local node</button>
+      </div>
+    </div>
+
+    <!-- Q5 rich text -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q5 · rich text</span>
+        <h3>What happened?</h3>
+        <span class="req">*</span>
+      </div>
+      <p class="qhint">Steps to reproduce, what you expected, what you got. Markdown welcome.</p>
+      <div class="rich-tools">
+        <button type="button" class="b">B</button>
+        <button type="button" class="i">i</button>
+        <button type="button" class="u">U</button>
+        <span class="div"></span>
+        <button type="button">• list</button>
+        <button type="button">1. list</button>
+        <button type="button">&gt; quote</button>
+        <span class="div"></span>
+        <button type="button" class="c">{ }</button>
+        <button type="button">link</button>
+      </div>
+      <textarea class="in-rich" placeholder="At epoch boundary the aggregator returns 504 for 30–90s before recovering…"></textarea>
+    </div>
+
+    <!-- Q6 star rating -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q6 · rating</span>
+        <h3>How would you rate the docs that led you here?</h3>
+      </div>
+      <div class="stars" id="stars">
+        <span class="star on"><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg></span>
+        <span class="star on"><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg></span>
+        <span class="star on"><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg></span>
+        <span class="star"><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg></span>
+        <span class="star"><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg></span>
+        <span class="lbl" id="rateLbl">3 / 5 — fine, could be clearer</span>
+      </div>
+    </div>
+
+    <!-- Q7 slider -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q7 · scale</span>
+        <h3>How likely are you to recommend Walrus to a friend?</h3>
+      </div>
+      <div class="slider-wrap">
+        <span style="font-family:var(--type);font-size:11px;color:var(--pencil)">0 not at all</span>
+        <input type="range" min="0" max="10" value="9" id="nps" />
+        <span style="font-family:var(--type);font-size:11px;color:var(--pencil)">10 def!</span>
+        <b id="npsv">9</b>
+      </div>
+    </div>
+
+    <!-- Q8 URL -->
+    <div class="q">
+      <div class="qhead">
+        <span class="num">Q8 · url</span>
+        <h3>Got a tx hash, repro repo, or screenshot link?</h3>
+      </div>
+      <div class="in-url">
+        <span class="pfx">https://</span>
+        <input type="url" placeholder="suiscan.xyz/testnet/tx/0x4a2c…b91" />
+      </div>
+    </div>
+
+    <!-- Q9 screenshot upload (sealed) -->
+    <div class="q sealed">
+      <div class="qhead">
+        <span class="num">Q9 · screenshot</span>
+        <h3>Drop a screenshot or short video</h3>
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>sealed</span>
+      </div>
+      <p class="qhint">Encrypted client-side with Seal · only the form owner can decrypt · stored on Walrus.</p>
+      <label class="drop">
+        <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg></span>
+        <span class="meta">
+          <b>drop image / png / jpg / mp4</b>
+          <small>up to 50 MB · we sign + Quilt-batch with your other answers · <em>seal threshold 2-of-3</em></small>
+        </span>
+        <input type="file" accept="image/*,video/mp4" hidden />
+      </label>
+      <div class="video-drop" style="margin-top:10px">
+        <div class="preview"><span class="play"></span></div>
+        <div class="info">
+          <b>aggregator-504-rollover.mp4</b>
+          <small>14.2 MB · 0:18 · h264 · attached</small>
+          <div class="row"><span>↗ blob will be quilted with form body</span></div>
+        </div>
+        <button type="button" class="x">remove ✕</button>
+      </div>
+    </div>
+
+    <!-- Q10 contact (sealed) -->
+    <div class="q sealed">
+      <div class="qhead">
+        <span class="num">Q10 · contact</span>
+        <h3>Email / Discord, only if you want a reply</h3>
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>sealed</span>
+      </div>
+      <p class="qhint">Optional. catat can&rsquo;t see this — only the form owner&rsquo;s wallet can decrypt.</p>
+      <input class="in-text" placeholder="hex@catat.io  ·  optional" />
+    </div>
+
+    <div class="fsubmit">
+      <p class="meta-line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        2 fields will be encrypted client-side with Seal before they leave this device. The Walrus blob and Sui event are public — sealed bodies stay sealed even from us.
+      </p>
+      <span class="gas-tip">~ <b>0.0021 SUI</b> · gas</span>
+      <button class="btn-submit" type="submit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+        Sign &amp; submit
+      </button>
+    </div>
+  </form>
+
+  <p class="powered">
+    Hosted on Walrus Sites · forms by <b>catat</b> · <a href="catat.html">make your own ↗</a> · <a href="verify.html">verify any submission ↗</a>
+  </p>
+</main>
+
+<script>
+// progress
+const ins = document.querySelectorAll('.fsheet .q');
+const pf = document.getElementById('pf');
+function recalc(){
+  const total = ins.length;
+  let answered = 0;
+  ins.forEach(q=>{
+    const t = q.querySelector('input[type="text"], input[type="url"], textarea, input.in-text');
+    const opt = q.querySelectorAll('.opt.on').length;
+    const star = q.querySelectorAll('.star.on').length;
+    const range = q.querySelector('input[type="range"]');
+    if ((t&&t.value&&t.value.length>0)||opt>0||star>0||range) answered++;
+  });
+  pf.style.width = Math.round(answered/total*100)+'%';
+}
+ins.forEach(q=>q.addEventListener('input',recalc));
+
+// single + multi
+document.querySelectorAll('[data-single]').forEach(g=>{
+  g.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    g.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');recalc();
+  });
+});
+document.querySelectorAll('[data-multi]').forEach(g=>{
+  g.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    b.classList.toggle('on');recalc();
+  });
+});
+
+// stars
+const stars = document.querySelectorAll('#stars .star');
+const rl = document.getElementById('rateLbl');
+const labels = ['','1 / 5 — terrible','2 / 5 — bad','3 / 5 — fine, could be clearer','4 / 5 — good','5 / 5 — chef&rsquo;s kiss'];
+stars.forEach((s,i)=>{
+  s.addEventListener('click',()=>{
+    stars.forEach((x,j)=>x.classList.toggle('on',j<=i));
+    rl.innerHTML = labels[i+1];
+    recalc();
+  });
+});
+
+// nps
+const nps = document.getElementById('nps');
+const npsv = document.getElementById('npsv');
+nps && nps.addEventListener('input',()=>{npsv.textContent=nps.value;});
+</script>
+
+<script src="tweaks-global.js"></script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — submission #413</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.crumbs{font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.crumbs a{color:var(--ink-soft)}
+.crumbs span{color:var(--marker-red)}
+
+.det-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:30px;align-items:flex-start;margin-top:8px}
+@media(max-width:1020px){.det-grid{grid-template-columns:1fr}}
+
+/* main column */
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:2px dashed var(--ink)}
+.dhead h2{font-family:var(--hand);font-weight:700;font-size:42px;line-height:1;margin:0 0 6px;color:var(--ink)}
+.dhead .meta{font-family:var(--body);font-size:14px;color:var(--ink-soft);margin:0;line-height:1.4}
+.dhead .meta b{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400}
+
+.status-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;font-family:var(--type);font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1.5px solid var(--ink);border-radius:99px;background:var(--paper)}
+.pill.red{background:var(--postit-pink);border-color:var(--marker-red);color:var(--marker-red)}
+.pill.green{background:var(--postit-mint);border-color:var(--marker-green);color:var(--marker-green)}
+.pill.blue{background:var(--postit-blue);color:var(--marker-blue)}
+.pill.amber{background:var(--postit);color:#a07a1a;border-color:#a07a1a}
+.pill.dot{padding-left:4px}.pill.dot::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+
+.dr-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.dr-actions .star{font-family:var(--hand);font-size:24px;color:var(--marker-red);background:var(--postit);border:2px solid var(--ink);padding:4px 12px;border-radius:8px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;transform:rotate(-2deg)}
+
+/* answers */
+.ans-block{background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:22px 26px;box-shadow:5px 5px 0 var(--ink);margin-bottom:22px}
+.ans-block h3{font-family:var(--hand);font-size:28px;margin:0 0 6px;line-height:1;color:var(--ink)}
+.ans-block .sub{font-family:var(--body);font-size:14px;color:var(--ink-soft);margin:0 0 14px;border-bottom:1px dashed var(--ink);padding-bottom:8px}
+.ans{padding:11px 0;border-bottom:1px dashed var(--line)}
+.ans:last-of-type{border-bottom:0}
+.ans .qrow{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.ans .qrow .num{font-family:var(--type);font-size:10px;letter-spacing:.14em;color:var(--marker-red);text-transform:uppercase;flex:none}
+.ans .qrow h4{font-family:var(--hand);font-weight:700;font-size:22px;margin:0;line-height:1.05;color:var(--ink)}
+.ans .a{font-family:var(--hand);font-size:24px;color:var(--ink);line-height:1.3;padding-left:2px;text-wrap:pretty}
+.ans .a.body{font-size:18px;font-family:var(--body);background:var(--paper);border:1.5px dashed var(--line);border-radius:6px;padding:10px 12px;line-height:1.5}
+.ans .a.url{font-family:"JetBrains Mono",monospace;font-size:14px;background:var(--paper);padding:2px 6px;border-radius:4px;display:inline-block;border:1px dashed var(--line);color:var(--marker-red)}
+.ans .a.box{background:var(--postit);padding:5px 12px;border:1.5px solid var(--ink);border-radius:6px;display:inline-block;font-size:18px}
+.ans .stars-mini{display:inline-flex;gap:3px;color:var(--marker-red);margin-right:6px}
+.ans .stars-mini svg{width:18px;height:18px;fill:currentColor;stroke:var(--ink);stroke-width:1.5px}
+
+/* sealed reveal */
+.sealed-card{display:flex;justify-content:space-between;align-items:center;background:var(--postit-pink);border:2px dashed var(--marker-red);border-radius:8px;padding:12px 14px;gap:12px;flex-wrap:wrap}
+.sealed-card .left{display:flex;align-items:center;gap:10px;flex:1;min-width:240px}
+.sealed-card .lock{width:34px;height:34px;border:2px solid var(--marker-red);background:var(--paper);color:var(--marker-red);border-radius:8px;display:grid;place-items:center;flex:none}
+.sealed-card .lock svg{width:18px;height:18px}
+.sealed-card .lbl{font-family:var(--hand);font-size:20px;color:var(--marker-red);line-height:1}
+.sealed-card .lbl small{font-family:var(--type);font-size:10px;letter-spacing:.06em;color:var(--pencil);text-transform:uppercase;display:block;line-height:1.2;margin-top:3px}
+.sealed-card .ct{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--marker-red);letter-spacing:.18em;background:var(--paper);padding:6px 10px;border:1px dashed var(--marker-red);border-radius:4px;flex:1;min-width:160px;text-align:center}
+.sealed-card .reveal{font-family:var(--hand);font-size:20px;color:var(--paper);background:var(--marker-red);padding:6px 14px;border:2px solid var(--ink);border-radius:99px;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
+.sealed-card.revealed{background:var(--postit-mint);border-color:var(--marker-green)}
+.sealed-card.revealed .lock{border-color:var(--marker-green);color:var(--marker-green)}
+.sealed-card.revealed .lbl{color:var(--marker-green)}
+.sealed-card.revealed .ct{font-family:var(--hand);font-size:22px;color:var(--ink);letter-spacing:0;border-color:var(--ink);text-align:left}
+.sealed-card.revealed .reveal{background:var(--marker-green)}
+
+/* sidebar — review */
+.side{display:flex;flex-direction:column;gap:18px}
+.side-card{background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:18px 20px;box-shadow:5px 5px 0 var(--ink)}
+.side-card.tilt-l{transform:rotate(-.5deg)}
+.side-card.tilt-r{transform:rotate(.5deg)}
+.side-card h4{font-family:var(--hand);font-size:24px;margin:0 0 6px;line-height:1;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
+.side-card h4 small{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.1em;text-transform:uppercase;font-weight:400}
+
+.field-row{display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);font-family:var(--body);font-size:14px}
+.field-row:last-child{border-bottom:0}
+.field-row .k{font-family:var(--type);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--pencil)}
+.field-row .v{font-family:var(--hand);font-size:20px;color:var(--ink);line-height:1}
+.field-row .v.mono{font-family:"JetBrains Mono",monospace;font-size:13px;word-break:break-all}
+
+/* priority controls */
+.prio{display:flex;gap:6px;flex-wrap:wrap}
+.prio button{font-family:var(--hand);font-size:18px;color:var(--ink);padding:5px 12px;border:1.8px solid var(--ink);background:var(--paper);border-radius:99px;cursor:pointer}
+.prio button.on.high{background:var(--marker-red);color:var(--paper);border-color:var(--marker-red)}
+.prio button.on.med{background:var(--postit);}
+.prio button.on.low{background:var(--postit-mint)}
+.status-set{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.status-set button{font-family:var(--hand);font-size:18px;padding:4px 12px;border:1.8px solid var(--ink);background:var(--paper);border-radius:6px;cursor:pointer}
+.status-set button.on{background:var(--ink);color:var(--paper)}
+
+/* labels / tags */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font-family:var(--hand);font-size:18px;background:var(--postit);border:1.5px solid var(--ink);padding:2px 10px;border-radius:99px;line-height:1;display:inline-flex;align-items:center;gap:4px}
+.tag.add{background:var(--paper);border-style:dashed;color:var(--pencil);cursor:pointer}
+.tag.add:hover{background:var(--postit-mint);color:var(--ink)}
+.tag .x{font-family:var(--hand);font-size:14px;color:var(--marker-red);cursor:pointer}
+
+/* assignee */
+.assignee{display:flex;align-items:center;gap:10px;padding:6px 8px;background:var(--paper);border:1.5px dashed var(--ink);border-radius:8px;margin-top:6px}
+.assignee .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ffb6b9,#ffea7a);border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--hand);font-size:14px;font-weight:700;color:var(--ink);flex:none}
+.assignee b{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:400}
+.assignee small{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.06em}
+
+/* notes thread */
+.notes{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.note{padding:10px 12px;background:var(--postit);border:1.5px solid var(--ink);border-radius:8px;font-family:var(--body);font-size:14px;color:var(--ink);position:relative;line-height:1.4}
+.note.green{background:var(--postit-mint)}
+.note.blue{background:var(--postit-blue)}
+.note .who{font-family:var(--hand);font-size:18px;color:var(--ink);font-weight:700;display:flex;justify-content:space-between;line-height:1;margin-bottom:3px}
+.note .who small{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.04em;font-weight:400}
+.note .who .av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#a8d5ff,#dab4ff);border:1.5px solid var(--ink);display:inline-grid;place-items:center;font-family:var(--hand);font-size:12px;margin-right:4px;flex:none}
+.note .who span{display:inline-flex;align-items:center;gap:4px}
+
+.note-input{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.note-input textarea{font-family:var(--body);font-size:14px;color:var(--ink);background:var(--paper);border:1.5px dashed var(--ink);border-radius:8px;padding:10px 12px;outline:0;resize:vertical;min-height:60px}
+.note-input textarea:focus{border-color:var(--marker-red)}
+.note-input .row{display:flex;justify-content:space-between;align-items:center;font-family:var(--type);font-size:11px;color:var(--pencil)}
+
+/* timeline */
+.tline2{position:relative;padding-left:22px;margin-top:6px}
+.tline2::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background-image:repeating-linear-gradient(180deg,var(--ink) 0 4px,transparent 4px 8px)}
+.tline2 .t{position:relative;padding:6px 0;border-bottom:1px dotted var(--line)}
+.tline2 .t:last-child{border-bottom:0}
+.tline2 .t::before{content:"";position:absolute;left:-21px;top:11px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--marker-red)}
+.tline2 .t.green::before{border-color:var(--marker-green)}
+.tline2 .t.blue::before{border-color:var(--marker-blue)}
+.tline2 .t .when{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.06em;text-transform:uppercase}
+.tline2 .t .what{font-family:var(--hand);font-size:18px;color:var(--ink);line-height:1.1}
+.tline2 .t .what em{background:var(--postit);font-style:normal;padding:0 4px;border-radius:3px}
+
+/* attached file viewer */
+.attach-card{margin-top:8px;background:var(--paper);border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+.attach-card .ah{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1.5px dashed var(--ink);font-family:var(--type);font-size:11px;color:var(--pencil);letter-spacing:.06em}
+.attach-card .vid{aspect-ratio:16/9;background:var(--ink);position:relative;display:grid;place-items:center;color:var(--paper)}
+.attach-card .vid::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 6px,transparent 6px 14px)}
+.attach-card .vid .play{width:54px;height:54px;border-radius:50%;background:var(--marker-red);border:3px solid var(--paper);display:grid;place-items:center;position:relative;z-index:2}
+.attach-card .vid .play::after{content:"";border:9px solid transparent;border-left:14px solid var(--paper);margin-left:4px}
+.attach-card .vid .stamp{position:absolute;left:14px;top:12px;font-family:var(--hand);color:var(--paper);font-size:18px;background:rgba(0,0,0,.4);padding:2px 9px;border-radius:99px;border:1.5px dashed rgba(255,255,255,.5);z-index:2}
+.attach-card .ctrl{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--paper-edge);font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>· admin</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="demo.html">Demo</a>
+      <a href="analytics.html">Analytics</a>
+      <a href="docs.html">Docs</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-sm" href="export.html">Export</a>
+      <a class="btn btn-primary" href="account.html">Account</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head"><span>Inbox · submission</span><span class="date">May 10, 2026</span></div>
+
+    <div class="crumbs"><a href="demo.html">forms</a> <span>›</span> <a href="demo.html">walrus bug report</a> <span>›</span> <span>#413</span></div>
+
+    <div class="det-grid">
+      <section>
+        <div class="dhead">
+          <div>
+            <h2>Aggregator timeout on epoch rollover</h2>
+            <p class="meta">submitted by <b>walrus.builder.sui</b> · <code style="font-family:'JetBrains Mono',monospace;font-size:13px">0x9f1a…e2c</code> · May 10 · 11:42 UTC</p>
+            <div class="status-row">
+              <span class="pill red dot">high</span>
+              <span class="pill amber dot">in review</span>
+              <span class="pill green dot">verified ✓</span>
+              <span class="pill blue">2 sealed</span>
+              <span class="pill">v4 · q10</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span style="font-family:var(--hand);font-size:36px;color:var(--marker-red);line-height:1">#413</span>
+            <span style="font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.1em">of 517</span>
+          </div>
+        </div>
+
+        <div class="dr-actions">
+          <button class="btn btn-sm">← prev (#412)</button>
+          <button class="btn btn-sm">next (#414) →</button>
+          <button class="star">★ pin</button>
+          <button class="btn btn-sm">copy verify link</button>
+          <button class="btn btn-sm">open on Sui ↗</button>
+          <button class="btn btn-sm">archive</button>
+        </div>
+
+        <div class="ans-block">
+          <h3>Answers</h3>
+          <p class="sub">Plain-text answers below render as submitted. Sealed fields stay sealed unless your wallet decrypts them.</p>
+
+          <div class="ans">
+            <div class="qrow"><span class="num">Q1 · title</span></div>
+            <div class="a">Aggregator timeout on epoch rollover</div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q2 · area</span></div>
+            <div class="a"><span class="box">📦 Storage / Walrus aggregator</span></div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q3 · severity</span></div>
+            <div class="a"><span class="box" style="background:var(--postit-pink);border-color:var(--marker-red)">🔴 high — blocking</span></div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q4 · networks</span></div>
+            <div class="a"><span class="box">testnet</span> <span class="box">devnet</span></div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q5 · what happened</span></div>
+            <div class="a body">At epoch boundary the aggregator returns 504 for 30–90s before recovering. Repro: hit <code style="font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--paper-edge);padding:0 4px;border-radius:3px">/v1/blob/&lt;id&gt;</code> right when an epoch rolls over (testnet, ~every 24m). Started ~v0.91 — earlier nodes don&rsquo;t hit it. Logs attached.</div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q6 · docs rating</span></div>
+            <div class="a"><span class="stars-mini"><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg><svg viewBox="0 0 24 24"><path d="M12 2.5l3 6.6 7.2.7-5.4 4.9 1.6 7.1L12 17.9l-6.4 3.9 1.6-7.1L1.8 9.8 9 9.1z"/></svg></span> 3 / 5 — fine, could be clearer</div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q7 · NPS</span></div>
+            <div class="a"><b style="font-family:var(--hand);font-size:36px;color:var(--marker-red);line-height:1">9</b> <span style="font-family:var(--body);font-size:15px;color:var(--ink-soft)">— promoter</span></div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q8 · link</span></div>
+            <div class="a"><span class="url">https://suiscan.xyz/testnet/tx/0xeb1d…c2f</span></div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q9 · screenshot</span><span class="pill red">🔒 sealed</span></div>
+            <div class="sealed-card" id="seal9">
+              <div class="left">
+                <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+                <div class="lbl">14.2 MB · mp4 attachment<small>Seal · 2-of-3 · key 0x4a2c…b91/screenshot</small></div>
+              </div>
+              <div class="ct">▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒</div>
+              <button class="reveal" onclick="revealSeal('seal9','aggregator-504-rollover.mp4',true)">🔓 decrypt</button>
+            </div>
+            <div id="vid9" style="display:none">
+              <div class="attach-card">
+                <div class="ah"><span>aggregator-504-rollover.mp4 · 0:18 · h264</span><span style="color:var(--marker-green)">decrypted in this browser ✓</span></div>
+                <div class="vid"><span class="stamp">decrypted live</span><span class="play"></span></div>
+                <div class="ctrl"><span>▶ 0:00 / 0:18</span><span>blob bafy…h1k</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="ans">
+            <div class="qrow"><span class="num">Q10 · contact</span><span class="pill red">🔒 sealed</span></div>
+            <div class="sealed-card" id="seal10">
+              <div class="left">
+                <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+                <div class="lbl">17 chars · text<small>Seal · 2-of-3 · key 0x4a2c…b91/contact</small></div>
+              </div>
+              <div class="ct">▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒</div>
+              <button class="reveal" onclick="revealSeal('seal10','hex@catat.io')">🔓 decrypt</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ans-block">
+          <h3>Activity</h3>
+          <p class="sub">Every state change of this submission, signed and timestamped. The on-chain part can be re-derived without trusting catat.</p>
+          <div class="tline2">
+            <div class="t green"><div class="when">May 10 · 11:42:17 UTC · on-chain</div><div class="what">SubmissionAdded · tx <em>0x4a2c…b91</em> · gas 0.0021 SUI</div></div>
+            <div class="t green"><div class="when">May 10 · 11:42:18 UTC · on-chain</div><div class="what">Walrus blob written · 2-child Quilt · 4.2 KB</div></div>
+            <div class="t blue"><div class="when">May 10 · 11:51 UTC · admin</div><div class="what">walrus.builder pinned this submission</div></div>
+            <div class="t"><div class="when">May 10 · 11:54:02 UTC · admin</div><div class="what">walrus.builder decrypted Q9 (this device)</div></div>
+            <div class="t blue"><div class="when">May 10 · 12:03 UTC · admin</div><div class="what">priority set to <em>high</em>, status → <em>in review</em></div></div>
+            <div class="t blue"><div class="when">May 10 · 12:04 UTC · admin</div><div class="what">tagged: <em>aggregator</em>, <em>epoch</em>, <em>504</em></div></div>
+            <div class="t"><div class="when">May 10 · 12:11 UTC · admin</div><div class="what">assigned to <em>mover.sui</em></div></div>
+            <div class="t"><div class="when">May 10 · 12:14 UTC · admin</div><div class="what">linked to issue #2241 on github</div></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <div class="side-card tilt-l">
+          <h4>Review<small>signs &amp; saves</small></h4>
+
+          <div style="margin-top:6px">
+            <div style="font-family:var(--type);font-size:10px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;margin-bottom:4px">priority</div>
+            <div class="prio">
+              <button>none</button>
+              <button class="on low">low</button>
+              <button>med</button>
+              <button class="on high">high</button>
+              <button>critical</button>
+            </div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div style="font-family:var(--type);font-size:10px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;margin-bottom:4px">status</div>
+            <div class="status-set">
+              <button>new</button>
+              <button class="on">in review</button>
+              <button>queued</button>
+              <button>fixed</button>
+              <button>wontfix</button>
+              <button>spam</button>
+            </div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div style="font-family:var(--type);font-size:10px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;margin-bottom:4px">tags</div>
+            <div class="tags">
+              <span class="tag">aggregator <span class="x">✕</span></span>
+              <span class="tag">epoch <span class="x">✕</span></span>
+              <span class="tag">504 <span class="x">✕</span></span>
+              <span class="tag">testnet <span class="x">✕</span></span>
+              <span class="tag add">+ add tag</span>
+            </div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div style="font-family:var(--type);font-size:10px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;margin-bottom:4px">assignee</div>
+            <div class="assignee">
+              <span class="av">M</span>
+              <div><b>mover.sui</b><br><small>assigned 8 min ago</small></div>
+              <button class="btn btn-sm" style="margin-left:auto">change</button>
+            </div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div style="font-family:var(--type);font-size:10px;letter-spacing:.1em;color:var(--pencil);text-transform:uppercase;margin-bottom:4px">link to</div>
+            <div class="status-set">
+              <button>+ github issue</button>
+              <button>+ linear</button>
+              <button>+ notion</button>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding-top:12px;border-top:1.5px dashed var(--ink);display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" style="flex:1">Save (sign w/ wallet)</button>
+            <button class="btn btn-sm">Reset</button>
+          </div>
+        </div>
+
+        <div class="side-card tilt-r">
+          <h4>Notes<small>private to admins</small></h4>
+          <div class="notes">
+            <div class="note green">
+              <div class="who"><span><span class="av">W</span>walrus.builder</span><small>11:54 UTC</small></div>
+              Decrypted attachment — confirms 504 right at epoch boundary (8s window). Matches what mover saw last week.
+            </div>
+            <div class="note">
+              <div class="who"><span><span class="av">M</span>mover.sui</span><small>12:11 UTC</small></div>
+              Looking now. Suspect aggregator cache TTL — pushing patch to <code style="font-family:'JetBrains Mono',monospace;font-size:12px">aggregator/cache.rs</code>. Will report back EOD.
+            </div>
+            <div class="note blue">
+              <div class="who"><span><span class="av">W</span>walrus.builder</span><small>12:14 UTC</small></div>
+              Linked to <a href="#" style="color:var(--marker-red);text-decoration:underline wavy">github #2241</a> — same root cause as the cli reproducer.
+            </div>
+          </div>
+          <div class="note-input">
+            <textarea placeholder="add a note for the team — markdown ok…">Reproduced once locally. Going to spin up a node and watch the next epoch.</textarea>
+            <div class="row">
+              <span>private · only admins · not on-chain</span>
+              <button class="btn btn-sm btn-primary">Post note</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-card">
+          <h4>Proof<small>walrus + sui</small></h4>
+          <div class="field-row"><span class="k">tx</span><span class="v mono">0x4a2c…b91e</span></div>
+          <div class="field-row"><span class="k">blob</span><span class="v mono">bafy…2x9</span></div>
+          <div class="field-row"><span class="k">epochs</span><span class="v">12 · expires Nov 14</span></div>
+          <div class="field-row"><span class="k">sig</span><span class="v" style="color:var(--marker-green)">ed25519 ✓ valid</span></div>
+          <div class="field-row"><span class="k">submitter</span><span class="v">walrus.builder.sui</span></div>
+          <div class="field-row"><span class="k">role</span><span class="v">WAL holder · gated ✓</span></div>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+            <a class="btn btn-sm" href="verify.html">Public verify ↗</a>
+            <button class="btn btn-sm">Sui ↗</button>
+            <button class="btn btn-sm">Walrus ↗</button>
+          </div>
+        </div>
+
+        <div class="postit" style="background:var(--postit-pink);transform:rotate(-1.5deg)">
+          <b>privacy</b>
+          Decryption happens in this browser. catat doesn&rsquo;t see plaintext, doesn&rsquo;t store it, and can&rsquo;t put it on this page if you don&rsquo;t click <i>decrypt</i>.
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script>
+function revealSeal(id, plaintext, isFile){
+  const el = document.getElementById(id);
+  el.classList.add('revealed');
+  el.querySelector('.lock svg').outerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 4-4 4 4 0 0 1 4 4"/></svg>';
+  el.querySelector('.ct').textContent = plaintext;
+  el.querySelector('.reveal').textContent = '✓ decrypted';
+  el.querySelector('.reveal').style.pointerEvents = 'none';
+  if(isFile){
+    setTimeout(()=>{document.getElementById('vid9').style.display='block'; el.style.display='none';}, 350);
+  }
+}
+document.querySelectorAll('.prio button').forEach(b=>b.addEventListener('click',()=>{
+  b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('on','high','med','low'));
+  b.classList.add('on');
+  if(b.textContent==='high'||b.textContent==='critical')b.classList.add('high');
+  else if(b.textContent==='med')b.classList.add('med');
+  else if(b.textContent==='low')b.classList.add('low');
+}));
+document.querySelectorAll('.status-set button').forEach(b=>b.addEventListener('click',()=>{
+  b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+}));
+</script>
+<script src="tweaks-global.js"></script>
+</body>
+</html>

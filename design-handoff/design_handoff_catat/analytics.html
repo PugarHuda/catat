@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>catat — analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="paper.css">
+<style>
+.tools{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.range{display:flex;gap:0;border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--paper)}
+.range button{padding:6px 14px;font-family:var(--body);font-size:14px;color:var(--ink);border-right:1.5px solid var(--ink);background:transparent}
+.range button:last-child{border-right:0}
+.range button.on{background:var(--ink);color:var(--paper);font-family:var(--hand);font-size:18px}
+.form-pick{font-family:var(--hand);font-size:22px;color:var(--ink);background:var(--postit);padding:4px 12px;border:2px solid var(--ink);border-radius:6px;display:inline-flex;align-items:center;gap:8px;transform:rotate(-1deg);box-shadow:2px 2px 0 var(--ink)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:780px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{position:relative;background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;padding:16px 18px;box-shadow:4px 4px 0 var(--ink)}
+.kpi:nth-child(1){transform:rotate(-.5deg)}
+.kpi:nth-child(2){transform:rotate(.4deg);background:var(--postit)}
+.kpi:nth-child(3){transform:rotate(-.4deg);background:var(--postit-mint)}
+.kpi:nth-child(4){transform:rotate(.5deg);background:var(--postit-blue)}
+.kpi .label{font-family:var(--type);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--pencil);margin-bottom:2px}
+.kpi b{font-family:var(--hand);font-size:42px;line-height:.95;display:block;color:var(--ink)}
+.kpi .delta{font-family:var(--hand);font-size:18px;color:var(--marker-green);display:flex;align-items:center;gap:4px;margin-top:2px}
+.kpi .delta.down{color:var(--marker-red)}
+.kpi .spark{position:absolute;right:14px;top:14px;width:80px;height:36px;color:var(--ink);opacity:.4}
+
+/* big timeline chart */
+.chart-card{background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:24px 28px 20px;box-shadow:5px 5px 0 var(--ink);margin-bottom:22px;position:relative}
+.chart-h{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.chart-h h3{font-family:var(--hand);font-size:32px;margin:0;line-height:1;color:var(--ink)}
+.chart-h .legend{display:flex;gap:14px;font-family:var(--type);font-size:11px;color:var(--pencil)}
+.chart-h .legend span{display:inline-flex;align-items:center;gap:5px}
+.chart-h .legend .sw{width:14px;height:6px;display:inline-block;border-radius:2px}
+
+.chart{position:relative;height:240px;display:flex;align-items:flex-end;gap:4px;padding:8px 0;border-bottom:2px solid var(--ink);background:repeating-linear-gradient(180deg,transparent 0 47px,rgba(163,196,212,.4) 47px 48px)}
+.bar-grp{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;align-items:center;min-width:0}
+.bar-grp .bar{width:80%;background:var(--ink);border-radius:1px 4px 1px 4px;position:relative;transition:transform .12s}
+.bar-grp .bar.sealed{background:var(--marker-red)}
+.bar-grp:hover .bar{transform:scaleY(1.04);transform-origin:bottom}
+.bar-grp .lbl{font-family:var(--type);font-size:9px;color:var(--pencil);letter-spacing:.04em;margin-top:6px;writing-mode:vertical-rl;transform:rotate(-180deg)}
+
+/* doodle annotation */
+.chart-card .anno{position:absolute;font-family:var(--hand);font-size:20px;color:var(--marker-red);transform:rotate(-3deg);display:flex;align-items:center;gap:4px}
+.chart-card .anno.peak{top:50px;right:80px}
+.chart-card .anno svg{width:36px;height:30px}
+
+.row-2{display:grid;grid-template-columns:1.2fr 1fr;gap:22px;margin-bottom:22px}
+@media(max-width:980px){.row-2{grid-template-columns:1fr}}
+
+.brk{background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:22px 24px;box-shadow:5px 5px 0 var(--ink)}
+.brk h3{font-family:var(--hand);font-size:28px;margin:0 0 12px;color:var(--ink);line-height:1}
+.brk-row{display:grid;grid-template-columns:1fr 80px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);font-family:var(--body);font-size:15px}
+.brk-row:last-child{border-bottom:0}
+.brk-row .nm{display:flex;align-items:center;gap:8px}
+.brk-row .nm .n{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-family:var(--hand);font-size:14px;flex:none}
+.brk-row .meter{height:14px;background:var(--paper-edge);border:1.5px solid var(--ink);border-radius:99px;overflow:hidden;flex:1;margin:0 10px}
+.brk-row .meter .fill{height:100%;background:var(--marker-red);border-right:1.5px solid var(--ink)}
+.brk-row .vv{font-family:var(--hand);font-size:20px;color:var(--ink);text-align:right}
+
+/* funnel */
+.funnel{padding:6px 0}
+.funnel-step{display:grid;grid-template-columns:160px 1fr 80px;align-items:center;gap:14px;margin:8px 0}
+.funnel-step .nm{font-family:var(--hand);font-size:20px;color:var(--ink)}
+.funnel-step .barwrap{position:relative;height:34px;background:var(--paper-edge);border:1.5px solid var(--ink);border-radius:6px;overflow:hidden}
+.funnel-step .bar{height:100%;background:var(--ink);border-right:1.5px solid var(--marker-red)}
+.funnel-step:nth-child(2) .bar{background:var(--marker-red)}
+.funnel-step:nth-child(3) .bar{background:var(--marker-blue)}
+.funnel-step:nth-child(4) .bar{background:var(--marker-green)}
+.funnel-step .vv{font-family:var(--hand);font-size:24px;color:var(--ink);text-align:right;line-height:1}
+.funnel-step .vv small{font-family:var(--type);font-size:10px;color:var(--pencil);letter-spacing:.06em;display:block}
+.drop{font-family:var(--hand);font-size:16px;color:var(--marker-red);margin-left:160px;font-style:italic;margin-bottom:4px}
+
+/* answer dist for a question */
+.q-card{background:var(--paper-2);border:2px solid var(--ink);border-radius:10px;padding:22px 24px;box-shadow:5px 5px 0 var(--ink);margin-bottom:22px}
+.q-card h3{font-family:var(--hand);font-size:28px;margin:0 0 4px;color:var(--ink)}
+.q-card .qtxt{font-family:var(--body);font-size:16px;color:var(--ink-soft);margin:0 0 18px}
+.dist{display:flex;flex-direction:column;gap:10px}
+.dist-row{display:grid;grid-template-columns:140px 1fr 90px;gap:10px;align-items:center}
+.dist-row .lbl{font-family:var(--hand);font-size:20px;color:var(--ink)}
+.dist-row .meter{height:18px;background:var(--paper-edge);border:1.5px solid var(--ink);border-radius:99px;overflow:hidden;display:flex;align-items:center}
+.dist-row .meter .f{height:100%;background:var(--marker-red)}
+.dist-row.row2 .meter .f{background:#a07a1a}
+.dist-row.row3 .meter .f{background:var(--marker-green)}
+.dist-row.row4 .meter .f{background:var(--marker-blue)}
+.dist-row .vv{font-family:var(--hand);font-size:22px;color:var(--ink);text-align:right}
+
+/* word cloud-ish */
+.words{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px}
+.words span{font-family:var(--hand);color:var(--ink);padding:2px 6px;border-bottom:2px solid var(--highlight)}
+.words .s14{font-size:14px;color:var(--pencil)}
+.words .s18{font-size:18px}
+.words .s24{font-size:24px}
+.words .s30{font-size:30px;color:var(--marker-red)}
+.words .s40{font-size:40px;color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="catat.html">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5A8 8 0 1 0 19 16.5"/><path d="M11 12.2l2.4 2.4 5.6-6"/></svg></span>
+      catat<small>· analytics</small>
+    </a>
+    <nav class="nav-links">
+      <a href="catat.html">Home</a>
+      <a href="templates.html">Templates</a>
+      <a href="demo.html">Demo</a>
+      <a href="docs.html">Docs</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="verify.html">Verify</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="account.html">Account</a>
+      <a class="btn btn-primary" href="signin.html">Connect wallet</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="sheet">
+    <div class="sheet-head"><span>Analytics · form #017</span><span class="date">May 10, 2026</span></div>
+    <span class="section-eyebrow">— what the numbers say —</span>
+    <h1>Counted on the <span class="marker">back</span> of a napkin.</h1>
+    <p class="lede">Every metric below is recomputable from Sui state — sealed answers stay sealed, but the shape of your responses doesn&rsquo;t lie. <em>Walrus bug report</em>, last 30 days.</p>
+
+    <div class="tools">
+      <span class="form-pick">📓 walrus bug report
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+      <div class="range">
+        <button>24h</button>
+        <button>7d</button>
+        <button class="on">30d</button>
+        <button>90d</button>
+        <button>all</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">submissions</div>
+        <b>517</b>
+        <div class="delta">↑ +24 vs prev. 30d</div>
+        <svg class="spark" viewBox="0 0 80 36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 28 L12 24 L22 26 L32 18 L42 20 L52 12 L62 14 L72 6 L78 4"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="label">completion rate</div>
+        <b>78%</b>
+        <div class="delta">↑ +6 pts</div>
+        <svg class="spark" viewBox="0 0 80 36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 24 L12 22 L22 18 L32 22 L42 14 L52 10 L62 12 L72 8 L78 6"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="label">unique wallets</div>
+        <b>412</b>
+        <div class="delta">↑ +18</div>
+        <svg class="spark" viewBox="0 0 80 36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 30 L12 26 L22 24 L32 22 L42 18 L52 16 L62 12 L72 10 L78 8"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="label">avg gas / submit</div>
+        <b>0.0021</b>
+        <div class="delta down">↓ −0.0003 SUI</div>
+        <svg class="spark" viewBox="0 0 80 36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 8 L12 12 L22 16 L32 14 L42 18 L52 20 L62 22 L72 26 L78 28"/></svg>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-h">
+        <h3>Submissions over time</h3>
+        <div class="legend">
+          <span><span class="sw" style="background:var(--ink)"></span>plain</span>
+          <span><span class="sw" style="background:var(--marker-red)"></span>sealed bytes</span>
+        </div>
+      </div>
+      <div class="chart" id="chart"></div>
+      <div class="anno peak">
+        <svg viewBox="0 0 50 30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4 C 14 12, 26 22, 44 24"/><path d="M40 16 L46 24 L36 26"/></svg>
+        twitter post 🚀
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="brk">
+        <h3>Funnel</h3>
+        <div class="funnel">
+          <div class="funnel-step"><span class="nm">visit</span><div class="barwrap"><div class="bar" style="width:100%"></div></div><span class="vv">662<small>visits</small></span></div>
+          <div class="drop">↓ 23% bounce</div>
+          <div class="funnel-step"><span class="nm">connect wallet</span><div class="barwrap"><div class="bar" style="width:78%"></div></div><span class="vv">517<small>connects</small></span></div>
+          <div class="drop">↓ 0% — gate is off</div>
+          <div class="funnel-step"><span class="nm">started form</span><div class="barwrap"><div class="bar" style="width:78%"></div></div><span class="vv">514<small>starts</small></span></div>
+          <div class="drop">↓ 22% drop on Q3</div>
+          <div class="funnel-step"><span class="nm">submitted</span><div class="barwrap"><div class="bar" style="width:60%"></div></div><span class="vv">402<small>submits</small></span></div>
+        </div>
+      </div>
+
+      <div class="brk">
+        <h3>Severity breakdown</h3>
+        <div class="brk-row"><span class="nm"><span class="n">1</span>high — blocking</span><div class="meter"><div class="fill" style="width:38%"></div></div><span class="vv">38%</span></div>
+        <div class="brk-row"><span class="nm"><span class="n">2</span>medium</span><div class="meter"><div class="fill" style="width:31%;background:#a07a1a"></div></div><span class="vv">31%</span></div>
+        <div class="brk-row"><span class="nm"><span class="n">3</span>low</span><div class="meter"><div class="fill" style="width:22%;background:var(--marker-green)"></div></div><span class="vv">22%</span></div>
+        <div class="brk-row"><span class="nm"><span class="n">4</span>critical</span><div class="meter"><div class="fill" style="width:9%;background:var(--marker-purple)"></div></div><span class="vv">9%</span></div>
+
+        <h3 style="margin-top:18px">Top wallets</h3>
+        <div class="brk-row"><span class="nm">walrus.builder.sui</span><div class="meter"><div class="fill" style="width:24%"></div></div><span class="vv">22</span></div>
+        <div class="brk-row"><span class="nm">mover.sui</span><div class="meter"><div class="fill" style="width:18%"></div></div><span class="vv">17</span></div>
+        <div class="brk-row"><span class="nm">devnet-anon</span><div class="meter"><div class="fill" style="width:14%"></div></div><span class="vv">13</span></div>
+        <div class="brk-row"><span class="nm">sui.frens</span><div class="meter"><div class="fill" style="width:10%"></div></div><span class="vv">9</span></div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <h3>Q3 · &ldquo;What happened?&rdquo; — words people use</h3>
+      <p class="qtxt">Free-text frequencies across 402 submitted answers. Larger = more common. Trace the shape of your bug surface.</p>
+      <div class="words">
+        <span class="s40">timeout</span>
+        <span class="s30">aggregator</span>
+        <span class="s30">epoch</span>
+        <span class="s24">504</span>
+        <span class="s24">slow</span>
+        <span class="s24">retry</span>
+        <span class="s18">node</span>
+        <span class="s18">rollover</span>
+        <span class="s18">quilt</span>
+        <span class="s18">decrypt</span>
+        <span class="s18">connection</span>
+        <span class="s18">stuck</span>
+        <span class="s14">cli</span>
+        <span class="s14">faucet</span>
+        <span class="s14">gas</span>
+        <span class="s14">testnet</span>
+        <span class="s14">redirect</span>
+        <span class="s14">cors</span>
+        <span class="s14">missing</span>
+        <span class="s14">wallet</span>
+        <span class="s14">cache</span>
+        <span class="s14">stale</span>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <h3>Q2 · severity distribution (this week)</h3>
+      <p class="qtxt">Live. Recompute these counts yourself by reading <code style="font-family:var(--type);font-size:13px">SubmissionAdded</code> events from the form&rsquo;s shared object.</p>
+      <div class="dist">
+        <div class="dist-row"><span class="lbl">high — blocking</span><div class="meter"><div class="f" style="width:42%"></div></div><span class="vv">63 / 152</span></div>
+        <div class="dist-row row2"><span class="lbl">medium</span><div class="meter"><div class="f" style="width:30%"></div></div><span class="vv">46 / 152</span></div>
+        <div class="dist-row row3"><span class="lbl">low</span><div class="meter"><div class="f" style="width:21%"></div></div><span class="vv">32 / 152</span></div>
+        <div class="dist-row row4"><span class="lbl">critical</span><div class="meter"><div class="f" style="width:7%"></div></div><span class="vv">11 / 152</span></div>
+      </div>
+    </div>
+
+    <div class="postit" style="background:var(--postit-pink);max-width:520px;transform:rotate(-1deg)">
+      <b>privacy note</b>
+      Sealed fields (Q4 email, Q5 screenshot) are <b style="color:var(--marker-red)">not</b> aggregated. catat can&rsquo;t see them. Only counts &amp; plain-text fields appear here.
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot">
+  <div>© 2026 catat · MIT · built on Sui &amp; Walrus<div class="signature-line">— sketched on real paper, served from Walrus.</div></div>
+  <div style="display:flex;gap:24px"><a href="docs.html">Docs</a><a href="#">GitHub</a><a href="#">Twitter</a><a href="#">Discord</a></div>
+</div></footer>
+
+<script>
+const heights = [22,28,34,30,38,42,50,46,54,48,42,52,60,68,72,64,58,66,74,82,78,84,92,88,76,82,90,96,86,72];
+const sealedShare = 0.36;
+const days = 30;
+const start = new Date(2026,3,11);
+const ch = document.getElementById('chart');
+heights.forEach((h,i)=>{
+  const total=h*2;const sealed=Math.round(total*sealedShare);const plain=total-sealed;
+  const d=new Date(start);d.setDate(start.getDate()+i);
+  const lbl = d.toLocaleString('en',{month:'short',day:'numeric'});
+  const grp=document.createElement('div');grp.className='bar-grp';
+  grp.innerHTML=`
+    <div class="bar sealed" style="height:${sealed*1.4}px"></div>
+    <div class="bar" style="height:${plain*1.4}px"></div>
+    <span class="lbl">${i%3===0?lbl:''}</span>`;
+  ch.appendChild(grp);
+});
+</script>
+<script src="tweaks-global.js"></script>
+</body>
+</html>
