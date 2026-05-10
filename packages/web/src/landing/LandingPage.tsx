@@ -1,19 +1,7 @@
-import {
-  ArrowRight,
-  Lock,
-  Shield,
-  Package,
-  Code,
-  Keyboard,
-  Database,
-  Users,
-  Award,
-  Boxes,
-  type LucideIcon,
-} from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useFormStats } from './useFormStats';
-import { BUG_REPORT_FORM_ID } from '@/lib/contract';
-import { cn } from '@/lib/utils';
+import { BUG_REPORT_FORM_ID, suiscanObject } from '@/lib/contract';
+import BrandGlyph from '@/components/BrandGlyph';
 
 interface Props {
   onEnterApp: () => void;
@@ -21,455 +9,399 @@ interface Props {
 
 export default function LandingPage({ onEnterApp }: Props) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <>
       <Header onEnterApp={onEnterApp} />
-      <main>
-        <Hero onEnterApp={onEnterApp} />
-        <Why />
-        <HowItWorks />
-        <Features />
-        <ForWho />
-        <CTA onEnterApp={onEnterApp} />
-      </main>
+      <Hero onEnterApp={onEnterApp} />
+      <Band />
+      <Features />
+      <HowItWorks />
+      <CTA onEnterApp={onEnterApp} />
       <Footer />
-    </div>
+    </>
   );
 }
 
 function Header({ onEnterApp }: Props) {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-12 max-w-5xl items-center gap-4 px-6 text-sm">
-        <span className="font-mono text-foreground">catat</span>
-        <span className="hidden text-muted-foreground/60 sm:inline">·</span>
-        <span className="hidden text-xs text-muted-foreground sm:inline">forms with proof</span>
-        <nav className="ml-auto flex items-center gap-1">
-          <a
-            href="https://github.com/PugarHuda/catat"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md px-2.5 py-1 text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground"
-          >
-            GitHub
-          </a>
-          <button
-            type="button"
-            onClick={onEnterApp}
-            className="ml-1 inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs text-primary-foreground transition hover:opacity-90"
-          >
-            Launch app <ArrowRight className="h-3 w-3" />
-          </button>
+    <header className="nav">
+      <div className="wrap nav-row">
+        <a className="brand" href="#top">
+          <BrandGlyph />
+          catat
+          <small>est. 2026</small>
+        </a>
+        <nav className="nav-links">
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <button type="button" onClick={onEnterApp}>Live demo ↗</button>
+          <a href="https://github.com/PugarHuda/catat" target="_blank" rel="noopener noreferrer">Open source</a>
         </nav>
+        <div className="nav-cta">
+          <button type="button" className="btn btn-ghost">Sign in</button>
+          <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+            Connect wallet
+            <Arrow />
+          </button>
+        </div>
       </div>
     </header>
+  );
+}
+
+function Arrow() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14M13 5l7 7-7 7" />
+    </svg>
   );
 }
 
 function Hero({ onEnterApp }: Props) {
   const { data: stats, isLoading: statsLoading } = useFormStats();
   const count = stats?.count ?? 0;
-  const formIdShort = `${BUG_REPORT_FORM_ID.slice(0, 6)}…${BUG_REPORT_FORM_ID.slice(-4)}`;
 
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[640px] bg-gradient-to-b from-sky-50 via-sky-50/30 to-transparent" />
-      <div className="absolute inset-x-0 top-0 -z-10 h-[640px] [mask-image:radial-gradient(ellipse_at_top,black_0%,transparent_70%)]">
-        <div className="h-full w-full bg-[linear-gradient(to_right,#0ea5e911_1px,transparent_1px),linear-gradient(to_bottom,#0ea5e911_1px,transparent_1px)] bg-[size:48px_48px]" />
-      </div>
+    <section className="hero" id="top">
+      <div className="wrap hero-grid">
+        <div>
+          <div className="eyebrow-row">
+            <span className="eyebrow-label">built on</span>
+            <span className="chip blue rotate-1">SUI</span>
+            <span className="chip green rotate-2">WALRUS</span>
+            <span className="chip red rotate-1">SEAL</span>
+          </div>
 
-      <div className="mx-auto max-w-3xl px-6 pb-20 pt-20 text-center md:pt-28">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          testnet preview · v0.1
-        </span>
+          <h1 className="hero-title">
+            Forms with <span className="marker">cryptographic</span><br />
+            <span className="underline">proof</span>, not <span className="strike">vendor</span> promises.
+          </h1>
 
-        <h1 className="mt-6 text-5xl font-semibold tracking-tight md:text-6xl">
-          Forms with proof.
-        </h1>
+          <p className="hero-lede">
+            catat is a feedback &amp; survey notebook for the on-chain era. Toggle a 🔒 on any field
+            to seal it with <em>Seal</em>, save every reply as a <em>Walrus blob</em>, and let anyone
+            verify your numbers straight from <em>Sui</em>.
+          </p>
 
-        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-          The Walrus-native feedback platform. Forms that live on-chain, attachments stored on Walrus, private fields encrypted by Seal. Owned by you, not by a vendor.
-        </p>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={onEnterApp}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-          >
-            Try the demo <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-          <a
-            href="https://github.com/PugarHuda/catat"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium transition hover:bg-accent"
-          >
-            View on GitHub
-          </a>
-        </div>
-
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 font-mono text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <div className="cta-row">
+            <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+              Start a notebook
+              <Arrow />
+            </button>
+            <button type="button" className="btn" onClick={onEnterApp}>See live demo</button>
+            <span className="handnote">
+              <svg viewBox="0 0 60 30" width={48} height={24} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 22 C 14 5, 30 4, 50 16" />
+                <path d="M44 8 L52 16 L44 22" />
+              </svg>
+              ← free on testnet!
             </span>
-            LIVE
-          </span>
-          <span className="text-muted-foreground/40">·</span>
-          <span>
-            <span className="text-foreground tabular-nums">
-              {statsLoading ? '—' : count.toLocaleString()}
-            </span>{' '}
-            on-chain submission{count === 1 ? '' : 's'}
-          </span>
-          <span className="text-muted-foreground/40">·</span>
-          <a
-            href={`https://suiscan.xyz/testnet/object/${BUG_REPORT_FORM_ID}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition hover:text-foreground"
-            title="View Form object on Suiscan"
-          >
-            form_id <span className="text-foreground">{formIdShort}</span>
-          </a>
-          <span className="text-muted-foreground/40">·</span>
-          <span>sui testnet</span>
+          </div>
+
+          <div className="signoff">
+            <span><b>2-of-3</b> Seal threshold</span>
+            <span className="div">·</span>
+            <span><b>~100×</b> cheaper via Quilt</span>
+            <span className="div">·</span>
+            <span><b>{statsLoading ? '—' : count.toLocaleString()}</b> on-chain replies</span>
+          </div>
+        </div>
+
+        <div className="stage">
+          <article className="notebook">
+            <div className="np-head">
+              <span>Form #017 / draft</span>
+              <span className="date">May 11, 2026</span>
+            </div>
+            <h3 className="np-title">
+              <span className="chk">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 13l5 5L20 7" />
+                </svg>
+              </span>
+              Walrus bug report
+            </h3>
+            <p className="np-sub">Help us track issues across the testnet.</p>
+
+            <div className="fld">
+              <div className="fld-label">Title <span className="req">*</span></div>
+              <div className="np-input">Aggregator timeout on epoch rollover</div>
+            </div>
+
+            <div className="fld">
+              <div className="fld-label">Severity <span className="req">*</span></div>
+              <div className="np-dropdown">
+                <span className="pill-sev"><span className="sev-dot" /> high — blocking</span>
+                <span style={{ fontSize: 18 }}>▾</span>
+              </div>
+            </div>
+
+            <div className="fld">
+              <div className="fld-label">
+                Reporter email
+                <span className="lock-tag">
+                  <LockIcon />
+                  sealed
+                </span>
+              </div>
+              <div className="np-encrypted">
+                <span className="ghost">▒▒▒▒-▒▒▒▒-▒▒-▒▒▒▒▒▒▒</span>
+                <span className="badge">SEAL · 2-of-3</span>
+              </div>
+            </div>
+
+            <div className="np-signature">
+              <span className="meta">3 fields · 1 sealed · ready to submit</span>
+              <span className="submit-stamp">submit ↵</span>
+            </div>
+          </article>
+
+          <div className="hero-postit hero-postit-tx">
+            <b>tx hash</b>
+            <code>0x4a2c…b91</code>
+            <small>verified on Sui ✓</small>
+          </div>
+          <div className="hero-postit hero-postit-blob">
+            <b>walrus blob</b>
+            <code>{statsLoading ? 'bafy…' : `count: ${count}`}</code>
+            <small>{statsLoading ? 'loading…' : 'live from Sui RPC'}</small>
+          </div>
+          <div className="hero-postit hero-postit-seal">
+            <b>seal</b>
+            <code>2-of-3</code>
+            <small>per-field key 🔒</small>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-function Why() {
+function LockIcon() {
   return (
-    <section className="border-t border-border py-16 md:py-24">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Why catat
-          </p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            Three things existing form tools can't do.
-          </h2>
-        </div>
-
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
-          <DiffCard
-            number="01"
-            title="Submissions you actually own"
-            desc="Tally stores in their DB. Formo too. catat stores on Walrus — bytes you can read, fork, or migrate without permission."
-          />
-          <DiffCard
-            number="02"
-            title="Per-field encryption"
-            desc="Other Web3 form tools: encrypt all-or-nothing. catat: toggle 🔒 per field. Bug title public, email encrypted. Granular via Seal."
-          />
-          <DiffCard
-            number="03"
-            title="Verifiable submission count"
-            desc="“We got 500 responses” — in Tally, you trust the admin. In catat, count = on-chain Sui array length. Anyone audits."
-          />
-        </div>
-      </div>
-    </section>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
   );
 }
 
-function HowItWorks() {
+function Band() {
+  const { data: stats } = useFormStats();
+  const count = stats?.count ?? 0;
   return (
-    <section className="border-t border-border py-16 md:py-24">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            How it works
-          </p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            From form idea to verified feedback in three steps.
-          </h2>
-        </div>
-
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          <StepCard
-            step="01"
-            title="Build"
-            desc="Drag-drop form. Slash command (/) to insert field types. Toggle 🔒 encrypted per field via Seal."
-            tagline="Tally-style speed"
-          />
-          <StepCard
-            step="02"
-            title="Share"
-            desc="Public URL or embed widget. Optional token-gate by NFT/Coin holding. Submission Quilt batched cheaply."
-            tagline="Embed everywhere"
-          />
-          <StepCard
-            step="03"
-            title="Triage"
-            desc="Linear-style admin dashboard. Status workflow, filter chips, J/K keyboard nav, CSV export."
-            tagline="Built for power users"
-          />
-        </div>
+    <div className="band">
+      <div className="wrap band-row">
+        <BandStat value={`${count}`} label="verifiable replies" />
+        <BandStat value="2-of-3" label="seal threshold" />
+        <BandStat value="~100×" label="cheaper writes" />
+        <BandStat value="10" label="storage epochs" />
+        <BandStat value="MIT" label="open source" />
       </div>
-    </section>
+    </div>
+  );
+}
+
+function BandStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="band-stat">
+      <b>{value}</b>
+      <span>{label}</span>
+    </div>
   );
 }
 
 function Features() {
   return (
-    <section className="border-t border-border py-16 md:py-24">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            What's inside
-          </p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            Built native on Walrus, Seal, and Sui.
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Not a Web2 form with a wallet button bolted on. Every primitive is on-chain composable.
-          </p>
-        </div>
-
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          <FeatureCard
-            icon={Package}
-            title="Walrus Quilt batching"
-            desc="One submission + attachments = one Quilt. ~100× cheaper than naive blob-per-file."
-            tag="cost"
-          />
-          <FeatureCard
-            icon={Lock}
-            title="Seal threshold encryption"
-            desc="2-of-3 key servers, identity-based. Per-field toggle, not all-or-nothing."
-            tag="privacy"
-          />
-          <FeatureCard
-            icon={Shield}
-            title="On-chain verifiability"
-            desc="Each submission carries blob_id + tx_hash. Audit count via Sui RPC."
-            tag="trust"
-          />
-          <FeatureCard
-            icon={Code}
-            title="Open source, MIT"
-            desc="Fork it. Self-host as Walrus Site. No vendor lock, no monthly fees."
-            tag="freedom"
-          />
-          <FeatureCard
-            icon={Keyboard}
-            title="Keyboard-first triage"
-            desc="J/K nav, X archive, Y resolve. Vim-style speed for DAO ops."
-            tag="speed"
-          />
-          <FeatureCard
-            icon={Boxes}
-            title="Embeddable widget"
-            desc="Drop the iframe into docs, blog, or dApp. QR generator for events."
-            tag="distribution"
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ForWho() {
-  return (
-    <section className="border-t border-border bg-muted/30 py-16 md:py-24">
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Who is this for
-          </p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            Built for teams that need accountable feedback.
-          </h2>
-        </div>
-
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          <PersonaCard
-            icon={Database}
-            title="Walrus team & RFP grants"
-            desc="Bug reports, feature requests with verifiable proof. Dogfood your own ecosystem with the right primitive."
-          />
-          <PersonaCard
-            icon={Users}
-            title="DAO operators"
-            desc="Token-gated surveys, NPS with verifiable count. Snapshot for governance votes — catat for everything in between."
-          />
-          <PersonaCard
-            icon={Award}
-            title="Grant program organizers"
-            desc="Application forms where wallet identity, timestamp, and attachment hash all live on-chain. Fair, audit-able, anti-tampering."
-          />
-          <PersonaCard
-            icon={Code}
-            title="Indie builders"
-            desc="Embed the feedback widget in your docs or dApp. 30-second setup. Zero infrastructure to maintain."
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CTA({ onEnterApp }: Props) {
-  return (
-    <section className="border-t border-border py-20 md:py-28">
-      <div className="mx-auto max-w-2xl px-6 text-center">
-        <h2 className="text-4xl font-semibold tracking-tight md:text-5xl">
-          Get started in 5 minutes.
-        </h2>
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Free, open source, no signup. Build a form, fill it as a respondent, then triage the submissions in admin mode — all in one click.
+    <section className="features" id="features">
+      <div className="wrap">
+        <span className="section-eyebrow">— what makes catat different —</span>
+        <h2 className="section-title">Form software, finally honest about its data.</h2>
+        <p className="section-sub">
+          Tally and Typeform ask you to <em>trust</em> their dashboards. catat hands you the receipts:
+          every submission has a Sui tx hash, every byte lives in Walrus, every secret is sealed with a 2-of-3 key.
         </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={onEnterApp}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+
+        <div className="feat-grid">
+          <FeatureCard
+            num="01"
+            tag="Privacy · Seal"
+            title="Per-field encryption with Seal."
+            wide
+            tape
           >
-            Open the demo <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-          <a
-            href="https://github.com/PugarHuda/catat"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card px-5 py-3 text-sm font-medium transition hover:bg-accent"
-          >
-            Star on GitHub
-          </a>
+            Toggle 🔒 on any field. Email and screenshots stay sealed end-to-end with threshold encryption — only the form owner&apos;s wallet can decrypt, in the browser, never on a server.
+            <span className="feat-note">id = formId · fieldId — granular like nothing else.</span>
+          </FeatureCard>
+
+          <FeatureCard num="02" tag="Provable" title="On-chain proof, every time." numColor="red">
+            Every submission emits a Sui event &amp; registers a blob ID. Your &ldquo;500 responses&rdquo; is a fact, not a claim.
+            <Squiggle />
+          </FeatureCard>
+
+          <FeatureCard num="03" tag="Storage · Quilt" title="Walrus storage, Quilt-batched." numColor="blue">
+            One submission + all attachments → one Quilt → one write. ~100× cheaper than naive blob-per-file.
+            <span className="feat-note">10 epochs default · extendable</span>
+          </FeatureCard>
+
+          <FeatureCard num="04" tag="Verifiable" title="Public count, queryable." numColor="ink-yellow">
+            <code>Form.submission_blob_ids.length</code> is permissionless. Count proven from Sui RPC, not catat dashboards.
+          </FeatureCard>
+
+          <FeatureCard num="05" tag="Self-host · OSS" title="Hosted on Walrus Sites — yours forever." wide numColor="yellow">
+            The whole app is a decentralized site. Fork the repo, point at your testnet package ID, deploy. No backend, no database, no monthly bill — just Sui state + Walrus bytes + Seal keys.
+            <span className="feat-note">MIT licensed · 100% open source</span>
+          </FeatureCard>
         </div>
-        <p className="mt-6 font-mono text-[11px] text-muted-foreground">
-          built for Walrus Sessions Session 2 · May 5–18, 2026
-        </p>
       </div>
     </section>
   );
 }
 
-function Footer() {
+function Squiggle() {
+  const heights = [30, 42, 38, 55, 48, 62, 58, 75, 70, 85, 80];
   return (
-    <footer className="border-t border-border bg-card">
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <p className="font-mono text-sm text-foreground">catat</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">forms with proof · MIT licensed</p>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <a
-              href="https://github.com/PugarHuda/catat"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition hover:text-foreground"
-            >
-              GitHub
-            </a>
-            <span className="text-muted-foreground/40">·</span>
-            <a
-              href="https://docs.wal.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition hover:text-foreground"
-            >
-              Walrus docs
-            </a>
-            <span className="text-muted-foreground/40">·</span>
-            <a
-              href="https://docs.sui.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition hover:text-foreground"
-            >
-              Sui docs
-            </a>
-          </div>
-        </div>
-        <p className="mt-4 font-mono text-[10px] text-muted-foreground/60">
-          Built with @mysten/walrus · @mysten/seal · @mysten/sui · Deployed on Walrus testnet · Frontend on Vercel
-        </p>
-      </div>
-    </footer>
-  );
-}
-
-interface DiffCardProps {
-  number: string;
-  title: string;
-  desc: string;
-}
-
-function DiffCard({ number, title, desc }: DiffCardProps) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-5 transition hover:border-foreground/20">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{number}</div>
-      <h3 className="mt-2 text-base font-semibold leading-snug">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-    </div>
-  );
-}
-
-interface StepCardProps {
-  step: string;
-  title: string;
-  desc: string;
-  tagline: string;
-}
-
-function StepCard({ step, title, desc, tagline }: StepCardProps) {
-  return (
-    <div className="relative rounded-lg border border-border bg-card p-6 transition hover:border-foreground/20">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">step {step}</div>
-      <h3 className="mt-2 text-xl font-semibold tracking-tight">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-      <p className="mt-3 inline-flex rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        {tagline}
-      </p>
+    <div className="squiggle-chart" aria-hidden="true">
+      {heights.map((h, i) => (
+        <span key={i} className="bar" style={{ height: `${h}%` }} />
+      ))}
+      <span className="bar now" style={{ height: '96%' }} />
     </div>
   );
 }
 
 interface FeatureCardProps {
-  icon: LucideIcon;
-  title: string;
-  desc: string;
+  num: string;
   tag: string;
+  title: string;
+  children: ReactNode;
+  wide?: boolean;
+  tape?: boolean;
+  numColor?: 'red' | 'blue' | 'ink-yellow' | 'yellow';
 }
 
-function FeatureCard({ icon: Icon, title, desc, tag }: FeatureCardProps) {
+function FeatureCard({ num, tag, title, children, wide, tape, numColor }: FeatureCardProps) {
+  const numClass = numColor ? ` ${numColor}` : '';
   return (
-    <div
-      className={cn(
-        'group relative rounded-lg border border-border bg-card p-5 transition',
-        'hover:border-foreground/20 hover:shadow-sm',
-      )}
-    >
-      <div className="flex items-start justify-between">
-        <Icon className="h-4 w-4 text-muted-foreground transition group-hover:text-foreground" />
-        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60">{tag}</span>
+    <article className={`feat-card${wide ? ' wide' : ''}`}>
+      {tape && <div className="tape" />}
+      <div className="card-h">
+        <span className={`card-num${numClass}`}>{num}</span>
+        <span className="card-tag">{tag}</span>
       </div>
-      <h3 className="mt-3 text-sm font-semibold">{title}</h3>
-      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{desc}</p>
+      <h3>{title}</h3>
+      <div className="feat-body">{children}</div>
+    </article>
+  );
+}
+
+function HowItWorks() {
+  return (
+    <section className="how" id="how">
+      <div className="wrap">
+        <span className="section-eyebrow">— how it works —</span>
+        <h2 className="section-title">Three steps. No backend.</h2>
+
+        <div className="how-grid">
+          <Step n="01" title="Build">
+            <p>Drag-drop fields, toggle 🔒 per field, set a token gate. Schema lands on Walrus, a Sui shared object is minted.</p>
+            <StepArt rows={[['title field', 'added'], ['email · sealed', '🔒 on'], ['schema → walrus', 'bafy…2x9']]} />
+          </Step>
+          <Step n="02" title="Share" bg="postit">
+            <p>Drop a link, embed the form in your docs, paste a QR onto a poster. Optionally token-gate.</p>
+            <StepArt rows={[['catat.wal.app/f/', '0x4a2c…b91'], ['QR generated', '✓'], ['token gate', 'off']]} />
+          </Step>
+          <Step n="03" title="Verify" bg="postit-mint">
+            <p>Every reply ships with a Sui tx hash + Walrus blob ID. Anyone can recompute your counts straight from chain.</p>
+            <StepArt rows={[['SubmissionAdded', '✓'], ['tx', '0x4a2c…b91'], ['count', 'live']]} />
+          </Step>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Step({ n, title, children, bg }: { n: string; title: string; children: ReactNode; bg?: 'postit' | 'postit-mint' }) {
+  return (
+    <div className={`step${bg ? ` bg-${bg}` : ''}`}>
+      <div className="step-num">{n}</div>
+      <h4>{title}</h4>
+      {children}
     </div>
   );
 }
 
-interface PersonaCardProps {
-  icon: LucideIcon;
-  title: string;
-  desc: string;
+function StepArt({ rows }: { rows: Array<[string, string]> }) {
+  return (
+    <div className="step-art">
+      {rows.map(([k, v], i) => (
+        <div key={i} className="tx-line">
+          <span>{k}</span>
+          <b>{v}</b>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-function PersonaCard({ icon: Icon, title, desc }: PersonaCardProps) {
+function CTA({ onEnterApp }: Props) {
   return (
-    <div className="flex gap-4 rounded-lg border border-border bg-background p-5 transition hover:border-foreground/20">
-      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-      <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+    <section className="cta-section">
+      <div className="wrap">
+        <div className="envelope">
+          <div>
+            <h2>Ship the first form on <span className="marker">Walrus.</span></h2>
+            <p>Free on testnet. Connect a Sui wallet, pick a template, and have a verifiable form live in 90 seconds.</p>
+            <div className="cta-row" style={{ marginTop: 24 }}>
+              <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+                Open the notebook
+                <Arrow />
+              </button>
+              <a href="https://github.com/PugarHuda/catat" target="_blank" rel="noopener noreferrer" className="btn">
+                View on GitHub
+              </a>
+            </div>
+          </div>
+          <div className="cta-receipt">
+            <div className="cta-receipt-title">📝 receipt — what you get</div>
+            <ReceiptRow k="form runner" v="walrus blob" />
+            <ReceiptRow k="schema" v="walrus blob" />
+            <ReceiptRow k="registry" v="sui shared obj" />
+            <ReceiptRow k="per-field keys" v="seal · 2-of-3" />
+            <ReceiptRow k="hosting" v="walrus sites" />
+            <div style={{ marginTop: 8, borderTop: '1.5px dashed var(--ink)', paddingTop: 8 }}>
+              <ReceiptRow k="price" v={<span style={{ color: 'var(--marker-red)' }}>free.</span>} />
+            </div>
+          </div>
+        </div>
       </div>
+    </section>
+  );
+}
+
+function ReceiptRow({ k, v }: { k: string; v: ReactNode }) {
+  return (
+    <div className="cta-receipt-row">
+      <span>{k}</span>
+      <b>{v}</b>
     </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer>
+      <div className="wrap foot">
+        <div>
+          <div>© 2026 catat · MIT · built on Sui &amp; Walrus</div>
+          <div className="signature-line">— sketched on real paper, served from Walrus.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 24 }}>
+          <a href="https://github.com/PugarHuda/catat" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://docs.wal.app" target="_blank" rel="noopener noreferrer">Walrus docs</a>
+          <a href="https://docs.sui.io" target="_blank" rel="noopener noreferrer">Sui docs</a>
+          <a href={suiscanObject(BUG_REPORT_FORM_ID)} target="_blank" rel="noopener noreferrer">Form on Suiscan</a>
+        </div>
+      </div>
+    </footer>
   );
 }
