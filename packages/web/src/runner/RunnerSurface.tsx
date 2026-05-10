@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Send, Loader2, AlertTriangle, Wallet } from 'lucide-react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
 import { walrus, WalrusFile } from '@mysten/walrus';
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
 import type { FormSchema } from '../builder/types';
@@ -9,6 +10,11 @@ import RunnerReview, { type SerializedSubmission } from './RunnerReview';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import type { Surface } from '@/lib/surfaces';
+import {
+  BUG_REPORT_FORM_ID,
+  CATAT_PACKAGE_ID,
+  SUI_CLOCK_OBJECT_ID,
+} from '@/lib/contract';
 import { cn } from '@/lib/utils';
 
 type SubmitState =
@@ -126,7 +132,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
 
     const submissionPayload = {
       version: '1.0',
-      form_id: '0xtest_form_object_id',
+      form_id: BUG_REPORT_FORM_ID,
       submitted_at_ms: Date.now(),
       submitter: account.address,
       values: submissionValues,
@@ -154,12 +160,25 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
       setSubmitState({ kind: 'submitting', step: 'Uploading to storage nodes…' });
       await flow.upload({ digest: registerResult.digest });
 
-      setSubmitState({ kind: 'submitting', step: 'Sign certification', subStep: '2 of 2' });
+      setSubmitState({ kind: 'submitting', step: 'Sign Walrus certify', subStep: '2 of 3' });
       const certifyTx = flow.certify();
       const certifyResult = await signAndExecute({ transaction: certifyTx });
 
       const filesUploaded = await flow.listFiles();
       const blobId = filesUploaded[0]?.blobId ?? 'unknown';
+
+      // Step 3: Record blob_id on Sui via catat::form::submit
+      setSubmitState({ kind: 'submitting', step: 'Sign Sui registry record', subStep: '3 of 3' });
+      const recordTx = new Transaction();
+      recordTx.moveCall({
+        target: `${CATAT_PACKAGE_ID}::form::submit`,
+        arguments: [
+          recordTx.object(BUG_REPORT_FORM_ID),
+          recordTx.pure.string(blobId),
+          recordTx.object(SUI_CLOCK_OBJECT_ID),
+        ],
+      });
+      const recordResult = await signAndExecute({ transaction: recordTx });
 
       setSubmitted({
         version: '1.0',
@@ -170,7 +189,9 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
         values: submissionValues,
         _meta_encrypted_field_ids: encryptedFieldIds,
         _real_blob_id: blobId,
-        _real_tx_hash: certifyResult.digest,
+        _real_tx_hash: recordResult.digest,
+        _real_walrus_certify_tx: certifyResult.digest,
+        _real_form_id: BUG_REPORT_FORM_ID,
       });
       setSubmitState({ kind: 'idle' });
     } catch (e) {
@@ -276,8 +297,8 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
           </button>
 
           <p className="text-center font-mono text-[11px] leading-relaxed text-muted-foreground/70">
-            real submit · 2 wallet sigs (reserve + certify) · ~10 epochs storage
-            {hasEncrypted && ' · encrypted fields shown as plaintext in this MVP (Seal pending)'}
+            real submit · 3 wallet sigs (Walrus reserve + certify + Sui record) · ~10 epochs storage
+            {hasEncrypted && ' · encrypted fields plaintext in MVP (Seal pending)'}
           </p>
         </div>
       </main>

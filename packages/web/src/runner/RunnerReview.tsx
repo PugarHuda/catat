@@ -16,8 +16,12 @@ export interface SerializedSubmission {
   _meta_encrypted_field_ids: string[];
   /** Real Walrus blob ID returned after upload (only present after a real submit) */
   _real_blob_id?: string;
-  /** Real Sui certify-tx hash (only present after a real submit) */
+  /** Real Sui tx hash from catat::form::submit (the registry record) */
   _real_tx_hash?: string;
+  /** Real Sui tx hash from Walrus certify (kept for transparency) */
+  _real_walrus_certify_tx?: string;
+  /** On-chain Form object that recorded this submission */
+  _real_form_id?: string;
 }
 
 interface Props {
@@ -32,7 +36,14 @@ interface Props {
 export default function RunnerReview({ schema, submission, onReset, surface, onSurfaceChange, onHome }: Props) {
   const [copied, setCopied] = useState(false);
 
-  const { _meta_encrypted_field_ids, _real_blob_id, _real_tx_hash, ...payload } = submission;
+  const {
+    _meta_encrypted_field_ids,
+    _real_blob_id,
+    _real_tx_hash,
+    _real_walrus_certify_tx,
+    _real_form_id,
+    ...payload
+  } = submission;
   const submissionJson = JSON.stringify(payload, null, 2);
   const sizeBytes = new Blob([submissionJson]).size;
   const isReal = Boolean(_real_blob_id);
@@ -90,15 +101,29 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
         {isReal && _real_blob_id && _real_tx_hash && (
           <div className="mb-6 grid gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 sm:grid-cols-2">
             <ExplorerRow
-              label="blob_id"
+              label="walrus blob_id"
               value={_real_blob_id}
               href={`https://walruscan.com/testnet/blob/${_real_blob_id.replace(/^blob_/, '')}`}
             />
             <ExplorerRow
-              label="tx_hash"
+              label="sui registry tx"
               value={_real_tx_hash}
               href={`https://suiscan.xyz/testnet/tx/${_real_tx_hash}`}
             />
+            {_real_form_id && (
+              <ExplorerRow
+                label="form object"
+                value={_real_form_id}
+                href={`https://suiscan.xyz/testnet/object/${_real_form_id}`}
+              />
+            )}
+            {_real_walrus_certify_tx && (
+              <ExplorerRow
+                label="walrus certify tx"
+                value={_real_walrus_certify_tx}
+                href={`https://suiscan.xyz/testnet/tx/${_real_walrus_certify_tx}`}
+              />
+            )}
           </div>
         )}
 

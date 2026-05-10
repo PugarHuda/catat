@@ -8,7 +8,12 @@
 import 'dotenv/config';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
+import { Transaction } from '@mysten/sui/transactions';
 import { walrus, WalrusFile } from '@mysten/walrus';
+
+const CATAT_PACKAGE_ID = '0xe270518be3f37a2a9c65007af2ace7967ee087cf12c950de16b2987606269441';
+const BUG_REPORT_FORM_ID = '0xe88fda404fe15a122c57ed220e668ec21a3f4119f2c38c65e490fbccd1e3a34e';
+const SUI_CLOCK_OBJECT_ID = '0x6';
 
 const kp = Ed25519Keypair.fromSecretKey(req('SUI_PRIVATE_KEY'));
 const address = kp.toSuiAddress();
@@ -118,6 +123,56 @@ if (!match) {
   console.log('expected:', JSON.stringify(submissionPayload).slice(0, 200));
   console.log('got     :', JSON.stringify(readJson).slice(0, 200));
 }
+
+console.log();
+console.log('=== [5/5] Sui registry submit (catat::form::submit) ===');
+const t4 = Date.now();
+
+// Read form count BEFORE
+type FormFields = { submission_blob_ids: string[]; accept_submissions: boolean };
+const beforeObj = await sui.getObject({
+  id: BUG_REPORT_FORM_ID,
+  options: { showContent: true },
+});
+const beforeFields = (beforeObj.data?.content as { fields?: FormFields } | undefined)?.fields;
+const countBefore = beforeFields?.submission_blob_ids.length ?? 0;
+console.log('count before:', countBefore);
+
+const recordTx = new Transaction();
+recordTx.moveCall({
+  target: `${CATAT_PACKAGE_ID}::form::submit`,
+  arguments: [
+    recordTx.object(BUG_REPORT_FORM_ID),
+    recordTx.pure.string(blobId),
+    recordTx.object(SUI_CLOCK_OBJECT_ID),
+  ],
+});
+const recordResult = await sui.signAndExecuteTransaction({
+  transaction: recordTx,
+  signer: kp,
+  options: { showEffects: true, showEvents: true },
+});
+console.log('record tx digest:', recordResult.digest);
+console.log('record status   :', recordResult.effects?.status.status);
+console.log('done in', Date.now() - t4, 'ms');
+
+const afterObj = await sui.getObject({
+  id: BUG_REPORT_FORM_ID,
+  options: { showContent: true },
+});
+const afterFields = (afterObj.data?.content as { fields?: FormFields } | undefined)?.fields;
+const countAfter = afterFields?.submission_blob_ids.length ?? 0;
+console.log('count after :', countAfter);
+console.log('count delta :', countAfter - countBefore, countAfter === countBefore + 1 ? '✅' : '❌');
+
+const lastBlobId = afterFields?.submission_blob_ids[countAfter - 1];
+console.log('last blob in form matches:', lastBlobId === blobId ? '✅' : '❌');
+console.log('   expected:', blobId);
+console.log('   got     :', lastBlobId);
+
+console.log();
+console.log('=== Form on-chain ===');
+console.log('https://suiscan.xyz/testnet/object/' + BUG_REPORT_FORM_ID);
 
 function req(k: string): string {
   const v = process.env[k];
