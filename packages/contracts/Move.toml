@@ -1,0 +1,12 @@
+[package]
+name = "catat"
+version = "0.0.1"
+edition = "2024.beta"
+authors = ["Pugar Huda Mantoro"]
+license = "MIT"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", override = true }
+
+[addresses]
+catat = "0x0"

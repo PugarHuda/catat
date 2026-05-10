@@ -1,0 +1,125 @@
+name: Publish Move Package
+
+# Manual trigger only — publishing burns gas + creates new package each run.
+# After a successful run, copy package_id + form_id from the step summary
+# into packages/web/src/lib/contract.ts.
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Form title to create after publish
+        required: true
+        default: 'Walrus Bug Report'
+      schema_blob_id:
+        description: Walrus blob_id of the form schema (use placeholder for now)
+        required: true
+        default: 'blob_pending_schema_upload'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Sui CLI (testnet release)
+        run: |
+          set -euo pipefail
+          # Find latest testnet release
+          TAG=$(curl -sL https://api.github.com/repos/MystenLabs/sui/releases \
+            | jq -r '[.[] | select(.prerelease==false) | select(.tag_name | test("testnet"))][0].tag_name')
+          echo "Installing Sui CLI: $TAG"
+          ASSET="sui-${TAG}-ubuntu-x86_64.tgz"
+          curl -sSfL "https://github.com/MystenLabs/sui/releases/download/${TAG}/${ASSET}" -o sui.tgz
+          tar xzf sui.tgz
+          sudo mv sui /usr/local/bin/
+          sui --version
+
+      - name: Configure Sui wallet from secret
+        env:
+          PRIVATE_KEY: ${{ secrets.SUI_BECH32_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.sui/sui_config
+          # Init sui client (creates default config) — answer no to default keystore
+          yes n 2>/dev/null | sui client --yes 2>/dev/null || true
+          # Add testnet env if missing
+          sui client new-env --alias testnet --rpc https://fullnode.testnet.sui.io:443 || true
+          sui client switch --env testnet
+          # Import the deploy key
+          sui keytool import "$PRIVATE_KEY" ed25519
+          ADDR=$(sui client addresses --json | jq -r '.addresses[0][1]')
+          sui client switch --address "$ADDR"
+          echo "Using address: $ADDR"
+          sui client gas
+
+      - name: Build Move package
+        working-directory: packages/contracts
+        run: sui move build
+
+      - name: Publish package
+        id: publish
+        working-directory: packages/contracts
+        run: |
+          set -euo pipefail
+          echo "Publishing..."
+          sui client publish --gas-budget 500000000 --json > publish.json
+          PACKAGE_ID=$(jq -r '.objectChanges[] | select(.type == "published") | .packageId' publish.json)
+          if [ -z "$PACKAGE_ID" ] || [ "$PACKAGE_ID" = "null" ]; then
+            echo "❌ Failed to extract package_id"
+            cat publish.json
+            exit 1
+          fi
+          echo "package_id=$PACKAGE_ID" >> "$GITHUB_OUTPUT"
+          {
+            echo "## ✅ Published Move package"
+            echo ""
+            echo "**Package ID**: \`$PACKAGE_ID\`"
+            echo ""
+            echo "Suiscan: https://suiscan.xyz/testnet/object/$PACKAGE_ID"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create initial Form object
+        id: create_form
+        run: |
+          set -euo pipefail
+          PKG=${{ steps.publish.outputs.package_id }}
+          TITLE='${{ inputs.title }}'
+          SCHEMA='${{ inputs.schema_blob_id }}'
+          echo "Calling $PKG::form::create_form(\"$TITLE\", \"$SCHEMA\")"
+          sui client call \
+            --package "$PKG" \
+            --module form \
+            --function create_form \
+            --args "$TITLE" "$SCHEMA" \
+            --gas-budget 100000000 \
+            --json > create.json
+          FORM_ID=$(jq -r '.objectChanges[] | select(.objectType != null) | select(.objectType | endswith("::form::Form")) | .objectId' create.json)
+          if [ -z "$FORM_ID" ] || [ "$FORM_ID" = "null" ]; then
+            echo "❌ Failed to extract form_id"
+            cat create.json
+            exit 1
+          fi
+          echo "form_id=$FORM_ID" >> "$GITHUB_OUTPUT"
+          {
+            echo ""
+            echo "## ✅ Created Form object"
+            echo ""
+            echo "**Form ID**: \`$FORM_ID\`"
+            echo "**Title**: $TITLE"
+            echo ""
+            echo "Suiscan: https://suiscan.xyz/testnet/object/$FORM_ID"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Output snippet for frontend
+        run: |
+          PKG=${{ steps.publish.outputs.package_id }}
+          FORM=${{ steps.create_form.outputs.form_id }}
+          {
+            echo ""
+            echo "## 📋 Copy into packages/web/src/lib/contract.ts"
+            echo ""
+            echo '```ts'
+            echo "export const CATAT_PACKAGE_ID = '$PKG';"
+            echo "export const BUG_REPORT_FORM_ID = '$FORM';"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
