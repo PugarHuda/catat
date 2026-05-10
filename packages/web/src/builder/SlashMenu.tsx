@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FieldType } from './types';
 import { fieldMeta, groupOrder, groupLabels } from './fieldMeta';
-import { cn } from '@/lib/utils';
 
 interface Props {
   onSelect: (type: FieldType) => void;
@@ -15,7 +14,6 @@ export default function SlashMenu({ onSelect, onClose }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const allEntries = Object.entries(fieldMeta) as Array<[FieldType, (typeof fieldMeta)[FieldType]]>;
-
   const filtered = query
     ? allEntries.filter(([, m]) => m.label.toLowerCase().includes(query.toLowerCase()))
     : allEntries;
@@ -52,18 +50,24 @@ export default function SlashMenu({ onSelect, onClose }: Props) {
   };
 
   const grouped = groupOrder
-    .map(g => ({
-      group: g,
-      items: filtered.filter(([, m]) => m.group === g),
-    }))
+    .map(g => ({ group: g, items: filtered.filter(([, m]) => m.group === g) }))
     .filter(g => g.items.length > 0);
 
   return (
     <div
       ref={menuRef}
-      className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-xl"
+      style={{
+        position: 'absolute', left: 0, right: 0, top: '100%',
+        zIndex: 20, marginTop: 6,
+        background: 'var(--paper-2)',
+        border: '2px solid var(--ink)',
+        borderRadius: 8,
+        boxShadow: '4px 4px 0 var(--ink)',
+        overflow: 'hidden',
+        transform: 'rotate(-0.4deg)',
+      }}
     >
-      <div className="border-b border-border px-3 py-2">
+      <div style={{ padding: '10px 12px', borderBottom: '1.5px dashed var(--line)' }}>
         <input
           ref={inputRef}
           value={query}
@@ -72,45 +76,69 @@ export default function SlashMenu({ onSelect, onClose }: Props) {
             setActiveIdx(0);
           }}
           onKeyDown={onKeyDown}
-          placeholder="Search field types..."
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          placeholder="Search field types…"
+          style={{
+            width: '100%',
+            fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--ink)',
+            background: 'transparent', border: 0, outline: 0,
+            padding: '2px 4px',
+            borderBottom: '1.5px solid var(--ink)',
+          }}
         />
       </div>
 
-      <div className="max-h-80 overflow-y-auto p-1">
+      <div style={{ maxHeight: 360, overflowY: 'auto', padding: 6 }}>
         {grouped.length === 0 && (
-          <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-            No field type matches "{query}"
+          <div style={{ padding: '20px 12px', textAlign: 'center', fontFamily: 'var(--hand)', color: 'var(--pencil)' }}>
+            No field type matches &ldquo;{query}&rdquo;
           </div>
         )}
-
         {grouped.map(({ group, items }) => (
-          <div key={group} className="mb-1">
-            <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {groupLabels[group]}
-            </div>
+          <div key={group} style={{ marginBottom: 6 }}>
+            <div className="palette-section">{groupLabels[group]}</div>
             {items.map(([type, m]) => {
               const idxInFiltered = filtered.findIndex(([t]) => t === type);
               const isActive = idxInFiltered === activeIdx;
-              const Icon = m.icon;
               return (
                 <button
                   key={type}
                   type="button"
                   onClick={() => onSelect(type)}
                   onMouseEnter={() => setActiveIdx(idxInFiltered)}
-                  className={cn(
-                    'flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-left text-sm transition',
-                    isActive ? 'bg-accent text-accent-foreground' : 'text-foreground',
-                  )}
+                  className="palette-item"
+                  style={{
+                    width: '100%',
+                    background: isActive ? 'var(--postit)' : 'var(--paper)',
+                    transform: isActive ? 'translate(-1px, -1px)' : 'none',
+                    marginBottom: 4,
+                  }}
                 >
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{m.label}</div>
-                    <div className="truncate text-xs text-muted-foreground">{m.description}</div>
+                  <span className="ico">
+                    {type === 'short_text' ? 'Aa' :
+                     type === 'rich_text' ? '¶' :
+                     type === 'dropdown' ? '◉' :
+                     type === 'checkboxes' ? '☑' :
+                     type === 'star_rating' ? '★' :
+                     type === 'image_upload' ? '📎' :
+                     type === 'video_upload' ? '🎬' :
+                     type === 'url' ? '🔗' :
+                     type === 'email' ? '@' :
+                     type === 'wallet_address' ? '◊' :
+                     type === 'number' ? '#' :
+                     type === 'date' ? '📅' : '?'}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--ink)' }}>{m.label}</div>
+                    <div style={{ fontFamily: 'var(--type)', fontSize: 10, color: 'var(--pencil)', letterSpacing: '.04em' }}>{m.description}</div>
                   </div>
                   {group === 'web3' && (
-                    <span className="shrink-0 rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-emerald-700">
+                    <span style={{
+                      fontFamily: 'var(--type)', fontSize: 9,
+                      letterSpacing: '.1em', textTransform: 'uppercase',
+                      padding: '2px 6px', borderRadius: 4,
+                      background: 'var(--postit-mint)', color: 'var(--marker-green)',
+                      border: '1px solid var(--marker-green)',
+                    }}>
                       catat
                     </span>
                   )}
@@ -121,16 +149,16 @@ export default function SlashMenu({ onSelect, onClose }: Props) {
         ))}
       </div>
 
-      <div className="flex items-center gap-3 border-t border-border bg-muted/40 px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
-        <span>
-          <kbd className="rounded border border-border bg-background px-1 py-px">↑↓</kbd> nav
-        </span>
-        <span>
-          <kbd className="rounded border border-border bg-background px-1 py-px">↵</kbd> add
-        </span>
-        <span>
-          <kbd className="rounded border border-border bg-background px-1 py-px">esc</kbd> close
-        </span>
+      <div style={{
+        padding: '6px 12px', borderTop: '1.5px dashed var(--line)',
+        background: 'var(--paper-edge)',
+        fontFamily: 'var(--type)', fontSize: 10, color: 'var(--pencil)',
+        letterSpacing: '.06em',
+        display: 'flex', gap: 12,
+      }}>
+        <span>↑↓ nav</span>
+        <span>↵ add</span>
+        <span>esc close</span>
       </div>
     </div>
   );

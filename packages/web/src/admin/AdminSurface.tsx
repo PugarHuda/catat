@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Download, RefreshCw, Loader2 } from 'lucide-react';
 import type { FormSchema } from '../builder/types';
 import type { Submission, Status, AdminFilters as Filters, SortKey } from './types';
 import AdminFilters from './AdminFilters';
@@ -8,8 +7,8 @@ import AdminDetail from './AdminDetail';
 import { useRealSubmissions } from './useRealSubmissions';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
+import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
-import { cn } from '@/lib/utils';
 
 interface Props {
   schema: FormSchema;
@@ -26,11 +25,9 @@ const PRIORITY_WEIGHT: Record<string, number> = { high: 3, medium: 2, low: 1 };
 function severityWeight(s: Submission): number {
   return SEVERITY_WEIGHT[(s.values.f_severity as string) ?? ''] ?? 0;
 }
-
 function priorityWeight(s: Submission): number {
   return PRIORITY_WEIGHT[s.priority] ?? 0;
 }
-
 function hasEncryptedField(s: Submission): boolean {
   return Object.values(s.values).some(
     v => v != null && typeof v === 'object' && (v as { encrypted?: boolean }).encrypted === true,
@@ -50,8 +47,6 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
   const realQuery = useRealSubmissions();
   const realSubmissions = realQuery.data ?? [];
 
-  // Real submissions appear first (newest demo of "your submission is here").
-  // Local status edits to mock submissions persist in `submissions` state.
   const allSubmissions = useMemo(
     () => [...realSubmissions, ...submissions],
     [realSubmissions, submissions],
@@ -81,8 +76,6 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
   }, [allSubmissions, filters, sort]);
 
   const updateSubmission = (id: string, patch: Partial<Submission>) => {
-    // Walrus-sourced submissions can't have status persisted yet (next: localStorage).
-    // For now, mutating mock submissions only.
     onSubmissionsChange(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)));
   };
 
@@ -90,27 +83,18 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const inEditable =
-        t.tagName === 'INPUT' ||
-        t.tagName === 'TEXTAREA' ||
-        t.tagName === 'SELECT' ||
-        t.isContentEditable;
+        t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable;
 
       if (e.key === 'Escape' && openId) {
         e.preventDefault();
         setOpenId(null);
         return;
       }
-
       if (inEditable) return;
 
       if (openId) {
-        if (e.key === 'y') {
-          e.preventDefault();
-          updateSubmission(openId, { status: 'resolved' });
-        } else if (e.key === 'x') {
-          e.preventDefault();
-          updateSubmission(openId, { status: 'archived' });
-        }
+        if (e.key === 'y') { e.preventDefault(); updateSubmission(openId, { status: 'resolved' }); }
+        else if (e.key === 'x') { e.preventDefault(); updateSubmission(openId, { status: 'archived' }); }
         return;
       }
 
@@ -129,7 +113,6 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
         setOpenId(focusedId);
       }
     };
-
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,9 +120,10 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
 
   const counts = {
     total: allSubmissions.length,
-    new: allSubmissions.filter(s => s.status === 'new').length,
     real: realSubmissions.length,
     mock: submissions.length,
+    sealed: allSubmissions.filter(hasEncryptedField).length,
+    new: allSubmissions.filter(s => s.status === 'new').length,
   };
 
   const handleExport = () => {
@@ -155,72 +139,58 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
     URL.revokeObjectURL(url);
   };
 
-  const openSubmission = openId ? submissions.find(s => s.id === openId) ?? null : null;
+  const openSubmission = openId ? allSubmissions.find(s => s.id === openId) ?? null : null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-12 max-w-6xl items-center gap-3 px-6 text-sm">
-          <button
-            type="button"
-            onClick={onHome}
-            className="font-mono text-foreground transition hover:text-muted-foreground"
-            title="Back to landing"
-          >
+    <>
+      <header className="nav">
+        <div className="wrap nav-row">
+          <button type="button" onClick={onHome} className="brand" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
+            <BrandGlyph />
             catat
+            <small>· inbox</small>
           </button>
-          <span className="text-muted-foreground">/</span>
-          <span className="min-w-0 flex-1 truncate font-medium">{schema.title}</span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} count={{ admin: counts.total }} />
-          <WalletButton />
-          <button
-            type="button"
-            onClick={() => realQuery.refetch()}
-            disabled={realQuery.isFetching}
-            className={cn(
-              'flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition',
-              realQuery.isFetching
-                ? 'cursor-not-allowed text-muted-foreground/40'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-            )}
-            title="Refresh from chain"
-          >
-            {realQuery.isFetching ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-            Refresh
-          </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground"
-          >
-            <Download className="h-3.5 w-3.5" /> Export CSV
-          </button>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <WalletButton />
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 xl:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-[11px]">
-            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-1.5 py-0.5 font-mono text-emerald-700">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              </span>
-              {counts.real} on-chain
-            </span>
-            <span className="font-mono text-muted-foreground/60">+</span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-muted-foreground">
-              {counts.mock} demo
-            </span>
-            {realQuery.isError && (
-              <span className="font-mono text-destructive">
-                · chain read failed: {(realQuery.error as Error).message.slice(0, 60)}
-              </span>
-            )}
+      <div className="wrap">
+        <div className="sheet">
+          <div className="sheet-head">
+            <span>Inbox · responses ledger</span>
+            <span className="date">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+          </div>
+          <h1 style={{ fontFamily: 'var(--hand)', fontWeight: 700, fontSize: 'clamp(40px, 5vw, 64px)', lineHeight: 1, margin: '0 0 8px', color: 'var(--ink)' }}>
+            The <span className="marker">ledger.</span>
+          </h1>
+          <p style={{ fontFamily: 'var(--body)', fontSize: 18, color: 'var(--ink-soft)', margin: '0 0 22px', maxWidth: '60ch' }}>
+            Every reply has an on-chain receipt. Sealed fields stay encrypted — click decrypt to fetch the Seal share with your wallet.
+          </p>
+
+          <div className="adm-stats">
+            <div className="stat">
+              <div className="label">replies</div>
+              <b>{counts.total}</b>
+              <small>{counts.real} on-chain · {counts.mock} demo</small>
+            </div>
+            <div className="stat">
+              <div className="label">sealed</div>
+              <b>{counts.sealed}</b>
+              <small>2-of-3 keys</small>
+            </div>
+            <div className="stat">
+              <div className="label">new</div>
+              <b>{counts.new}</b>
+              <small>not triaged yet</small>
+            </div>
+            <div className="stat">
+              <div className="label">storage</div>
+              <b>10 ep</b>
+              <small>per submission</small>
+            </div>
           </div>
 
           <AdminFilters
@@ -231,51 +201,57 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
             totalShown={filtered.length}
             totalAll={counts.total}
           />
-          <AdminTable
-            submissions={filtered}
-            focusedId={focusedId}
-            openId={openId}
-            onFocus={setFocusedId}
-            onOpen={setOpenId}
-          />
+
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <button type="button" className="export-btn-paper" onClick={() => realQuery.refetch()} disabled={realQuery.isFetching}>
+              {realQuery.isFetching ? '⟳ refreshing…' : '⟳ refresh chain'}
+            </button>
+            <button type="button" className="export-btn-paper" onClick={handleExport}>
+              ⬇ export CSV
+            </button>
+          </div>
+
+          <div className="admin-grid">
+            <AdminTable
+              submissions={filtered}
+              focusedId={focusedId}
+              openId={openId}
+              onFocus={setFocusedId}
+              onOpen={setOpenId}
+            />
+
+            {openSubmission && (
+              <AdminDetail
+                schema={schema}
+                submission={openSubmission}
+                onUpdate={patch => updateSubmission(openSubmission.id, patch)}
+                onClose={() => setOpenId(null)}
+              />
+            )}
+          </div>
+
+          <p style={{
+            marginTop: 22, textAlign: 'center',
+            fontFamily: 'var(--type)', fontSize: 11, color: 'var(--pencil)',
+            letterSpacing: '.06em',
+          }}>
+            keyboard ·{' '}
+            <kbd style={{ fontFamily: 'var(--mono)', background: 'var(--paper-edge)', padding: '1px 4px', borderRadius: 3 }}>j</kbd>{' '}
+            <kbd style={{ fontFamily: 'var(--mono)', background: 'var(--paper-edge)', padding: '1px 4px', borderRadius: 3 }}>k</kbd> nav ·{' '}
+            <kbd style={{ fontFamily: 'var(--mono)', background: 'var(--paper-edge)', padding: '1px 4px', borderRadius: 3 }}>↵</kbd> open ·{' '}
+            <kbd style={{ fontFamily: 'var(--mono)', background: 'var(--paper-edge)', padding: '1px 4px', borderRadius: 3 }}>y</kbd> resolve ·{' '}
+            <kbd style={{ fontFamily: 'var(--mono)', background: 'var(--paper-edge)', padding: '1px 4px', borderRadius: 3 }}>x</kbd> archive ·{' '}
+            <kbd style={{ fontFamily: 'var(--mono)', background: 'var(--paper-edge)', padding: '1px 4px', borderRadius: 3 }}>esc</kbd> close
+          </p>
         </div>
-
-        {openSubmission && (
-          <AdminDetail
-            schema={schema}
-            submission={openSubmission}
-            onUpdate={patch => updateSubmission(openSubmission.id, patch)}
-            onClose={() => setOpenId(null)}
-          />
-        )}
-      </main>
-
-      <p className="pb-8 text-center font-mono text-[11px] text-muted-foreground/60">
-        prototype · {filtered.length} of {counts.total} shown · keyboard:{' '}
-        <kbd className="rounded border border-border bg-muted px-1">j</kbd>{' '}
-        <kbd className="rounded border border-border bg-muted px-1">k</kbd> nav ·{' '}
-        <kbd className="rounded border border-border bg-muted px-1">↵</kbd> open ·{' '}
-        <kbd className="rounded border border-border bg-muted px-1">y</kbd> resolve ·{' '}
-        <kbd className="rounded border border-border bg-muted px-1">x</kbd> archive ·{' '}
-        <kbd className="rounded border border-border bg-muted px-1">esc</kbd> close
-      </p>
-    </div>
+      </div>
+    </>
   );
 }
 
 function exportToCsv(schema: FormSchema, submissions: Submission[]): string {
   const fieldHeaders = schema.fields.map(f => (f.encrypted ? `${f.label} [encrypted]` : f.label));
-  const headers = [
-    'id',
-    'status',
-    'priority',
-    'submitted_at_iso',
-    'submitter',
-    'blob_id',
-    'tx_hash',
-    ...fieldHeaders,
-  ];
-
+  const headers = ['id', 'status', 'priority', 'submitted_at_iso', 'submitter', 'blob_id', 'tx_hash', 'source', ...fieldHeaders];
   const rows = submissions.map(s => {
     const meta = [
       s.id,
@@ -285,6 +261,7 @@ function exportToCsv(schema: FormSchema, submissions: Submission[]): string {
       s.submitter ?? '',
       s.blob_id,
       s.tx_hash,
+      s.source ?? 'mock',
     ];
     const fieldValues = schema.fields.map(f => {
       const v = s.values[f.id];
@@ -299,7 +276,6 @@ function exportToCsv(schema: FormSchema, submissions: Submission[]): string {
     });
     return [...meta, ...fieldValues];
   });
-
   return [headers, ...rows].map(row => row.map(escapeCsvCell).join(',')).join('\n');
 }
 

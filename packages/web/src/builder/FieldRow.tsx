@@ -1,173 +1,162 @@
-import { useState } from 'react';
-import { Trash2, ArrowUp, ArrowDown, Lock, Asterisk } from 'lucide-react';
 import type { Field } from './types';
-import { fieldMeta } from './fieldMeta';
-import { cn } from '@/lib/utils';
 
 interface Props {
   field: Field;
   index: number;
   total: number;
+  selected: boolean;
+  onSelect: () => void;
   onUpdate: (patch: Partial<Field>) => void;
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
 }
 
-export default function FieldRow({ field, index, total, onUpdate, onRemove, onMove }: Props) {
-  const [hover, setHover] = useState(false);
-  const meta = fieldMeta[field.type];
-  const Icon = meta.icon;
-
+export default function FieldRow({ field, index, total, selected, onSelect, onUpdate, onRemove, onMove }: Props) {
   return (
     <div
-      className="group relative rounded-md px-3 py-3 transition hover:bg-muted/40"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className={`field-card${selected ? ' selected' : ''}${field.encrypted ? ' sealed' : ''}`}
+      onClick={onSelect}
     >
-      <div
-        className={cn(
-          'absolute right-2 top-2 flex items-center gap-0.5 transition',
-          hover ? 'opacity-100' : 'opacity-0',
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => onMove(-1)}
-          disabled={index === 0}
-          className="rounded p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
-          title="Move up"
-        >
-          <ArrowUp className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onMove(1)}
-          disabled={index === total - 1}
-          className="rounded p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
-          title="Move down"
-        >
-          <ArrowDown className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="rounded p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-          title="Delete field"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+      <span className="grip" aria-hidden>⋮⋮</span>
+      <div className="field-card-h">
+        <div className="label-line">
+          <span className="qnum">Q{index}.</span>
+          <span>{field.type.replace('_', ' ')}</span>
+          {field.encrypted && (
+            <span className="lock-tag">
+              <LockIcon />
+              sealed
+            </span>
+          )}
+        </div>
+        <div className="field-card-actions" onClick={e => e.stopPropagation()}>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => onMove(-1)}
+            disabled={index === 1}
+            title="Move up"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => onMove(1)}
+            disabled={index === total}
+            title="Move down"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`icon-btn${field.encrypted ? ' lock-on' : ''}`}
+            onClick={() => onUpdate({ encrypted: !field.encrypted })}
+            title={field.encrypted ? 'Unseal' : 'Seal (encrypt with Seal)'}
+          >
+            <LockIcon open={!field.encrypted} />
+          </button>
+          <button type="button" className="icon-btn" onClick={onRemove} title="Delete field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div className="mb-2 flex items-center gap-2 pr-24">
-        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <input
-          value={field.label}
-          onChange={e => onUpdate({ label: e.target.value })}
-          className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground"
-          placeholder="Field label"
-        />
-        <button
-          type="button"
-          onClick={() => onUpdate({ required: !field.required })}
-          className={cn(
-            'flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider transition',
-            field.required
-              ? 'bg-foreground/10 text-foreground'
-              : 'text-muted-foreground/50 hover:bg-accent hover:text-foreground',
-          )}
-          title={field.required ? 'Required' : 'Optional — click to require'}
-        >
-          <Asterisk className="h-2.5 w-2.5" />
-          {field.required ? 'Required' : 'Optional'}
-        </button>
-        <button
-          type="button"
-          onClick={() => onUpdate({ encrypted: !field.encrypted })}
-          className={cn(
-            'flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider transition',
-            field.encrypted
-              ? 'bg-emerald-500/10 text-emerald-700'
-              : 'text-muted-foreground/50 hover:bg-accent hover:text-foreground',
-          )}
-          title={field.encrypted ? 'Encrypted via Seal — only owner can decrypt' : 'Plaintext — click to encrypt'}
-        >
-          <Lock className="h-2.5 w-2.5" />
-          {field.encrypted ? 'Encrypted' : 'Plain'}
-        </button>
+      <input
+        type="text"
+        className="field-q-edit"
+        value={field.label}
+        onChange={e => onUpdate({ label: e.target.value })}
+        onClick={e => e.stopPropagation()}
+        placeholder="Field label"
+        spellCheck={false}
+      />
+
+      <div className="field-preview">
+        <FieldPreview field={field} />
       </div>
 
-      <FieldPreview field={field} />
-
-      {field.help && (
-        <p className="mt-1.5 pl-6 text-xs text-muted-foreground">{field.help}</p>
-      )}
+      <div className="field-meta">
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation();
+            onUpdate({ required: !field.required });
+          }}
+          style={{
+            background: 'none', border: 0, cursor: 'pointer',
+            fontFamily: 'var(--type)', fontSize: 11, letterSpacing: '.06em',
+            color: field.required ? 'var(--marker-red)' : 'var(--pencil)',
+          }}
+        >
+          {field.required ? 'required ✓' : 'optional'}
+        </button>
+        <span>id · field/{field.id}</span>
+      </div>
     </div>
   );
 }
 
+function LockIcon({ open = false }: { open?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      {open ? <path d="M8 11V7a4 4 0 0 1 8 0V11" /> : <path d="M8 11V7a4 4 0 0 1 8 0v4" />}
+    </svg>
+  );
+}
+
 function FieldPreview({ field }: { field: Field }) {
-  const baseInput =
-    'pointer-events-none w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground/70';
+  if (field.encrypted) {
+    return <div className="placeholder">▒▒▒▒-▒▒▒▒-▒▒-▒▒▒▒▒▒▒</div>;
+  }
 
   switch (field.type) {
     case 'short_text':
     case 'email':
-    case 'url':
     case 'wallet_address':
-      return (
-        <input
-          disabled
-          placeholder={field.placeholder ?? 'Respondent input'}
-          className={baseInput}
-        />
-      );
+    case 'number':
+    case 'date':
+      return <div className="placeholder">{field.placeholder ?? '…'}</div>;
+    case 'url':
+      return <div className="placeholder">https://…</div>;
     case 'rich_text':
-      return (
-        <div className={cn(baseInput, 'h-16 italic')}>
-          Markdown editor
-        </div>
-      );
+      return <div className="placeholder box">Markdown editor area…</div>;
     case 'dropdown':
       return (
-        <select disabled className={baseInput}>
+        <>
           {(field.options ?? []).map(o => (
-            <option key={o}>{o}</option>
+            <span key={o} className="opt-prev">{o}</span>
           ))}
-        </select>
+        </>
       );
     case 'checkboxes':
       return (
-        <div className="space-y-1 pl-1">
+        <>
           {(field.options ?? []).map(o => (
-            <label key={o} className="flex items-center gap-2 text-sm text-muted-foreground/70">
-              <input type="checkbox" disabled className="pointer-events-none" /> {o}
-            </label>
+            <span key={o} className="opt-prev multi">{o}</span>
           ))}
-        </div>
+        </>
       );
-    case 'star_rating':
+    case 'star_rating': {
+      const scale = field.scale ?? 5;
       return (
-        <div className="flex gap-1 text-lg text-muted-foreground/40">
-          {Array.from({ length: field.scale ?? 5 }).map((_, i) => (
-            <span key={i}>★</span>
+        <div style={{ display: 'flex', gap: 4, color: 'var(--pencil)' }}>
+          {Array.from({ length: scale }).map((_, i) => (
+            <span key={i} style={{ fontSize: 24 }}>★</span>
           ))}
         </div>
       );
+    }
     case 'image_upload':
-      return (
-        <div className={cn(baseInput, 'border-dashed text-center')}>
-          Click to upload screenshots — stored as Walrus blobs
-        </div>
-      );
+      return <div className="placeholder box">📎 drop screenshots / png / jpg</div>;
     case 'video_upload':
-      return (
-        <div className={cn(baseInput, 'border-dashed text-center')}>
-          Click to upload video — stored as Walrus blob
-        </div>
-      );
-    case 'number':
-      return <input type="number" disabled placeholder="0" className={baseInput} />;
-    case 'date':
-      return <input type="date" disabled className={baseInput} />;
+      return <div className="placeholder box">🎬 drop video / mp4 (sealed-friendly)</div>;
   }
 }

@@ -1,7 +1,5 @@
-import { ChevronDown, Lock } from 'lucide-react';
 import type { AdminFilters as Filters, Status, SortKey } from './types';
 import { statusMeta, statusOrder } from './statusMeta';
-import { cn } from '@/lib/utils';
 
 interface Props {
   filters: Filters;
@@ -12,12 +10,12 @@ interface Props {
   totalAll: number;
 }
 
-const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
-  { value: 'latest',   label: 'Latest first' },
-  { value: 'oldest',   label: 'Oldest first' },
-  { value: 'severity', label: 'Severity' },
-  { value: 'priority', label: 'Priority' },
-];
+const SORT_LABELS: Record<SortKey, string> = {
+  latest: 'latest first',
+  oldest: 'oldest first',
+  severity: 'by severity',
+  priority: 'by priority',
+};
 
 const SEVERITIES: Array<'Critical' | 'High' | 'Medium' | 'Low'> = ['Critical', 'High', 'Medium', 'Low'];
 
@@ -39,75 +37,55 @@ export default function AdminFilters({ filters, onFiltersChange, sort, onSortCha
   const hasFilters = filters.status.size > 0 || filters.severity.size > 0 || filters.encryptedOnly;
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-xs">
-      <span className="font-mono text-muted-foreground">
-        {totalShown} of {totalAll}
+    <div className="adm-filters">
+      <span className="count-pill">
+        {totalShown} of {totalAll} shown
       </span>
-      <span className="text-muted-foreground/40">·</span>
 
-      <span className="text-muted-foreground">Status</span>
+      <span className="group-label">status</span>
       {statusOrder.map(s => {
         const m = statusMeta[s];
         const active = filters.status.has(s);
-        const Icon = m.icon;
         return (
           <button
             key={s}
             type="button"
+            className={`filter-chip${active ? ' on' : ''}`}
             onClick={() => toggleStatus(s)}
-            className={cn(
-              'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition',
-              active
-                ? 'border-foreground/40 bg-accent text-foreground'
-                : 'border-border text-muted-foreground hover:bg-muted/50',
-            )}
           >
-            <Icon className={cn('h-3 w-3', active && m.color)} />
             {m.label}
           </button>
         );
       })}
 
-      <span className="mx-1 text-muted-foreground/40">·</span>
-
-      <span className="text-muted-foreground">Severity</span>
+      <span className="group-label" style={{ marginLeft: 8 }}>severity</span>
       {SEVERITIES.map(sev => {
         const active = filters.severity.has(sev);
         return (
           <button
             key={sev}
             type="button"
+            className={`filter-chip${active ? ' on' : ''}`}
             onClick={() => toggleSeverity(sev)}
-            className={cn(
-              'rounded-md border px-1.5 py-0.5 transition',
-              active
-                ? 'border-foreground/40 bg-accent text-foreground'
-                : 'border-border text-muted-foreground hover:bg-muted/50',
-            )}
           >
             {sev}
           </button>
         );
       })}
 
-      <span className="mx-1 text-muted-foreground/40">·</span>
-
       <button
         type="button"
+        className={`filter-chip${filters.encryptedOnly ? ' on green' : ''}`}
         onClick={() => onFiltersChange({ ...filters, encryptedOnly: !filters.encryptedOnly })}
-        className={cn(
-          'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition',
-          filters.encryptedOnly
-            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700'
-            : 'border-border text-muted-foreground hover:bg-muted/50',
-        )}
+        style={{ marginLeft: 8 }}
       >
-        <Lock className="h-3 w-3" /> Encrypted
+        🔒 sealed only
       </button>
 
       {hasFilters && (
         <button
           type="button"
+          className="filter-chip clear"
           onClick={() =>
             onFiltersChange({
               status: new Set(),
@@ -115,29 +93,29 @@ export default function AdminFilters({ filters, onFiltersChange, sort, onSortCha
               encryptedOnly: false,
             })
           }
-          className="rounded-md px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
         >
-          Clear
+          ✕ clear
         </button>
       )}
 
-      <div className="ml-auto flex items-center gap-1.5">
-        <span className="text-muted-foreground">Sort</span>
-        <div className="relative">
-          <select
-            value={sort}
-            onChange={e => onSortChange(e.target.value as SortKey)}
-            className="appearance-none rounded-md border border-border bg-background py-0.5 pl-2 pr-6 text-xs"
-          >
-            {SORT_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-        </div>
-      </div>
+      <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span className="group-label">sort</span>
+        <select
+          value={sort}
+          onChange={e => onSortChange(e.target.value as SortKey)}
+          style={{
+            fontFamily: 'var(--hand)', fontSize: 18,
+            color: 'var(--ink)', background: 'var(--paper)',
+            border: '1.5px solid var(--ink)', borderRadius: 6,
+            padding: '2px 8px', cursor: 'pointer',
+            boxShadow: '2px 2px 0 var(--ink)',
+          }}
+        >
+          {(Object.entries(SORT_LABELS) as Array<[SortKey, string]>).map(([k, label]) => (
+            <option key={k} value={k}>{label}</option>
+          ))}
+        </select>
+      </span>
     </div>
   );
 }

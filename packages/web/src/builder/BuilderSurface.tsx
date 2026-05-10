@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { Plus, Send } from 'lucide-react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import type { Field, FieldType, FormSchema } from './types';
+import { fieldMeta, groupOrder, groupLabels } from './fieldMeta';
 import FieldRow from './FieldRow';
-import SlashMenu from './SlashMenu';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
+import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
-import { cn } from '@/lib/utils';
+import { BUG_REPORT_FORM_ID } from '@/lib/contract';
 
 interface Props {
   schema: FormSchema;
@@ -21,8 +21,8 @@ const newId = () => `f${nextId++}`;
 
 function defaultsForType(type: FieldType): Partial<Field> {
   switch (type) {
-    case 'dropdown':       return { label: 'Dropdown',                options: ['Option A', 'Option B', 'Option C'] };
-    case 'checkboxes':     return { label: 'Checkboxes',              options: ['Choice 1', 'Choice 2'] };
+    case 'dropdown':       return { label: 'Dropdown', options: ['Option A', 'Option B', 'Option C'] };
+    case 'checkboxes':     return { label: 'Checkboxes', options: ['Choice 1', 'Choice 2'] };
     case 'star_rating':    return { label: 'How would you rate this?', scale: 5 };
     case 'email':          return { label: 'Email' };
     case 'url':            return { label: 'Link' };
@@ -37,35 +37,15 @@ function defaultsForType(type: FieldType): Partial<Field> {
 }
 
 export default function BuilderSurface({ schema, onSchemaChange: setSchema, surface, onSurfaceChange, onHome }: Props) {
-  const [slashOpen, setSlashOpen] = useState(false);
-  const slashAnchorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement;
-      const inEditable =
-        t.tagName === 'INPUT' ||
-        t.tagName === 'TEXTAREA' ||
-        t.isContentEditable;
-      if (e.key === '/' && !inEditable && !slashOpen) {
-        e.preventDefault();
-        setSlashOpen(true);
-        slashAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [slashOpen]);
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(schema.fields[0]?.id ?? null);
 
   const addField = (type: FieldType) => {
+    const id = newId();
     setSchema(s => ({
       ...s,
-      fields: [
-        ...s.fields,
-        { id: newId(), type, label: 'New field', required: false, ...defaultsForType(type) },
-      ],
+      fields: [...s.fields, { id, type, label: 'New field', required: false, ...defaultsForType(type) }],
     }));
-    setSlashOpen(false);
+    setSelectedFieldId(id);
   };
 
   const updateField = (id: string, patch: Partial<Field>) => {
@@ -77,6 +57,10 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
 
   const removeField = (id: string) => {
     setSchema(s => ({ ...s, fields: s.fields.filter(f => f.id !== id) }));
+    if (selectedFieldId === id) {
+      const remaining = schema.fields.filter(f => f.id !== id);
+      setSelectedFieldId(remaining[0]?.id ?? null);
+    }
   };
 
   const moveField = (id: string, dir: -1 | 1) => {
@@ -94,93 +78,210 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
     });
   };
 
-  const encryptedCount = schema.fields.filter(f => f.encrypted).length;
+  const sealedCount = schema.fields.filter(f => f.encrypted).length;
+  const selectedField = selectedFieldId ? schema.fields.find(f => f.id === selectedFieldId) ?? null : null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-12 max-w-3xl items-center gap-3 px-6 text-sm">
-          <button
-            type="button"
-            onClick={onHome}
-            className="font-mono text-foreground transition hover:text-muted-foreground"
-            title="Back to landing"
-          >
+    <>
+      <header className="nav">
+        <div className="wrap nav-row">
+          <button type="button" onClick={onHome} className="brand" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
+            <BrandGlyph />
             catat
+            <small>· builder</small>
           </button>
-          <span className="text-muted-foreground">/</span>
-          <input
-            value={schema.title}
-            onChange={e => setSchema(s => ({ ...s, title: e.target.value }))}
-            className="min-w-0 flex-1 bg-transparent font-medium outline-none placeholder:text-muted-foreground"
-            placeholder="Untitled form"
-          />
           <SurfaceTabs current={surface} onChange={onSurfaceChange} />
-          <WalletButton />
-          <button
-            type="button"
-            title="Coming soon — will publish schema blob to Walrus and register on Sui"
-            className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs text-primary-foreground transition hover:opacity-90"
-          >
-            <Send className="h-3.5 w-3.5" /> Publish
-          </button>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <WalletButton />
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <div className="mb-10 space-y-2">
-          <input
-            value={schema.title}
-            onChange={e => setSchema(s => ({ ...s, title: e.target.value }))}
-            className="w-full bg-transparent text-3xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground/50"
-            placeholder="Form title"
-          />
-          <textarea
-            value={schema.description}
-            onChange={e => setSchema(s => ({ ...s, description: e.target.value }))}
-            className="w-full resize-none bg-transparent text-sm leading-relaxed text-muted-foreground outline-none placeholder:text-muted-foreground/40"
-            placeholder="Describe what this form is for"
-            rows={2}
-          />
+      <div className="wrap">
+        <div className="sheet">
+          <div className="sheet-head">
+            <span>Builder · draft</span>
+            <span className="date">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+          </div>
+
+          <h1 style={{ fontFamily: 'var(--hand)', fontWeight: 700, fontSize: 'clamp(40px, 5vw, 64px)', lineHeight: 1, margin: '0 0 8px', color: 'var(--ink)' }}>
+            Sketch your <span className="marker">form</span>.
+          </h1>
+          <p style={{ fontFamily: 'var(--body)', fontSize: 18, color: 'var(--ink-soft)', margin: '0 0 22px', maxWidth: '60ch' }}>
+            Pick a field type from the palette, click any card to edit, toggle 🔒 to seal. Schema lives on Walrus, the form is a Sui shared object.
+          </p>
+
+          <div className="builder-grid">
+            <aside className="palette">
+              <h4>Field types</h4>
+              <p>tap to add</p>
+              <div className="palette-list">
+                {groupOrder.map(group => {
+                  const items = (Object.entries(fieldMeta) as Array<[FieldType, (typeof fieldMeta)[FieldType]]>)
+                    .filter(([, m]) => m.group === group);
+                  return (
+                    <div key={group}>
+                      <div className="palette-section">{groupLabels[group]}</div>
+                      {items.map(([type]) => (
+                        <button key={type} type="button" className="palette-item" onClick={() => addField(type)}>
+                          <span className="ico">{paletteIcon(type)}</span>
+                          {fieldMeta[type].label}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </aside>
+
+            <main className="canvas-wrap">
+              <div className="form-meta">
+                <div className="form-meta-l">
+                  <input
+                    type="text"
+                    className="form-title-input"
+                    value={schema.title}
+                    onChange={e => setSchema(s => ({ ...s, title: e.target.value }))}
+                    spellCheck={false}
+                  />
+                  <textarea
+                    className="form-desc-input"
+                    value={schema.description}
+                    onChange={e => setSchema(s => ({ ...s, description: e.target.value }))}
+                    placeholder="Describe what this form is for"
+                    rows={2}
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="form-meta-r">
+                  FORM ID<br />
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: 0, textTransform: 'none' }}>
+                    {BUG_REPORT_FORM_ID.slice(0, 8)}…{BUG_REPORT_FORM_ID.slice(-4)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="field-stack">
+                {schema.fields.map((f, i) => (
+                  <FieldRow
+                    key={f.id}
+                    field={f}
+                    index={i + 1}
+                    total={schema.fields.length}
+                    selected={selectedFieldId === f.id}
+                    onSelect={() => setSelectedFieldId(f.id)}
+                    onUpdate={patch => updateField(f.id, patch)}
+                    onRemove={() => removeField(f.id)}
+                    onMove={dir => moveField(f.id, dir)}
+                  />
+                ))}
+                {schema.fields.length === 0 && (
+                  <div className="adm-empty">
+                    No fields yet. Pick from the palette on the left.
+                  </div>
+                )}
+              </div>
+
+              <div className="publish-bar">
+                <div className="left">
+                  <b>{schema.fields.length} fields</b>
+                  · {sealedCount} sealed · gate off · 10 epochs
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-sm" onClick={() => onSurfaceChange('runner')}>Preview</button>
+                  <button type="button" className="btn btn-primary btn-sm" title="Coming soon — schema upload to Walrus">
+                    Publish to Walrus →
+                  </button>
+                </div>
+              </div>
+            </main>
+
+            <aside className="settings">
+              {selectedField ? (
+                <div className="set-card selected">
+                  <h5>🪶 Field — <span style={{ color: 'var(--marker-red)' }}>{selectedField.type.replace('_', ' ')}</span></h5>
+                  <div className="set-row">
+                    <label>Question</label>
+                    <input
+                      type="text"
+                      value={selectedField.label}
+                      onChange={e => updateField(selectedField.id, { label: e.target.value })}
+                    />
+                  </div>
+                  <div className="set-row">
+                    <label>Required</label>
+                    <button
+                      type="button"
+                      className={`toggle${selectedField.required ? ' on' : ''}`}
+                      onClick={() => updateField(selectedField.id, { required: !selectedField.required })}
+                      aria-label="Toggle required"
+                    />
+                  </div>
+                  <div className="set-row">
+                    <label>🔒 Sealed</label>
+                    <button
+                      type="button"
+                      className={`toggle${selectedField.encrypted ? ' on' : ''}`}
+                      onClick={() => updateField(selectedField.id, { encrypted: !selectedField.encrypted })}
+                      aria-label="Toggle sealed"
+                    />
+                  </div>
+                  {selectedField.encrypted && (
+                    <div className="seal-warn">
+                      Encrypted client-side. Only the form owner&rsquo;s wallet (2-of-3 Seal threshold) can decrypt — pending Move policy in this MVP.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="set-card">
+                  <h5>🪶 Click a field</h5>
+                  <p style={{ fontFamily: 'var(--body)', fontSize: 14, color: 'var(--ink-soft)', margin: 0 }}>
+                    Settings for the selected field appear here.
+                  </p>
+                </div>
+              )}
+
+              <div className="set-card">
+                <h5>🌐 Form settings</h5>
+                <div className="set-row">
+                  <label>Token gate</label>
+                  <button type="button" className="toggle" aria-label="Toggle token gate" />
+                </div>
+                <div className="set-row">
+                  <label>Epochs</label>
+                  <span style={{ fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--ink)' }}>10</span>
+                </div>
+                <div className="set-row">
+                  <label>Public count</label>
+                  <button type="button" className="toggle on" aria-label="Toggle public count" />
+                </div>
+              </div>
+
+              <div className="postit blue" style={{ transform: 'rotate(-2deg)' }}>
+                <b>tip</b>
+                Click a field card to edit it. Sealed fields render as <code>▒▒▒▒</code> for everyone except you.
+              </div>
+            </aside>
+          </div>
         </div>
-
-        <div className="space-y-1">
-          {schema.fields.map((field, i) => (
-            <FieldRow
-              key={field.id}
-              field={field}
-              index={i}
-              total={schema.fields.length}
-              onUpdate={patch => updateField(field.id, patch)}
-              onRemove={() => removeField(field.id)}
-              onMove={dir => moveField(field.id, dir)}
-            />
-          ))}
-        </div>
-
-        <div ref={slashAnchorRef} className="relative mt-4">
-          <button
-            type="button"
-            onClick={() => setSlashOpen(o => !o)}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-md border border-dashed border-border px-3 py-2.5 text-sm text-muted-foreground transition',
-              'hover:border-foreground/30 hover:text-foreground',
-            )}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add field</span>
-            <span className="ml-auto font-mono text-[10px] text-muted-foreground/60">
-              press <kbd className="rounded border border-border bg-muted px-1 py-px">/</kbd>
-            </span>
-          </button>
-
-          {slashOpen && <SlashMenu onSelect={addField} onClose={() => setSlashOpen(false)} />}
-        </div>
-
-        <p className="mt-16 text-center font-mono text-xs text-muted-foreground/60">
-          prototype · {schema.fields.length} fields · {encryptedCount} encrypted · use Preview tab to fill
-        </p>
-      </main>
-    </div>
+      </div>
+    </>
   );
+}
+
+function paletteIcon(type: FieldType): string {
+  switch (type) {
+    case 'short_text': return 'Aa';
+    case 'rich_text': return '¶';
+    case 'dropdown': return '◉';
+    case 'checkboxes': return '☑';
+    case 'star_rating': return '★';
+    case 'image_upload': return '📎';
+    case 'video_upload': return '🎬';
+    case 'url': return '🔗';
+    case 'email': return '@';
+    case 'wallet_address': return '◊';
+    case 'number': return '#';
+    case 'date': return '📅';
+  }
 }
