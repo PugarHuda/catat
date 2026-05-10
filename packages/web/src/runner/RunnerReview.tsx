@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, ExternalLink } from 'lucide-react';
 import type { FormSchema } from '../builder/types';
 import SurfaceTabs from '@/components/SurfaceTabs';
+import WalletButton from '@/components/WalletButton';
 import type { Surface } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +14,10 @@ export interface SerializedSubmission {
   submitter: string;
   values: Record<string, unknown>;
   _meta_encrypted_field_ids: string[];
+  /** Real Walrus blob ID returned after upload (only present after a real submit) */
+  _real_blob_id?: string;
+  /** Real Sui certify-tx hash (only present after a real submit) */
+  _real_tx_hash?: string;
 }
 
 interface Props {
@@ -27,9 +32,10 @@ interface Props {
 export default function RunnerReview({ schema, submission, onReset, surface, onSurfaceChange, onHome }: Props) {
   const [copied, setCopied] = useState(false);
 
-  const { _meta_encrypted_field_ids, ...payload } = submission;
+  const { _meta_encrypted_field_ids, _real_blob_id, _real_tx_hash, ...payload } = submission;
   const submissionJson = JSON.stringify(payload, null, 2);
   const sizeBytes = new Blob([submissionJson]).size;
+  const isReal = Boolean(_real_blob_id);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(submissionJson);
@@ -50,25 +56,51 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
             catat
           </button>
           <span className="text-muted-foreground">/</span>
-          <span className="text-muted-foreground">submission preview</span>
-          <span className="ml-auto" />
+          <span className="min-w-0 flex-1 truncate text-muted-foreground">
+            {isReal ? 'submission stored on walrus' : 'submission preview'}
+          </span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} />
+          <WalletButton />
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-12">
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700">
-            <Check className="h-3 w-3" /> Submission ready
+            <Check className="h-3 w-3" />
+            {isReal ? 'Stored on Walrus testnet ✓' : 'Submission ready'}
           </div>
           <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-            This is what would go to Walrus
+            {isReal ? 'Your submission is now on-chain.' : 'This is what would go to Walrus'}
           </h1>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            In production: bundled into a Quilt with attachments → uploaded to Walrus → blob_id recorded on Sui via{' '}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">catat::form::submit()</code>.
+            {isReal ? (
+              <>
+                Submission JSON uploaded as a Walrus blob, certified via Sui transaction. Anyone can verify the blob existence + content addressing on Walruscan.
+              </>
+            ) : (
+              <>
+                In production: bundled into a Quilt with attachments → uploaded to Walrus → blob_id recorded on Sui via{' '}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">catat::form::submit()</code>.
+              </>
+            )}
           </p>
         </div>
+
+        {isReal && _real_blob_id && _real_tx_hash && (
+          <div className="mb-6 grid gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 sm:grid-cols-2">
+            <ExplorerRow
+              label="blob_id"
+              value={_real_blob_id}
+              href={`https://walruscan.com/testnet/blob/${_real_blob_id.replace(/^blob_/, '')}`}
+            />
+            <ExplorerRow
+              label="tx_hash"
+              value={_real_tx_hash}
+              href={`https://suiscan.xyz/testnet/tx/${_real_tx_hash}`}
+            />
+          </div>
+        )}
 
         <div className="mb-4 grid grid-cols-3 gap-3">
           <Stat label="JSON size" value={`${sizeBytes} B`} />
@@ -76,7 +108,7 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
             label="Encrypted fields"
             value={`${_meta_encrypted_field_ids.length} of ${schema.fields.length}`}
           />
-          <Stat label="Walrus epochs" value="12" hint="~12 days" />
+          <Stat label="Walrus epochs" value="10" hint={isReal ? 'live' : '~10 days'} />
         </div>
 
         <div className="overflow-hidden rounded-lg border border-border">
@@ -131,5 +163,23 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
         {hint && <span className="font-mono text-[10px] text-muted-foreground">{hint}</span>}
       </div>
     </div>
+  );
+}
+
+function ExplorerRow({ label, value, href }: { label: string; value: string; href: string }) {
+  const short = value.length > 20 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-start gap-2 rounded-md border border-border bg-background p-2.5 transition hover:border-emerald-500/40"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-700">{label}</div>
+        <div className="mt-0.5 truncate font-mono text-xs">{short}</div>
+      </div>
+      <ExternalLink className="mt-1 h-3 w-3 text-muted-foreground transition group-hover:text-foreground" />
+    </a>
   );
 }

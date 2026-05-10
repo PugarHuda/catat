@@ -6,6 +6,7 @@ import AdminFilters from './AdminFilters';
 import AdminTable from './AdminTable';
 import AdminDetail from './AdminDetail';
 import SurfaceTabs from '@/components/SurfaceTabs';
+import WalletButton from '@/components/WalletButton';
 import type { Surface } from '@/lib/surfaces';
 
 interface Props {
@@ -155,9 +156,7 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
           <span className="text-muted-foreground">/</span>
           <span className="min-w-0 flex-1 truncate font-medium">{schema.title}</span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} count={{ admin: counts.total }} />
-          <span className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline-block">
-            testnet
-          </span>
+          <WalletButton />
           <button
             type="button"
             onClick={handleExport}

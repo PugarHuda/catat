@@ -1,11 +1,20 @@
-import { useState } from 'react';
-import { Send } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Send, Loader2, AlertTriangle, Wallet } from 'lucide-react';
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { walrus, WalrusFile } from '@mysten/walrus';
+import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
 import type { FormSchema } from '../builder/types';
 import RunnerField, { type Values } from './RunnerField';
 import RunnerReview, { type SerializedSubmission } from './RunnerReview';
 import SurfaceTabs from '@/components/SurfaceTabs';
+import WalletButton from '@/components/WalletButton';
 import type { Surface } from '@/lib/surfaces';
 import { cn } from '@/lib/utils';
+
+type SubmitState =
+  | { kind: 'idle' }
+  | { kind: 'submitting'; step: string; subStep?: string }
+  | { kind: 'error'; message: string };
 
 interface Props {
   schema: FormSchema;
@@ -28,9 +37,35 @@ function serializeValue(v: unknown): unknown {
   return v;
 }
 
+function friendlyError(msg: string): string {
+  const lower = msg.toLowerCase();
+  if (lower.includes('user reject') || lower.includes('rejected')) {
+    return 'You rejected the wallet signature. Click Submit again to retry.';
+  }
+  if (lower.includes('wal') && (lower.includes('insufficient') || lower.includes('not enough') || lower.includes('balance'))) {
+    return 'Wallet has no WAL token. Get testnet WAL from stakely.io/faucet/walrus-testnet-wal then retry.';
+  }
+  if (lower.includes('sui') && (lower.includes('insufficient') || lower.includes('not enough') || lower.includes('balance'))) {
+    return 'Wallet has no SUI for gas. Get testnet SUI from faucet.sui.io then retry.';
+  }
+  if (lower.includes('coin') && lower.includes('balance')) {
+    return 'Wallet missing required coin balance (SUI for gas + WAL for storage). Fund via faucets and retry.';
+  }
+  return msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
+}
+
 export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome }: Props) {
   const [values, setValues] = useState<Values>({});
   const [submitted, setSubmitted] = useState<SerializedSubmission | null>(null);
+  const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
+
+  const account = useCurrentAccount();
+  const sui = useSuiClient();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+
+  const walrusClient = useMemo(() => {
+    return sui.$extend(walrus({ wasmUrl: walrusWasmUrl }));
+  }, [sui]);
 
   const updateValue = (id: string, v: unknown) => {
     setValues(prev => ({ ...prev, [id]: v }));
@@ -46,7 +81,15 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
     return true;
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!account) {
+      setSubmitState({
+        kind: 'error',
+        message: 'Connect wallet to submit. Wallet button is at the top-right.',
+      });
+      return;
+    }
+
     const submissionValues: Record<string, unknown> = {};
     const encryptedFieldIds: string[] = [];
 
@@ -62,23 +105,68 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
             : JSON.stringify(serialized ?? null).length;
         submissionValues[f.id] = {
           encrypted: true,
-          scheme: 'seal-ibe-2of3',
-          ciphertext_placeholder: `[Seal-encrypted: ~${previewSize} bytes]`,
+          scheme: 'seal-ibe-2of3-pending',
+          ciphertext_placeholder: `[Seal-encryption pending: ~${previewSize} bytes plaintext]`,
         };
       } else {
         submissionValues[f.id] = serialized ?? null;
       }
     }
 
-    setSubmitted({
+    const submissionPayload = {
       version: '1.0',
-      form_id: '0xtest_form_object_id_will_come_from_sui',
-      form_schema_blob_id: 'blob_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      form_id: '0xtest_form_object_id',
       submitted_at_ms: Date.now(),
-      submitter: '0xrespondent_wallet_address_when_connected',
+      submitter: account.address,
       values: submissionValues,
-      _meta_encrypted_field_ids: encryptedFieldIds,
+    };
+
+    const submissionFile = WalrusFile.from({
+      contents: new TextEncoder().encode(JSON.stringify(submissionPayload)),
+      identifier: 'submission.json',
+      tags: { 'content-type': 'application/json' },
     });
+
+    try {
+      setSubmitState({ kind: 'submitting', step: 'Encoding for Walrus…' });
+      const flow = walrusClient.walrus.writeFilesFlow({ files: [submissionFile] });
+      await flow.encode();
+
+      setSubmitState({ kind: 'submitting', step: 'Sign storage reservation', subStep: '1 of 2' });
+      const registerTx = flow.register({
+        epochs: 10,
+        owner: account.address,
+        deletable: false,
+      });
+      const registerResult = await signAndExecute({ transaction: registerTx });
+
+      setSubmitState({ kind: 'submitting', step: 'Uploading to storage nodes…' });
+      await flow.upload({ digest: registerResult.digest });
+
+      setSubmitState({ kind: 'submitting', step: 'Sign certification', subStep: '2 of 2' });
+      const certifyTx = flow.certify();
+      const certifyResult = await signAndExecute({ transaction: certifyTx });
+
+      const filesUploaded = await flow.listFiles();
+      const blobId = filesUploaded[0]?.blobId ?? 'unknown';
+
+      setSubmitted({
+        version: '1.0',
+        form_id: submissionPayload.form_id,
+        form_schema_blob_id: 'blob_schema_pending_publish',
+        submitted_at_ms: submissionPayload.submitted_at_ms,
+        submitter: account.address,
+        values: submissionValues,
+        _meta_encrypted_field_ids: encryptedFieldIds,
+        _real_blob_id: blobId,
+        _real_tx_hash: certifyResult.digest,
+      });
+      setSubmitState({ kind: 'idle' });
+    } catch (e) {
+      console.error('Walrus submit failed:', e);
+      const msg = (e as Error).message || 'Unknown error';
+      setSubmitState({ kind: 'error', message: friendlyError(msg) });
+    }
   };
 
   if (submitted) {
@@ -114,9 +202,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
           <span className="text-muted-foreground">/</span>
           <span className="min-w-0 flex-1 truncate text-muted-foreground">{schema.title}</span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} />
-          <span className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground sm:inline-block">
-            respondent view
-          </span>
+          <WalletButton />
         </div>
       </header>
 
@@ -140,20 +226,47 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-border pt-8">
+          {submitState.kind === 'error' && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <div className="flex-1">
+                <div className="font-medium">Submission failed</div>
+                <div className="mt-0.5 font-mono leading-relaxed opacity-80">{submitState.message}</div>
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!isComplete}
+            disabled={!isComplete || submitState.kind === 'submitting'}
             className={cn(
               'inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition',
-              isComplete ? 'hover:opacity-90' : 'cursor-not-allowed opacity-50',
+              isComplete && submitState.kind !== 'submitting' ? 'hover:opacity-90' : 'cursor-not-allowed opacity-50',
             )}
           >
-            <Send className="h-3.5 w-3.5" /> Submit
+            {submitState.kind === 'submitting' ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {submitState.step}
+                {submitState.subStep && (
+                  <span className="font-mono text-[10px] opacity-70">({submitState.subStep})</span>
+                )}
+              </>
+            ) : !account ? (
+              <>
+                <Wallet className="h-3.5 w-3.5" /> Connect wallet to submit
+              </>
+            ) : (
+              <>
+                <Send className="h-3.5 w-3.5" /> Submit to Walrus
+              </>
+            )}
           </button>
+
           <p className="text-center font-mono text-[11px] leading-relaxed text-muted-foreground/70">
-            on submit · bundle into Walrus Quilt → record blob_id on Sui
-            {hasEncrypted && ' · encrypted fields via Seal threshold 2-of-3'}
+            real submit · 2 wallet sigs (reserve + certify) · ~10 epochs storage
+            {hasEncrypted && ' · encrypted fields shown as plaintext in this MVP (Seal pending)'}
           </p>
         </div>
       </main>
