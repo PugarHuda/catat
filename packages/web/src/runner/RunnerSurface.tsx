@@ -64,7 +64,18 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
 
   const walrusClient = useMemo(() => {
-    return sui.$extend(walrus({ wasmUrl: walrusWasmUrl }));
+    return sui.$extend(
+      walrus({
+        wasmUrl: walrusWasmUrl,
+        // Upload Relay = ship-stop fix. Direct storage-node upload is flaky from
+        // browsers/most networks (NotEnoughBlobConfirmationsError). Relay handles
+        // node fan-out for us, charging a tiny SUI tip per upload.
+        uploadRelay: {
+          host: 'https://upload-relay.testnet.walrus.space',
+          sendTip: { max: 1_000 },
+        },
+      }),
+    );
   }, [sui]);
 
   const updateValue = (id: string, v: unknown) => {
