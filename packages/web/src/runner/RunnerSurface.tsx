@@ -305,7 +305,15 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       });
       await flow.encode();
 
-      setSubmitState({ kind: 'submitting', step: 'Sign Walrus reserve', subStep: '1 of 3' });
+      // blob_id is deterministic from the encoded content — read it now so
+      // we can bake it into the combined certify+submit PTB below.
+      const filesEncoded = await flow.listFiles();
+      const blobId = filesEncoded[0]?.blobId;
+      if (!blobId) {
+        throw new Error('Walrus encode returned no blobId — refusing to start submit flow');
+      }
+
+      setSubmitState({ kind: 'submitting', step: 'Sign Walrus reserve', subStep: '1 of 2' });
       const registerTx = flow.register({
         epochs: 10,
         owner: account.address,
@@ -316,27 +324,24 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       setSubmitState({ kind: 'submitting', step: 'Uploading via Walrus relay…' });
       await flow.upload({ digest: registerResult.digest });
 
-      setSubmitState({ kind: 'submitting', step: 'Sign Walrus certify', subStep: '2 of 3' });
-      const certifyTx = flow.certify();
-      const certifyResult = await signAndExecute({ transaction: certifyTx });
-
-      const filesUploaded = await flow.listFiles();
-      const blobId = filesUploaded[0]?.blobId;
-      if (!blobId) {
-        throw new Error('Walrus certify returned no blobId — refusing to record placeholder on-chain');
-      }
-
-      setSubmitState({ kind: 'submitting', step: 'Sign Sui registry record', subStep: '3 of 3' });
-      const recordTx = new Transaction();
-      recordTx.moveCall({
+      // ATOMIC: certify + form::submit in a single PTB. Either both ops
+      // succeed (blob stored on Walrus AND blob_id appended to Form
+      // submission vector) or both fail. No half-state where bytes are
+      // certified but never registered on chain.
+      setSubmitState({ kind: 'submitting', step: 'Sign Walrus certify + Sui submit', subStep: '2 of 2' });
+      const combinedTx = flow.certify();
+      combinedTx.moveCall({
         target: `${CATAT_PACKAGE_ID}::form::submit`,
         arguments: [
-          recordTx.object(activeFormId),
-          recordTx.pure.string(blobId),
-          recordTx.object(SUI_CLOCK_OBJECT_ID),
+          combinedTx.object(activeFormId),
+          combinedTx.pure.string(blobId),
+          combinedTx.object(SUI_CLOCK_OBJECT_ID),
         ],
       });
-      const recordResult = await signAndExecute({ transaction: recordTx });
+      const recordResult = await signAndExecute({ transaction: combinedTx });
+      // certifyResult digest is now the same as recordResult since they're
+      // the same transaction; expose the combined digest for the receipt.
+      const certifyResult = recordResult;
 
       setSubmitted({
         persisted: {
@@ -482,7 +487,7 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
                   {' '}Attached files (un-sealed) ride along inside the same Quilt blob.
                 </>
               ) : (
-                <>3 wallet sigs: Walrus reserve → certify → Sui registry. Submission JSON + any attached files all bundle into one Walrus Quilt blob; that blob_id is appended to the on-chain Form.</>
+                <>2 wallet sigs: Walrus reserve, then a single atomic certify+Sui submit PTB. Submission JSON + any attached files all bundle into one Walrus Quilt blob; that blob_id is appended to the on-chain Form.</>
               )}
             </p>
             <span className="gas-tip">~ <b>0.0021 SUI</b> · gas</span>

@@ -147,34 +147,35 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       const flow = walrusClient.walrus.writeFilesFlow({ files: [file] });
       await flow.encode();
 
-      setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 3' });
+      // blob_id is deterministic from the encoded content — we can read it
+      // BEFORE certify so we can bake it into the combined PTB below.
+      const filesEncoded = await flow.listFiles();
+      const blobId = filesEncoded[0]?.blobId;
+      if (!blobId) {
+        throw new Error('Walrus encode returned no blobId — refusing to start publish flow');
+      }
+
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 2' });
       const reserveTx = flow.register({ epochs: 26, owner: account.address, deletable: false });
       const reserveResult = await signAndExecute({ transaction: reserveTx });
 
       setPublishState({ kind: 'publishing', step: 'Uploading via Walrus relay…' });
       await flow.upload({ digest: reserveResult.digest });
 
-      setPublishState({ kind: 'publishing', step: 'Sign Walrus certify', subStep: '2 of 3' });
-      const certifyTx = flow.certify();
-      await signAndExecute({ transaction: certifyTx });
-
-      const filesUploaded = await flow.listFiles();
-      const blobId = filesUploaded[0]?.blobId;
-      if (!blobId) {
-        throw new Error('Walrus certify returned no blobId — refusing to mint Form pointing to empty schema');
-      }
-
-      // 2. Mint a new Form on Sui via catat::form::create_form
-      setPublishState({ kind: 'publishing', step: 'Sign Sui create_form', subStep: '3 of 3' });
-      const createTx = new Transaction();
-      createTx.moveCall({
+      // ATOMIC: certify + create_form in a single PTB. flow.certify() returns
+      // a Transaction we can extend with our Move call — both ops succeed or
+      // both fail. Eliminates the "ghost blob" risk where bytes get certified
+      // but the Form is never minted.
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus certify + Sui create_form', subStep: '2 of 2' });
+      const combinedTx = flow.certify();
+      combinedTx.moveCall({
         target: `${CATAT_PACKAGE_ID}::form::create_form`,
         arguments: [
-          createTx.pure.string(schema.title),
-          createTx.pure.string(blobId),
+          combinedTx.pure.string(schema.title),
+          combinedTx.pure.string(blobId),
         ],
       });
-      const createResult = await signAndExecute({ transaction: createTx });
+      const createResult = await signAndExecute({ transaction: combinedTx });
 
       // Extract the freshly-created Form object id so Runner + Admin can switch
       // to it. signAndExecute by default returns just the digest — we need to
