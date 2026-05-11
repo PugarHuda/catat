@@ -458,6 +458,20 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, onClose }: ModalP
   const blobShort = `${blobId.slice(0, 12)}…${blobId.slice(-6)}`;
   const txShort = `${txHash.slice(0, 12)}…${txHash.slice(-6)}`;
   const formShort = `${formId.slice(0, 12)}…${formId.slice(-6)}`;
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/?f=${formId}&go=submit`
+    : `https://catat-walrus.vercel.app/?f=${formId}&go=submit`;
+  const [copied, setCopied] = useState(false);
+  const copyShare = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (err) {
+      console.warn('clipboard write blocked:', err);
+      alert(`Copy this URL manually:\n\n${shareUrl}`);
+    }
+  };
 
   return (
     <div className="publish-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -471,6 +485,17 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, onClose }: ModalP
           {' '}
           Decrypt sealed fields from Inbox after collecting replies.
         </p>
+
+        <div className="share-link">
+          <div className="sl-label">share with respondents</div>
+          <div className="sl-row">
+            <code>{shareUrl}</code>
+            <button type="button" onClick={copyShare} className="btn btn-sm btn-primary">
+              {copied ? '✓ copied' : 'Copy link'}
+            </button>
+          </div>
+          <small>opens this form directly in Submit mode for anyone with the URL</small>
+        </div>
 
         <div className="receipt-row">
           <span>form object</span>

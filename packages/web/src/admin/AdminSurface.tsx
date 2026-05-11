@@ -54,11 +54,20 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
   // lift, every row open would re-prompt the wallet for a personal-message
   // signature.
   const decrypt = useSealDecrypt();
+  // Triage overlay for on-chain submissions: real Walrus submissions are
+  // immutable (the blob can't be changed), so triage state — status,
+  // priority, notes — lives in this in-memory Map keyed by submission id
+  // and gets merged on display. Survives only the current session;
+  // persistence to a wallet-owned admin blob is on the roadmap.
+  const [overlay, setOverlay] = useState<Map<string, Partial<Submission>>>(new Map());
   const realSubmissions = realQuery.data ?? [];
 
   const allSubmissions = useMemo(
-    () => [...realSubmissions, ...submissions],
-    [realSubmissions, submissions],
+    () => [...realSubmissions, ...submissions].map(s => {
+      const patch = overlay.get(s.id);
+      return patch ? { ...s, ...patch } : s;
+    }),
+    [realSubmissions, submissions, overlay],
   );
 
   const filtered = useMemo(() => {
@@ -85,7 +94,20 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
   }, [allSubmissions, filters, sort]);
 
   const updateSubmission = (id: string, patch: Partial<Submission>) => {
-    onSubmissionsChange(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)));
+    // Mock submissions live in a state array we own — patch in place.
+    const isMock = submissions.some(s => s.id === id);
+    if (isMock) {
+      onSubmissionsChange(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)));
+      return;
+    }
+    // Walrus submissions are immutable on chain — accumulate the patch into
+    // the overlay map, keyed by id, merged on display.
+    setOverlay(prev => {
+      const next = new Map(prev);
+      const merged = { ...(next.get(id) ?? {}), ...patch };
+      next.set(id, merged);
+      return next;
+    });
   };
 
   useEffect(() => {

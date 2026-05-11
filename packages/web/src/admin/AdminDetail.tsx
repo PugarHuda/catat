@@ -51,6 +51,42 @@ export default function AdminDetail({ schema, submission, decrypt, onUpdate, onC
           </div>
         </div>
 
+        <div className="det-section">
+          <div className="label">
+            <span>priority</span>
+          </div>
+          <div className="status-btns">
+            {(['low', 'medium', 'high'] as const).map(p => (
+              <button
+                key={p}
+                type="button"
+                className={`status-btn${submission.priority === p ? ' on' : ''}`}
+                onClick={() => onUpdate({ priority: p })}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="det-section">
+          <div className="label">
+            <span>triage notes</span>
+            {submission.notes && <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--pencil)' }}>{submission.notes.length} chars</span>}
+          </div>
+          <textarea
+            className="det-notes"
+            value={submission.notes ?? ''}
+            placeholder="Private notes for the team — repro steps, who to assign, links to relevant code…"
+            onChange={e => onUpdate({ notes: e.target.value })}
+            rows={3}
+            spellCheck
+          />
+          <small style={{ fontFamily: 'var(--body)', fontSize: 11, color: 'var(--pencil)', fontStyle: 'italic' }}>
+            Notes stay in your browser session — never written to chain. Persistence to a Walrus admin blob is on the roadmap.
+          </small>
+        </div>
+
         {schema.fields.map((f, i) => {
           const v = submission.values[f.id];
           return (

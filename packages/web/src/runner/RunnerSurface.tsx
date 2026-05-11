@@ -35,16 +35,80 @@ interface Props {
   onHome?: () => void;
 }
 
-function serializeValue(v: unknown): unknown {
+/** Sanitize a filename for use as a Walrus Quilt identifier — no slashes,
+ *  spaces collapsed, length-capped. The reader gets the original filename
+ *  back from the JSON metadata; this is just the in-Quilt address. */
+function sanitizeIdentifier(name: string): string {
+  return name.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 80);
+}
+
+interface MediaEntry {
+  fieldId: string;
+  fileIndex: number;
+  file: File;
+  /** Stable address inside the Walrus Quilt — matches what we write into
+   *  submission.json so admin/preview can pull the bytes back out. */
+  identifier: string;
+}
+
+function collectMediaEntries(
+  schema: { fields: Array<{ id: string; encrypted?: boolean }> },
+  values: Record<string, unknown>,
+): MediaEntry[] {
+  const out: MediaEntry[] = [];
+  for (const f of schema.fields) {
+    // Sealed fields don't push file bytes — only the metadata gets sealed.
+    // Encrypting a video would defeat the Quilt batching benefit and isn't
+    // what the brief asks for either.
+    if (f.encrypted) continue;
+    const v = values[f.id];
+    if (v instanceof File) {
+      out.push({
+        fieldId: f.id,
+        fileIndex: 0,
+        file: v,
+        identifier: `media_${f.id}_0_${sanitizeIdentifier(v.name)}`,
+      });
+    } else if (Array.isArray(v) && v.length > 0 && v[0] instanceof File) {
+      v.forEach((file, i) => {
+        if (file instanceof File) {
+          out.push({
+            fieldId: f.id,
+            fileIndex: i,
+            file,
+            identifier: `media_${f.id}_${i}_${sanitizeIdentifier(file.name)}`,
+          });
+        }
+      });
+    }
+  }
+  return out;
+}
+
+function serializeValue(v: unknown, mediaForField: MediaEntry[]): unknown {
+  if (mediaForField.length > 0) {
+    // For unsealed file fields, swap raw File objects for an array of
+    // {filename, size_bytes, content_type, walrus_identifier} so the reader
+    // can locate each upload inside the parent Quilt blob.
+    return mediaForField.map(m => ({
+      filename: m.file.name,
+      size_bytes: m.file.size,
+      content_type: m.file.type || 'application/octet-stream',
+      walrus_identifier: m.identifier,
+    }));
+  }
   if (Array.isArray(v) && v[0] instanceof File) {
+    // Sealed file field — file bytes are dropped, only metadata kept and
+    // will then be encrypted alongside the rest of the sealed value.
     return v.map((f: File) => ({
       filename: f.name,
       size_bytes: f.size,
       content_type: f.type || 'application/octet-stream',
+      sealed_no_bytes: true,
     }));
   }
   if (v instanceof File) {
-    return { filename: v.name, size_bytes: v.size, content_type: v.type };
+    return { filename: v.name, size_bytes: v.size, content_type: v.type, sealed_no_bytes: true };
   }
   return v;
 }
@@ -136,6 +200,17 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
     const submissionValues: Record<string, unknown> = {};
     const encryptedFieldIds: string[] = [];
 
+    // Phase 0: collect File objects from un-sealed file fields. These will
+    // ride along inside the same Walrus Quilt as submission.json so the
+    // submission travels as one self-contained blob.
+    const mediaEntries = collectMediaEntries(schema, values);
+    if (mediaEntries.length > 0) {
+      setSubmitState({
+        kind: 'submitting',
+        step: `Reading ${mediaEntries.length} attached file${mediaEntries.length === 1 ? '' : 's'}…`,
+      });
+    }
+
     // Build values, encrypting any sealed fields client-side via Seal IBE.
     const sealedFields = schema.fields.filter(f => f.encrypted && values[f.id] != null);
     if (sealedFields.length > 0) {
@@ -144,7 +219,8 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
 
     for (const f of schema.fields) {
       const raw = values[f.id];
-      const serialized = serializeValue(raw);
+      const mediaForField = mediaEntries.filter(m => m.fieldId === f.id);
+      const serialized = serializeValue(raw, mediaForField);
 
       if (f.encrypted && raw != null) {
         encryptedFieldIds.push(f.id);
@@ -194,9 +270,36 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
       tags: { 'content-type': 'application/json' },
     });
 
+    // Read media file bytes once and bundle them into the same Quilt as
+    // submission.json. The Quilt has one shared blob_id; each file is
+    // addressable via its `identifier`.
+    let mediaWalrusFiles: Array<ReturnType<typeof WalrusFile.from>> = [];
     try {
-      setSubmitState({ kind: 'submitting', step: 'Encoding for Walrus…' });
-      const flow = walrusClient.walrus.writeFilesFlow({ files: [submissionFile] });
+      mediaWalrusFiles = await Promise.all(
+        mediaEntries.map(async m => WalrusFile.from({
+          contents: new Uint8Array(await m.file.arrayBuffer()),
+          identifier: m.identifier,
+          tags: { 'content-type': m.file.type || 'application/octet-stream' },
+        })),
+      );
+    } catch (err) {
+      setSubmitState({
+        kind: 'error',
+        message: `Failed to read attached file: ${(err as Error).message}`,
+      });
+      return;
+    }
+
+    try {
+      setSubmitState({
+        kind: 'submitting',
+        step: mediaEntries.length > 0
+          ? `Encoding submission + ${mediaEntries.length} file${mediaEntries.length === 1 ? '' : 's'} for Walrus…`
+          : 'Encoding for Walrus…',
+      });
+      const flow = walrusClient.walrus.writeFilesFlow({
+        files: [submissionFile, ...mediaWalrusFiles],
+      });
       await flow.encode();
 
       setSubmitState({ kind: 'submitting', step: 'Sign Walrus reserve', subStep: '1 of 3' });
@@ -360,9 +463,10 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
                 <>
                   {sealedCount} field{sealedCount === 1 ? '' : 's'} will be encrypted client-side with Seal before they leave this device.
                   The Walrus blob and Sui event are public — sealed bodies stay sealed even from us.
+                  {' '}Attached files (un-sealed) ride along inside the same Quilt blob.
                 </>
               ) : (
-                <>3 wallet sigs: Walrus reserve → certify → Sui registry. Submission JSON ends up as a Walrus blob, blob_id appended to the on-chain Form.</>
+                <>3 wallet sigs: Walrus reserve → certify → Sui registry. Submission JSON + any attached files all bundle into one Walrus Quilt blob; that blob_id is appended to the on-chain Form.</>
               )}
             </p>
             <span className="gas-tip">~ <b>0.0021 SUI</b> · gas</span>
