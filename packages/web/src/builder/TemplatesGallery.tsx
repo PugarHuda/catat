@@ -26,56 +26,64 @@ export default function TemplatesGallery({ currentSchemaId, onPick, onClose }: P
 
   return (
     <div className="tpl-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="tpl-modal" role="dialog" aria-label="Form templates gallery">
+      {/* Shell handles the box-shadow, border, transform AND hosts the
+          absolutely-positioned stamp. Inner .tpl-modal-content owns the
+          scroll behavior — split because overflow-y:auto would clip the
+          stamp that pokes above the modal's top edge. */}
+      <div className="tpl-shell" role="dialog" aria-label="Form templates gallery">
         <div className="tpl-stamp">templates</div>
 
-        <header className="tpl-head">
-          <h3>Pick a starting point.</h3>
-          <p>
-            Each template is a real <code>FormSchema</code> — load it, edit, then publish to Walrus.
-            Sealed (🔒) fields use Seal client-side encryption.
-          </p>
-          <button type="button" className="tpl-close" onClick={onClose} aria-label="Close gallery">✕</button>
-        </header>
+        <div className="tpl-modal-content">
+          <header className="tpl-head">
+            <h3>Pick a starting point.</h3>
+            <p>
+              Each template is a real <code>FormSchema</code> — load it, edit, then publish to Walrus.
+              Sealed (🔒) fields use Seal client-side encryption.
+            </p>
+            <button type="button" className="tpl-close" onClick={onClose} aria-label="Close gallery">✕</button>
+          </header>
 
-        <div className="tpl-grid">
-          {templateRegistry.map(t => (
-            <TemplateCard
-              key={t.id}
-              tpl={t}
-              isActive={t.schema.id === currentSchemaId}
-              onPick={() => {
-                onPick(t.schema);
-                onClose();
-              }}
-            />
-          ))}
+          <div className="tpl-grid">
+            {/* Blank canvas first — many users start from scratch and were
+                scrolling past 12 templates to find this. */}
+            <div className="tpl-card tpl-blank">
+              <div className="tpl-emoji">＋</div>
+              <h4>Blank canvas</h4>
+              <p>Start from scratch — same fields are in the palette.</p>
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => {
+                  onPick({
+                    id: `tpl_blank_${Date.now()}`,
+                    title: 'Untitled form',
+                    description: '',
+                    fields: [],
+                  });
+                  onClose();
+                }}
+              >
+                Start blank →
+              </button>
+            </div>
 
-          <div className="tpl-card tpl-blank">
-            <div className="tpl-emoji">＋</div>
-            <h4>Blank canvas</h4>
-            <p>Start from scratch — same fields are in the palette.</p>
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => {
-                onPick({
-                  id: `tpl_blank_${Date.now()}`,
-                  title: 'Untitled form',
-                  description: '',
-                  fields: [],
-                });
-                onClose();
-              }}
-            >
-              Start blank →
-            </button>
+            {templateRegistry.map(t => (
+              <TemplateCard
+                key={t.id}
+                tpl={t}
+                isActive={t.schema.id === currentSchemaId}
+                onPick={() => {
+                  onPick(t.schema);
+                  onClose();
+                }}
+              />
+            ))}
           </div>
-        </div>
 
-        <footer className="tpl-foot">
-          <span className="kbd">esc</span> to close · {templateRegistry.length} ready-made + 1 blank
-        </footer>
+          <footer className="tpl-foot">
+            <span className="kbd">esc</span> to close · {templateRegistry.length} ready-made + 1 blank
+          </footer>
+        </div>
       </div>
     </div>
   );

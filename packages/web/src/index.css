@@ -2303,31 +2303,37 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   z-index: 80;
   animation: fade-in 160ms ease-out;
 }
-.tpl-modal {
+/* Shell — owns the visual chrome (border, shadow) and hosts the absolutely
+   positioned stamp. overflow:visible so the stamp can extend above. */
+.tpl-shell {
   position: relative;
-  background: var(--paper);
   width: min(1180px, 100%);
   max-height: calc(100vh - 48px);
-  overflow-y: auto;
+  background: var(--paper);
   border: 2px solid var(--ink);
   box-shadow: 10px 10px 0 var(--ink-soft);
-  padding: 32px 36px 28px;
   font-family: var(--body);
-  /* Visible custom scrollbar (Webkit) so users notice they can scroll. */
+  display: flex; flex-direction: column;
+}
+/* Scrollable inner — clipped vertically so the modal stays inside viewport. */
+.tpl-modal-content {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding: 32px 36px 28px;
   scrollbar-color: var(--marker-blue) var(--paper-edge);
   scrollbar-width: thin;
 }
-.tpl-modal::-webkit-scrollbar { width: 12px; }
-.tpl-modal::-webkit-scrollbar-track {
+.tpl-modal-content::-webkit-scrollbar { width: 12px; }
+.tpl-modal-content::-webkit-scrollbar-track {
   background: var(--paper-edge);
   border-left: 1.5px solid var(--ink);
 }
-.tpl-modal::-webkit-scrollbar-thumb {
+.tpl-modal-content::-webkit-scrollbar-thumb {
   background: var(--marker-blue);
   border: 2px solid var(--paper-edge);
   border-radius: 6px;
 }
-.tpl-modal::-webkit-scrollbar-thumb:hover {
+.tpl-modal-content::-webkit-scrollbar-thumb:hover {
   background: var(--walrus-deep, #0e3b66);
 }
 .tpl-stamp {
@@ -3052,7 +3058,8 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 
   /* Templates gallery: 1-col cards, full-width modal */
   .tpl-overlay { padding: 16px 8px; }
-  .tpl-modal { padding: 22px 18px 18px; max-height: calc(100vh - 32px); }
+  .tpl-shell { max-height: calc(100vh - 32px); }
+  .tpl-modal-content { padding: 22px 18px 18px; }
   .tpl-grid { grid-template-columns: 1fr; gap: 10px; }
   .tpl-card { padding: 14px 14px 48px; }
 
