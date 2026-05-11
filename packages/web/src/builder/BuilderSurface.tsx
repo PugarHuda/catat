@@ -234,6 +234,20 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
             Pick a field type from the palette, click any card to edit, toggle 🔒 to seal. Schema lives on Walrus, the form is a Sui shared object.
           </p>
 
+          <div className="tpl-cta">
+            <div className="tpl-cta-text">
+              <b>Don't start from scratch</b>
+              <span>5 ready-made recipes — bug report, NPS, founder app, contact, feature request</span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm tpl-cta-btn"
+              onClick={() => setGalleryOpen(true)}
+            >
+              📚 Browse templates →
+            </button>
+          </div>
+
           <div className="builder-grid">
             <aside className="palette">
               <h4>Field types</h4>
@@ -277,14 +291,6 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
                   />
                 </div>
                 <div className="form-meta-r">
-                  <button
-                    type="button"
-                    className="tpl-open-btn"
-                    onClick={() => setGalleryOpen(true)}
-                    title="Pick from a starter template"
-                  >
-                    📚 Templates
-                  </button>
                   ACTIVE FORM<br />
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: 0, textTransform: 'none' }}>
                     {activeFormId.slice(0, 8)}…{activeFormId.slice(-4)}
