@@ -76,6 +76,7 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
       { kind: 'pending', detail: 'Awaiting…' },
       { kind: 'pending', detail: 'Awaiting…' },
     ];
+    let currentStep = 0;
 
     setState({ kind: 'verifying', steps: [...steps] });
 
@@ -91,6 +92,7 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
         return;
       }
       steps[0] = { kind: 'pass', detail: `Found in checkpoint ${tx.checkpoint ?? '?'}` };
+      currentStep = 1;
       setState({ kind: 'verifying', steps: [...steps] });
 
       // Step 2: find SubmissionAdded event from catat::form
@@ -103,6 +105,7 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
       }
       const parsed = event.parsedJson as SubmissionAddedEvent;
       steps[1] = { kind: 'pass', detail: `catat::form::submit confirmed.` };
+      currentStep = 2;
       setState({ kind: 'verifying', steps: [...steps] });
 
       // Step 3: fetch blob from Walrus
@@ -115,6 +118,7 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
         return;
       }
       steps[2] = { kind: 'pass', detail: `Walrus returned ${blobBytes.length} bytes.` };
+      currentStep = 3;
       setState({ kind: 'verifying', steps: [...steps] });
 
       // Step 4: parse + validate body
@@ -154,9 +158,15 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
     } catch (e) {
       const msg = (e as Error).message || 'Unknown error';
       console.error('Verify failed:', e);
+      // Mark the step that was in flight as failed so the user sees WHICH
+      // phase blew up (instead of all four staying on "Awaiting…").
+      steps[currentStep] = {
+        kind: 'fail',
+        detail: msg.length > 100 ? msg.slice(0, 100) + '…' : msg,
+      };
       setState({
         kind: 'failed',
-        steps,
+        steps: [...steps],
         error: msg.length > 200 ? msg.slice(0, 200) + '…' : msg,
       });
     }
@@ -216,7 +226,13 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
                 try {
                   const text = await navigator.clipboard.readText();
                   if (text) setInput(text.trim());
-                } catch {}
+                } catch (err) {
+                  console.warn('clipboard read blocked:', err);
+                  // Browser denied — most common cause is non-secure context
+                  // or no permission. The input stays focused so user can
+                  // paste manually with Ctrl+V.
+                  alert('Clipboard read blocked by browser. Paste manually with Ctrl+V (or ⌘V).');
+                }
               }}
             >
               Paste

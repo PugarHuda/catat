@@ -83,9 +83,29 @@ export function useRealSubmissions(formId: string = BUG_REPORT_FORM_ID) {
         }),
       );
 
-      return submissions
-        .filter((r): r is PromiseFulfilledResult<Submission> => r.status === 'fulfilled')
-        .map(r => r.value);
+      // Replace silent rejection-drop with explicit placeholder rows. AdminSurface
+      // shows a "N of M failed to load" banner; the row itself renders with a
+      // "blob unreachable" body so the submitter knows their entry exists on
+      // chain but the body is currently un-fetchable.
+      return submissions.map((r, i): Submission => {
+        if (r.status === 'fulfilled') return r.value;
+        const blobId = blobIds[i] ?? 'unknown';
+        const reason = r.reason instanceof Error ? r.reason.message : String(r.reason);
+        console.warn(`[useRealSubmissions] blob ${blobId} failed:`, reason);
+        return {
+          id: `walrus_${blobId}_err`,
+          blob_id: blobId,
+          tx_hash: '',
+          form_id: formId,
+          submitted_at_ms: Date.now(),
+          submitter: '',
+          values: { _loadError: reason },
+          status: 'new',
+          priority: 'low',
+          tags: [],
+          source: 'walrus',
+        };
+      });
     },
     staleTime: 30_000,
     refetchOnWindowFocus: false,

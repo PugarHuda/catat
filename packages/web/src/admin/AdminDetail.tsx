@@ -3,21 +3,23 @@ import type { Field, FormSchema } from '../builder/types';
 import type { Submission } from './types';
 import { statusMeta, statusOrder } from './statusMeta';
 import { suiscanObject, suiscanTx, walruscanBlob } from '@/lib/contract';
-import { useSealDecrypt, type SealedFieldMeta } from '@/lib/useSealDecrypt';
+import type { SealedFieldMeta } from '@/lib/useSealDecrypt';
 
 interface Props {
   schema: FormSchema;
   submission: Submission;
+  /** Decrypt callback supplied by AdminSurface — its SessionKey ref outlives
+   *  this panel's mount, so opening 5 rows = 1 wallet popup, not 5. */
+  decrypt: (meta: SealedFieldMeta) => Promise<string>;
   onUpdate: (patch: Partial<Submission>) => void;
   onClose: () => void;
 }
 
-export default function AdminDetail({ schema, submission, onUpdate, onClose }: Props) {
+export default function AdminDetail({ schema, submission, decrypt, onUpdate, onClose }: Props) {
   const submittedAt = new Date(submission.submitted_at_ms);
   const submitterShort = submission.submitter
     ? `${submission.submitter.slice(0, 6)}…${submission.submitter.slice(-4)}`
     : 'anonymous';
-  const decrypt = useSealDecrypt();
 
   return (
     <aside className="detail">
@@ -276,5 +278,11 @@ function friendlyDecryptError(msg: string): string {
   if (lower.includes('no access') || lower.includes('enoaccess'))
     return 'Wallet is not the form owner. Only the form creator can decrypt sealed fields.';
   if (lower.includes('connect')) return 'Connect your wallet first (button top-right).';
+  // Phase tags from useSealDecrypt — let the user know WHICH part of the
+  // 4-step decrypt blew up so they can retry intelligently.
+  if (lower.includes('[seal:session-key]')) return 'Wallet signing failed during session-key setup. Try again or unlock your wallet.';
+  if (lower.includes('[seal:fetch-keys]')) return 'Seal key servers unreachable or refused — check connection and retry.';
+  if (lower.includes('[seal:decrypt]')) return 'Decryption failed locally after key fetch. Ciphertext may be corrupt.';
+  if (lower.includes('[seal:parse-ciphertext]')) return 'Sealed value in this submission is malformed — cannot decode ciphertext.';
   return msg.length > 180 ? msg.slice(0, 180) + '…' : msg;
 }

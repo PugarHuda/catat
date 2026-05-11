@@ -7,6 +7,7 @@ import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
 import type { Field, FieldType, FormSchema } from './types';
 import { fieldMeta, groupOrder, groupLabels } from './fieldMeta';
 import FieldRow from './FieldRow';
+import TemplatesGallery from './TemplatesGallery';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
@@ -67,6 +68,7 @@ function friendlyError(msg: string): string {
 export default function BuilderSurface({ schema, onSchemaChange: setSchema, activeFormId, onFormPublished, surface, onSurfaceChange, onHome }: Props) {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(schema.fields[0]?.id ?? null);
   const [publishState, setPublishState] = useState<PublishState>({ kind: 'idle' });
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const account = useCurrentAccount();
   const sui = useSuiClient();
@@ -153,7 +155,10 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       await signAndExecute({ transaction: certifyTx });
 
       const filesUploaded = await flow.listFiles();
-      const blobId = filesUploaded[0]?.blobId ?? '';
+      const blobId = filesUploaded[0]?.blobId;
+      if (!blobId) {
+        throw new Error('Walrus certify returned no blobId — refusing to mint Form pointing to empty schema');
+      }
 
       // 2. Mint a new Form on Sui via catat::form::create_form
       setPublishState({ kind: 'publishing', step: 'Sign Sui create_form', subStep: '3 of 3' });
@@ -272,6 +277,14 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
                   />
                 </div>
                 <div className="form-meta-r">
+                  <button
+                    type="button"
+                    className="tpl-open-btn"
+                    onClick={() => setGalleryOpen(true)}
+                    title="Pick from a starter template"
+                  >
+                    📚 Templates
+                  </button>
                   ACTIVE FORM<br />
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: 0, textTransform: 'none' }}>
                     {activeFormId.slice(0, 8)}…{activeFormId.slice(-4)}
@@ -368,7 +381,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
                   </div>
                   {selectedField.encrypted && (
                     <div className="seal-warn">
-                      Encrypted client-side. Only the form owner&rsquo;s wallet (2-of-3 Seal threshold) can decrypt — pending Move policy in this MVP.
+                      Encrypted client-side via Seal IBE (2-of-3 threshold). On-chain <code>seal_approve_owner</code> policy enforces that only this form&rsquo;s owner wallet can fetch decryption keys.
                     </div>
                   )}
                 </div>
@@ -413,6 +426,20 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
           formId={publishState.formId}
           schemaTitle={schema.title}
           onClose={() => setPublishState({ kind: 'idle' })}
+        />
+      )}
+
+      {galleryOpen && (
+        <TemplatesGallery
+          currentSchemaId={schema.id}
+          onPick={picked => {
+            // Loading a template replaces the draft entirely. The user can
+            // then edit any field — they're not coupled to the on-disk
+            // template after load. Selected field resets to the first.
+            setSchema(picked);
+            setSelectedFieldId(picked.fields[0]?.id ?? null);
+          }}
+          onClose={() => setGalleryOpen(false)}
         />
       )}
     </>

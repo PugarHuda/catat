@@ -9,6 +9,8 @@ import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
+import { BUG_REPORT_FORM_ID } from '@/lib/contract';
+import { useSealDecrypt } from '@/lib/useSealDecrypt';
 
 interface Props {
   schema: FormSchema;
@@ -47,6 +49,11 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
   const [openId, setOpenId] = useState<string | null>(null);
 
   const realQuery = useRealSubmissions(activeFormId);
+  // SessionKey lives at AdminSurface level so it survives the AdminDetail
+  // panel mounting and unmounting as the user clicks rows. Without this
+  // lift, every row open would re-prompt the wallet for a personal-message
+  // signature.
+  const decrypt = useSealDecrypt();
   const realSubmissions = realQuery.data ?? [];
 
   const allSubmissions = useMemo(
@@ -172,6 +179,26 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
             Every reply has an on-chain receipt. Sealed fields stay encrypted — click decrypt to fetch the Seal share with your wallet.
           </p>
 
+          {activeFormId === BUG_REPORT_FORM_ID && (
+            <div className="seed-form-banner">
+              <b>👀 viewing the public seed form</b>
+              <span>This form is owned by the catat deploy wallet — sealed fields <em>will not decrypt</em> for you. <b>Publish your own form via Builder</b> first to see the full encrypt → decrypt round-trip.</span>
+            </div>
+          )}
+
+          {realQuery.error && (
+            <div className="seed-form-banner err">
+              <b>⚠ inbox load error</b>
+              <span>Couldn&rsquo;t fetch submissions from chain: <code>{(realQuery.error as Error).message.slice(0, 140)}</code></span>
+            </div>
+          )}
+          {realQuery.data && realQuery.data.some(s => s.values._loadError) && (
+            <div className="seed-form-banner warn">
+              <b>⚠ some submissions failed to load</b>
+              <span>{realQuery.data.filter(s => s.values._loadError).length} of {realQuery.data.length} blob{realQuery.data.length === 1 ? '' : 's'} couldn&rsquo;t be fetched from Walrus — they appear in the table with a placeholder body. Check console for reasons.</span>
+            </div>
+          )}
+
           <div className="adm-stats">
             <div className="stat">
               <div className="label">replies</div>
@@ -226,6 +253,7 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
               <AdminDetail
                 schema={schema}
                 submission={openSubmission}
+                decrypt={decrypt}
                 onUpdate={patch => updateSubmission(openSubmission.id, patch)}
                 onClose={() => setOpenId(null)}
               />

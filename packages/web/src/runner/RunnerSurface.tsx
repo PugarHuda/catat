@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
+import { toBase64 } from '@mysten/sui/utils';
 import { walrus, WalrusFile } from '@mysten/walrus';
 import { SealClient } from '@mysten/seal';
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
@@ -18,16 +19,6 @@ import {
   SUI_CLOCK_OBJECT_ID,
   sealIdentity,
 } from '@/lib/contract';
-
-/** Encode bytes as base64 (browser-safe, no Buffer). */
-function bytesToBase64(bytes: Uint8Array): string {
-  let bin = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
-  }
-  return btoa(bin);
-}
 
 type SubmitState =
   | { kind: 'idle' }
@@ -176,7 +167,7 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
             formId: activeFormId,
             fieldId: f.id,
             keyId: sealIdentity(activeFormId, f.id),
-            ciphertext_b64: bytesToBase64(encryptedObject),
+            ciphertext_b64: toBase64(encryptedObject),
             ciphertext_bytes: encryptedObject.length,
             plaintext_bytes: plaintext.length,
           };
@@ -224,7 +215,10 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
       const certifyResult = await signAndExecute({ transaction: certifyTx });
 
       const filesUploaded = await flow.listFiles();
-      const blobId = filesUploaded[0]?.blobId ?? 'unknown';
+      const blobId = filesUploaded[0]?.blobId;
+      if (!blobId) {
+        throw new Error('Walrus certify returned no blobId — refusing to record placeholder on-chain');
+      }
 
       setSubmitState({ kind: 'submitting', step: 'Sign Sui registry record', subStep: '3 of 3' });
       const recordTx = new Transaction();

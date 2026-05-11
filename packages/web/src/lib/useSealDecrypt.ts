@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useCurrentAccount, useSignPersonalMessage, useSuiClient } from '@mysten/dapp-kit';
 import { SealClient, SessionKey, EncryptedObject } from '@mysten/seal';
 import { Transaction } from '@mysten/sui/transactions';
-import { fromHex } from '@mysten/sui/utils';
+import { fromBase64, fromHex } from '@mysten/sui/utils';
 import { SEAL_KEY_SERVERS_TESTNET } from './contract';
 
 /**
@@ -53,27 +53,41 @@ export function useSealDecrypt() {
       if (!account) throw new Error('Connect wallet to decrypt');
 
       let sessionKey = sessionKeyRef.current;
+      // packageId mismatch invalidates the session — Seal binds the session
+      // signature to a specific Move package so we can't reuse a key signed
+      // for a different package.
       const sessionStale =
         !sessionKey ||
         sessionKey.isExpired() ||
-        sessionKey.getAddress() !== account.address;
+        sessionKey.getAddress() !== account.address ||
+        sessionKey.getPackageId() !== meta.packageId;
 
       if (sessionStale) {
-        sessionKey = await SessionKey.create({
-          address: account.address,
-          packageId: meta.packageId,
-          ttlMin: SESSION_TTL_MIN,
-          suiClient: sui as unknown as Parameters<typeof SessionKey.create>[0]['suiClient'],
-        });
-        const sig = await signPersonalMessage({
-          message: sessionKey.getPersonalMessage(),
-        });
-        await sessionKey.setPersonalMessageSignature(sig.signature);
-        sessionKeyRef.current = sessionKey;
+        try {
+          sessionKey = await SessionKey.create({
+            address: account.address,
+            packageId: meta.packageId,
+            ttlMin: SESSION_TTL_MIN,
+            suiClient: sui as unknown as Parameters<typeof SessionKey.create>[0]['suiClient'],
+          });
+          const sig = await signPersonalMessage({
+            message: sessionKey.getPersonalMessage(),
+          });
+          await sessionKey.setPersonalMessageSignature(sig.signature);
+          sessionKeyRef.current = sessionKey;
+        } catch (err) {
+          throw tagPhase('session-key', err);
+        }
       }
 
-      const ciphertextBytes = base64ToBytes(meta.ciphertext_b64);
-      const idHex = EncryptedObject.parse(ciphertextBytes).id;
+      let ciphertextBytes: Uint8Array;
+      let idHex: string;
+      try {
+        ciphertextBytes = fromBase64(meta.ciphertext_b64);
+        idHex = EncryptedObject.parse(ciphertextBytes).id;
+      } catch (err) {
+        throw tagPhase('parse-ciphertext', err);
+      }
       const idBytes = fromHex(idHex);
 
       const tx = new Transaction();
@@ -83,28 +97,35 @@ export function useSealDecrypt() {
       });
       const txBytes = await tx.build({ client: sui, onlyTransactionKind: true });
 
-      await sealClient.fetchKeys({
-        ids: [idHex],
-        txBytes,
-        sessionKey: sessionKey!,
-        threshold: 2,
-      });
+      try {
+        await sealClient.fetchKeys({
+          ids: [idHex],
+          txBytes,
+          sessionKey: sessionKey!,
+          threshold: 2,
+        });
+      } catch (err) {
+        throw tagPhase('fetch-keys', err);
+      }
 
-      const plaintextBytes = await sealClient.decrypt({
-        data: ciphertextBytes,
-        sessionKey: sessionKey!,
-        txBytes,
-      });
-
-      return new TextDecoder().decode(plaintextBytes);
+      try {
+        const plaintextBytes = await sealClient.decrypt({
+          data: ciphertextBytes,
+          sessionKey: sessionKey!,
+          txBytes,
+        });
+        return new TextDecoder().decode(plaintextBytes);
+      } catch (err) {
+        throw tagPhase('decrypt', err);
+      }
     },
     [account, sui, signPersonalMessage, sealClient],
   );
 }
 
-function base64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
+function tagPhase(phase: string, err: unknown): Error {
+  const orig = err instanceof Error ? err : new Error(String(err));
+  const tagged = new Error(`[seal:${phase}] ${orig.message}`);
+  tagged.cause = orig;
+  return tagged;
 }
