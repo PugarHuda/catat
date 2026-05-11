@@ -37,7 +37,6 @@ function Header({ onEnterApp }: Props) {
           <a href="https://github.com/PugarHuda/catat" target="_blank" rel="noopener noreferrer">Open source</a>
         </nav>
         <div className="nav-cta">
-          <button type="button" className="btn btn-ghost">Sign in</button>
           <button type="button" className="btn btn-primary" onClick={onEnterApp}>
             Connect wallet
             <Arrow />

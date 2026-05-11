@@ -411,6 +411,12 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       </div>
 
       <main className="form-wrap">
+        {!embedMode && (
+          <div className="preview-banner">
+            <b>👁 Preview mode</b>
+            <span>You&rsquo;re testing the form yourself — submit still spends real WAL + SUI. Send respondents the <b>share URL</b> from your Publish modal for a clean fill-only view.</span>
+          </div>
+        )}
         <form className="fsheet" onSubmit={handleSubmit}>
           <div className="fhead">
             <div className="meta">

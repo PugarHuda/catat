@@ -13,9 +13,13 @@ const ORDS: Record<Surface, string> = {
   verify: '04',
 };
 
+// "Preview" instead of "Submit" makes intent obvious — this tab is for the
+// form author to test what respondents will see. The real submit flow for
+// respondents is the standalone share URL (?f=0x…&go=submit) which renders
+// the same Runner in embed mode (no surface tabs visible).
 const LABELS: Record<Surface, string> = {
   builder: 'Builder',
-  runner: 'Submit',
+  runner: 'Preview',
   admin: 'Inbox',
   verify: 'Verify',
 };

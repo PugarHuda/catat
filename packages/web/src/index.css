@@ -951,6 +951,25 @@ footer {
   padding: 0 24px;
 }
 
+/* Preview-mode banner — only shown when Runner is accessed via the
+   in-app tab (not via the ?f=… share URL). Clear messaging that this
+   is the author testing the form, not the respondent flow. */
+.preview-banner {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 18px;
+  margin: 0 0 18px;
+  background: var(--postit-blue);
+  border: 1.5px solid var(--marker-blue);
+  box-shadow: 4px 4px 0 var(--ink-soft);
+  transform: rotate(-0.3deg);
+  font-family: var(--body); font-size: 14px; line-height: 1.45;
+  color: var(--ink);
+}
+.preview-banner b:first-child {
+  font-family: var(--hand); font-size: 20px;
+  color: var(--marker-blue); letter-spacing: 0;
+}
+
 .fsheet {
   background: var(--paper-2);
   border: 2.5px solid var(--ink);
