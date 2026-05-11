@@ -8,9 +8,12 @@ interface Props {
   onSortChange: (s: SortKey) => void;
   totalShown: number;
   totalAll: number;
+  /** Hide the severity filter + severity sort option when the active form
+   *  has no severity field (most non-bug-report templates). */
+  hasSeverityField: boolean;
 }
 
-const SORT_LABELS: Record<SortKey, string> = {
+const ALL_SORT_LABELS: Record<SortKey, string> = {
   latest: 'latest first',
   oldest: 'oldest first',
   severity: 'by severity',
@@ -19,7 +22,7 @@ const SORT_LABELS: Record<SortKey, string> = {
 
 const SEVERITIES: Array<'Critical' | 'High' | 'Medium' | 'Low'> = ['Critical', 'High', 'Medium', 'Low'];
 
-export default function AdminFilters({ filters, onFiltersChange, sort, onSortChange, totalShown, totalAll }: Props) {
+export default function AdminFilters({ filters, onFiltersChange, sort, onSortChange, totalShown, totalAll, hasSeverityField }: Props) {
   const toggleStatus = (s: Status) => {
     const next = new Set(filters.status);
     if (next.has(s)) next.delete(s);
@@ -58,20 +61,24 @@ export default function AdminFilters({ filters, onFiltersChange, sort, onSortCha
         );
       })}
 
-      <span className="group-label" style={{ marginLeft: 8 }}>severity</span>
-      {SEVERITIES.map(sev => {
-        const active = filters.severity.has(sev);
-        return (
-          <button
-            key={sev}
-            type="button"
-            className={`filter-chip${active ? ' on' : ''}`}
-            onClick={() => toggleSeverity(sev)}
-          >
-            {sev}
-          </button>
-        );
-      })}
+      {hasSeverityField && (
+        <>
+          <span className="group-label" style={{ marginLeft: 8 }}>severity</span>
+          {SEVERITIES.map(sev => {
+            const active = filters.severity.has(sev);
+            return (
+              <button
+                key={sev}
+                type="button"
+                className={`filter-chip${active ? ' on' : ''}`}
+                onClick={() => toggleSeverity(sev)}
+              >
+                {sev}
+              </button>
+            );
+          })}
+        </>
+      )}
 
       <button
         type="button"
@@ -111,9 +118,11 @@ export default function AdminFilters({ filters, onFiltersChange, sort, onSortCha
             boxShadow: '2px 2px 0 var(--ink)',
           }}
         >
-          {(Object.entries(SORT_LABELS) as Array<[SortKey, string]>).map(([k, label]) => (
-            <option key={k} value={k}>{label}</option>
-          ))}
+          {(Object.entries(ALL_SORT_LABELS) as Array<[SortKey, string]>)
+            .filter(([k]) => hasSeverityField || k !== 'severity')
+            .map(([k, label]) => (
+              <option key={k} value={k}>{label}</option>
+            ))}
         </select>
       </span>
     </div>

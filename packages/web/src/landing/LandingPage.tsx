@@ -34,7 +34,20 @@ function Header({ onEnterApp }: Props) {
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
           <button type="button" onClick={onEnterApp}>Live demo ↗</button>
-          <a href="https://github.com/PugarHuda/catat" target="_blank" rel="noopener noreferrer">Open source</a>
+          <a
+            href="https://github.com/PugarHuda/catat#readme"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Docs ↗
+          </a>
+          <a
+            href="https://github.com/PugarHuda/catat"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open source ↗
+          </a>
         </nav>
         <div className="nav-cta">
           <button type="button" className="btn btn-primary" onClick={onEnterApp}>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  catat favicon — paper-square with "C-curve + checkmark" glyph that
+  matches the in-app BrandGlyph component. Cream paper bg + ink stroke
+  for the icon, with a Walrus-blue marker shadow accent (matches the
+  brand-glyph 2px ink-blue shadow used at the brand mark in the nav).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- shadow underneath (Walrus blue marker accent) -->
+  <rect x="6" y="8" width="50" height="50" rx="10" fill="#1f6fb2" transform="rotate(-3 32 32)"/>
+  <!-- paper-square top with ink rotated tab -->
+  <rect x="4" y="4" width="50" height="50" rx="10" fill="#211b14" transform="rotate(-3 32 32)"/>
+  <!-- glyph: open C-curve + checkmark, matches BrandGlyph svg -->
+  <g transform="rotate(-3 32 32)" stroke="#f4ecd6" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M44 19A18 18 0 1 0 44 39"/>
+    <path d="M26 28.5l5.5 5.5L44 21"/>
+  </g>
+</svg>

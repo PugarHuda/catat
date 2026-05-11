@@ -73,13 +73,41 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
   const [overlayMessage, setOverlayMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const realSubmissions = realQuery.data ?? [];
 
+  // Mock submissions only show when viewing the SEED form (= demo data
+  // for first-time visitors who haven't published their own form yet).
+  // For user-published forms, the inbox starts empty until real
+  // submissions land via the share URL — no fake noise from another form.
+  const showMocks = activeFormId === BUG_REPORT_FORM_ID;
   const allSubmissions = useMemo(
-    () => [...realSubmissions, ...submissions].map(s => {
-      const patch = overlay.get(s.id);
-      return patch ? { ...s, ...patch } : s;
-    }),
-    [realSubmissions, submissions, overlay],
+    () => {
+      const merged = showMocks
+        ? [...realSubmissions, ...submissions]
+        : [...realSubmissions];
+      return merged.map(s => {
+        const patch = overlay.get(s.id);
+        return patch ? { ...s, ...patch } : s;
+      });
+    },
+    [realSubmissions, submissions, overlay, showMocks],
   );
+
+  // Schema-aware filter visibility — severity filter only makes sense
+  // for forms that actually have a severity field. Same for sort.
+  const hasSeverityField = schema.fields.some(
+    f => f.id === 'f_severity' && Array.isArray(f.options) && f.options.length > 0,
+  );
+
+  // If user switched away from a severity-having form while severity sort
+  // was active, reset to latest. Same for severity filter chips.
+  useEffect(() => {
+    if (!hasSeverityField) {
+      if (sort === 'severity') setSort('latest');
+      if (filters.severity.size > 0) {
+        setFilters(f => ({ ...f, severity: new Set() }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSeverityField]);
 
   const filtered = useMemo(() => {
     let rows = allSubmissions;
@@ -228,7 +256,7 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
       <div className="wrap">
         <div className="sheet">
           <div className="sheet-head">
-            <span>Inbox · responses ledger</span>
+            <span>Inbox · {schema.title || 'untitled form'}</span>
             <span className="date">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </div>
           <h1 style={{ fontFamily: 'var(--hand)', fontWeight: 700, fontSize: 'clamp(40px, 5vw, 64px)', lineHeight: 1, margin: '0 0 8px', color: 'var(--ink)' }}>
@@ -288,6 +316,7 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
             onSortChange={setSort}
             totalShown={filtered.length}
             totalAll={counts.total}
+            hasSeverityField={hasSeverityField}
           />
 
           <div className="overlay-toolbar">

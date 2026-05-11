@@ -80,14 +80,23 @@ function RunnerInput({ field, value, onChange }: Pick<Props, 'field' | 'value' |
       );
 
     case 'url':
+      // type="text" instead of "url" — HTML5 url-validation runs against
+      // the visible input value (the stripped form, no scheme), which
+      // rejects every URL because it has no scheme there. We append the
+      // https:// to the stored value, so validation needs to be relaxed
+      // here. Placeholder uses field.placeholder if the form author set
+      // one; otherwise a generic example (was "suiscan.xyz/..." which
+      // implied only Sui URLs were allowed).
       return (
         <div className="in-url">
           <span className="pfx">https://</span>
           <input
-            type="url"
+            type="text"
+            inputMode="url"
             value={((value as string) ?? '').replace(/^https?:\/\//, '')}
             onChange={e => onChange(e.target.value ? `https://${e.target.value.replace(/^https?:\/\//, '')}` : '')}
-            placeholder="suiscan.xyz/testnet/tx/0x…"
+            placeholder={field.placeholder ?? 'your-site.com/path'}
+            spellCheck={false}
           />
         </div>
       );
