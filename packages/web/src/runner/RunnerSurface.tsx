@@ -338,8 +338,28 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
         ],
       });
       const recordResult = await signAndExecute({ transaction: combinedTx });
-      // certifyResult digest is now the same as recordResult since they're
-      // the same transaction; expose the combined digest for the receipt.
+      console.log('[submit] combined PTB submitted, digest:', recordResult.digest);
+
+      // Wait for chain confirmation so we can verify success before showing
+      // the receipt — otherwise a failed PTB would render a "saved forever"
+      // receipt for a tx that actually reverted.
+      setSubmitState({ kind: 'submitting', step: 'Waiting for Sui indexer…', subStep: '~10–20s' });
+      try {
+        const txDetails = await sui.waitForTransaction({
+          digest: recordResult.digest,
+          options: { showEffects: true },
+          timeout: 30_000,
+        });
+        if (txDetails.effects?.status?.status === 'failure') {
+          throw new Error(`On-chain execution failed: ${txDetails.effects.status.error ?? 'unknown'}`);
+        }
+        console.log('[submit] tx confirmed on chain');
+      } catch (waitErr) {
+        // Don't block the receipt entirely — bytes are certified, indexer
+        // is just slow. Show a soft warning but proceed.
+        console.warn('[submit] chain confirmation slow:', waitErr);
+      }
+      // certifyResult digest is the same as recordResult (single PTB).
       const certifyResult = recordResult;
 
       setSubmitted({

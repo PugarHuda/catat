@@ -190,23 +190,46 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
         ],
       });
       const createResult = await signAndExecute({ transaction: combinedTx });
+      console.log('[publish] combined PTB submitted, digest:', createResult.digest);
 
-      // Extract the freshly-created Form object id so Runner + Admin can switch
-      // to it. signAndExecute by default returns just the digest — we need to
-      // wait for indexing then fetch the tx with showObjectChanges to see the
-      // Form created by create_form().
-      const txDetails = await sui.waitForTransaction({
-        digest: createResult.digest,
-        options: { showObjectChanges: true },
-      });
-      const formChange = txDetails.objectChanges?.find(
-        (c): c is Extract<typeof c, { type: 'created' }> =>
-          c.type === 'created' && c.objectType.endsWith('::form::Form'),
-      );
-      const newFormId = formChange?.objectId;
-      if (!newFormId) {
-        throw new Error('create_form succeeded but Form object id was not found in objectChanges');
+      // Wait for Sui to index the tx and surface objectChanges. The testnet
+      // RPC sometimes takes 5-20s to populate objectChanges for a freshly-
+      // submitted tx; we retry up to ~30s with explicit progress updates so
+      // the user doesn't think the flow has died.
+      setPublishState({ kind: 'publishing', step: 'Waiting for Sui indexer…', subStep: '~10–20s' });
+      let newFormId: string | undefined;
+      const deadline = Date.now() + 30_000;
+      let attempt = 0;
+      while (!newFormId && Date.now() < deadline) {
+        attempt += 1;
+        try {
+          const txDetails = await sui.waitForTransaction({
+            digest: createResult.digest,
+            options: { showObjectChanges: true, showEffects: true },
+            timeout: 8_000,
+          });
+          if (txDetails.effects?.status?.status === 'failure') {
+            throw new Error(`On-chain execution failed: ${txDetails.effects.status.error ?? 'unknown'}`);
+          }
+          const formChange = txDetails.objectChanges?.find(
+            (c): c is Extract<typeof c, { type: 'created' }> =>
+              c.type === 'created' && c.objectType.endsWith('::form::Form'),
+          );
+          newFormId = formChange?.objectId;
+          if (!newFormId) {
+            console.warn(`[publish] attempt ${attempt}: no Form object in objectChanges, retrying…`);
+            await new Promise(r => setTimeout(r, 1500));
+          }
+        } catch (waitErr) {
+          // waitForTransaction timeout — keep polling within the outer deadline.
+          if (Date.now() >= deadline) throw waitErr;
+          console.warn(`[publish] attempt ${attempt} timed out, retrying…`);
+        }
       }
+      if (!newFormId) {
+        throw new Error(`Sui indexer didn't return the new Form within 30s. Tx ${createResult.digest.slice(0, 10)}… may still finalize — check Suiscan, then refresh.`);
+      }
+      console.log('[publish] new Form object id:', newFormId);
       onFormPublished(newFormId);
 
       setPublishState({ kind: 'success', blobId, txHash: createResult.digest, formId: newFormId });
