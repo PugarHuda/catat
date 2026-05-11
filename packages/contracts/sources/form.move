@@ -18,6 +18,7 @@ use sui::event;
 
 const ENotAcceptingSubmissions: u64 = 1;
 const ENotOwner: u64 = 2;
+const ENoAccess: u64 = 3;
 
 // ─── Structs ───────────────────────────────────────────────────────────────
 
@@ -122,4 +123,32 @@ public fun schema_blob_id(form: &Form): String {
 
 public fun accept_submissions(form: &Form): bool {
     form.accept_submissions
+}
+
+// ─── Seal access policy ────────────────────────────────────────────────────
+//
+// Seal key servers dry-run `seal_approve_*` with the requester as
+// ctx.sender(). If the call aborts, no key shares are released.
+//
+// Identity layout (see sealIdentity() in lib/contract.ts):
+//   id = bcs(form_id) (32 bytes) || ":" || field_id_utf8
+//
+// Two checks are needed:
+//   1. caller is form.owner — gates by ownership
+//   2. id starts with form.id.to_bytes() — prevents the owner from reusing
+//      their signature to decrypt another form's blobs (replay across forms)
+
+fun is_prefix(prefix: vector<u8>, full: vector<u8>): bool {
+    if (prefix.length() > full.length()) return false;
+    let mut i = 0;
+    while (i < prefix.length()) {
+        if (prefix[i] != full[i]) return false;
+        i = i + 1;
+    };
+    true
+}
+
+entry fun seal_approve_owner(id: vector<u8>, form: &Form, ctx: &TxContext) {
+    assert!(ctx.sender() == form.owner, ENoAccess);
+    assert!(is_prefix(form.id.to_bytes(), id), ENoAccess);
 }
