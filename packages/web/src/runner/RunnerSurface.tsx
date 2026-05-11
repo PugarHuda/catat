@@ -3,6 +3,7 @@ import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@
 import { useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
 import { walrus, WalrusFile } from '@mysten/walrus';
+import { SealClient } from '@mysten/seal';
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
 import type { FormSchema } from '../builder/types';
 import RunnerField, { type Values } from './RunnerField';
@@ -14,8 +15,20 @@ import type { Surface } from '@/lib/surfaces';
 import {
   BUG_REPORT_FORM_ID,
   CATAT_PACKAGE_ID,
+  SEAL_KEY_SERVERS_TESTNET,
   SUI_CLOCK_OBJECT_ID,
+  sealIdentity,
 } from '@/lib/contract';
+
+/** Encode bytes as base64 (browser-safe, no Buffer). */
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+  }
+  return btoa(bin);
+}
 
 type SubmitState =
   | { kind: 'idle' }
@@ -82,6 +95,13 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
     );
   }, [sui]);
 
+  const sealClient = useMemo(() => {
+    return new SealClient({
+      suiClient: sui as unknown as ConstructorParameters<typeof SealClient>[0]['suiClient'],
+      serverConfigs: SEAL_KEY_SERVERS_TESTNET.map(objectId => ({ objectId, weight: 1 })),
+    });
+  }, [sui]);
+
   const updateValue = (id: string, v: unknown) => {
     setValues(prev => ({ ...prev, [id]: v }));
   };
@@ -123,21 +143,43 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
     const submissionValues: Record<string, unknown> = {};
     const encryptedFieldIds: string[] = [];
 
+    // Build values, encrypting any sealed fields client-side via Seal IBE.
+    const sealedFields = schema.fields.filter(f => f.encrypted && values[f.id] != null);
+    if (sealedFields.length > 0) {
+      setSubmitState({ kind: 'submitting', step: `Encrypting ${sealedFields.length} sealed field${sealedFields.length === 1 ? '' : 's'} via Seal…` });
+    }
+
     for (const f of schema.fields) {
       const raw = values[f.id];
       const serialized = serializeValue(raw);
 
       if (f.encrypted && raw != null) {
         encryptedFieldIds.push(f.id);
-        const previewSize =
+        const plaintext =
           typeof serialized === 'string'
-            ? serialized.length
-            : JSON.stringify(serialized ?? null).length;
-        submissionValues[f.id] = {
-          encrypted: true,
-          scheme: 'seal-ibe-2of3-pending',
-          ciphertext_placeholder: `[Seal-encryption pending: ~${previewSize} bytes plaintext]`,
-        };
+            ? serialized
+            : JSON.stringify(serialized ?? null);
+
+        try {
+          const { encryptedObject } = await sealClient.encrypt({
+            threshold: 2,
+            packageId: CATAT_PACKAGE_ID,
+            id: sealIdentity(BUG_REPORT_FORM_ID, f.id),
+            data: new TextEncoder().encode(plaintext),
+          });
+          submissionValues[f.id] = {
+            encrypted: true,
+            scheme: 'seal-ibe-2of3',
+            packageId: CATAT_PACKAGE_ID,
+            keyId: sealIdentity(BUG_REPORT_FORM_ID, f.id),
+            ciphertext_b64: bytesToBase64(encryptedObject),
+            ciphertext_bytes: encryptedObject.length,
+            plaintext_bytes: plaintext.length,
+          };
+        } catch (err) {
+          console.error(`Seal encrypt failed for ${f.id}:`, err);
+          throw new Error(`Seal encryption failed for "${f.label}": ${(err as Error).message}`);
+        }
       } else {
         submissionValues[f.id] = serialized ?? null;
       }

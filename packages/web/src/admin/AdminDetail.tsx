@@ -123,7 +123,16 @@ function FieldAnswer({ field, value }: { field: Field; value: unknown }) {
   }
 
   if (typeof value === 'object' && value !== null && (value as { encrypted?: boolean }).encrypted) {
-    return <SealedAnswer plaintext={(value as { ciphertext_placeholder?: string }).ciphertext_placeholder ?? '▒▒▒▒-▒▒▒▒-▒▒▒▒'} />;
+    const sealed = value as {
+      ciphertext_bytes?: number;
+      plaintext_bytes?: number;
+      ciphertext_placeholder?: string;
+      scheme?: string;
+    };
+    const sizeNote = sealed.ciphertext_bytes
+      ? `${sealed.ciphertext_bytes} ciphertext bytes`
+      : sealed.ciphertext_placeholder ?? '▒▒▒▒';
+    return <SealedAnswer plaintext={sizeNote} />;
   }
 
   if (Array.isArray(value)) {
