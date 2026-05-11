@@ -169,28 +169,34 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
         throw new Error('Walrus encode returned no blobId — refusing to start publish flow');
       }
 
-      setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 2' });
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 3' });
       const reserveTx = flow.register({ epochs: 26, owner: account.address, deletable: false });
       const reserveResult = await signAndExecute({ transaction: reserveTx });
 
       setPublishState({ kind: 'publishing', step: 'Uploading via Walrus relay…' });
       await flow.upload({ digest: reserveResult.digest });
 
-      // ATOMIC: certify + create_form in a single PTB. flow.certify() returns
-      // a Transaction we can extend with our Move call — both ops succeed or
-      // both fail. Eliminates the "ghost blob" risk where bytes get certified
-      // but the Form is never minted.
-      setPublishState({ kind: 'publishing', step: 'Sign Walrus certify + Sui create_form', subStep: '2 of 2' });
-      const combinedTx = flow.certify();
-      combinedTx.moveCall({
+      // Sequential 3-sig flow (rolled back from a combined-PTB attempt
+      // that proved flaky on testnet — the combined tx's objectChanges
+      // didn't reliably surface the new Form object via the public RPC,
+      // leaving the publish flow stuck post-sign-2). Three smaller txs
+      // index independently and each digest is debuggable on its own.
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus certify', subStep: '2 of 3' });
+      const certifyTx = flow.certify();
+      const certifyResult = await signAndExecute({ transaction: certifyTx });
+      console.log('[publish] Walrus certify confirmed, digest:', certifyResult.digest);
+
+      setPublishState({ kind: 'publishing', step: 'Sign Sui create_form', subStep: '3 of 3' });
+      const createTx = new Transaction();
+      createTx.moveCall({
         target: `${CATAT_PACKAGE_ID}::form::create_form`,
         arguments: [
-          combinedTx.pure.string(schema.title),
-          combinedTx.pure.string(blobId),
+          createTx.pure.string(schema.title),
+          createTx.pure.string(blobId),
         ],
       });
-      const createResult = await signAndExecute({ transaction: combinedTx });
-      console.log('[publish] combined PTB submitted, digest:', createResult.digest);
+      const createResult = await signAndExecute({ transaction: createTx });
+      console.log('[publish] Sui create_form submitted, digest:', createResult.digest);
 
       // Wait for Sui to index the tx and surface objectChanges. The testnet
       // RPC sometimes takes 5-20s to populate objectChanges for a freshly-

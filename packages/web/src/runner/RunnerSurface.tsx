@@ -312,7 +312,7 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
         throw new Error('Walrus encode returned no blobId — refusing to start submit flow');
       }
 
-      setSubmitState({ kind: 'submitting', step: 'Sign Walrus reserve', subStep: '1 of 2' });
+      setSubmitState({ kind: 'submitting', step: 'Sign Walrus reserve', subStep: '1 of 3' });
       const registerTx = flow.register({
         epochs: 10,
         owner: account.address,
@@ -323,44 +323,26 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       setSubmitState({ kind: 'submitting', step: 'Uploading via Walrus relay…' });
       await flow.upload({ digest: registerResult.digest });
 
-      // ATOMIC: certify + form::submit in a single PTB. Either both ops
-      // succeed (blob stored on Walrus AND blob_id appended to Form
-      // submission vector) or both fail. No half-state where bytes are
-      // certified but never registered on chain.
-      setSubmitState({ kind: 'submitting', step: 'Sign Walrus certify + Sui submit', subStep: '2 of 2' });
-      const combinedTx = flow.certify();
-      combinedTx.moveCall({
+      // Sequential 3-sig flow (rolled back from combined-PTB approach —
+      // see same comment in BuilderSurface). Three smaller txs index
+      // independently and each digest is debuggable on its own.
+      setSubmitState({ kind: 'submitting', step: 'Sign Walrus certify', subStep: '2 of 3' });
+      const certifyTx = flow.certify();
+      const certifyResult = await signAndExecute({ transaction: certifyTx });
+      console.log('[submit] Walrus certify confirmed, digest:', certifyResult.digest);
+
+      setSubmitState({ kind: 'submitting', step: 'Sign Sui form::submit', subStep: '3 of 3' });
+      const recordTx = new Transaction();
+      recordTx.moveCall({
         target: `${CATAT_PACKAGE_ID}::form::submit`,
         arguments: [
-          combinedTx.object(activeFormId),
-          combinedTx.pure.string(blobId),
-          combinedTx.object(SUI_CLOCK_OBJECT_ID),
+          recordTx.object(activeFormId),
+          recordTx.pure.string(blobId),
+          recordTx.object(SUI_CLOCK_OBJECT_ID),
         ],
       });
-      const recordResult = await signAndExecute({ transaction: combinedTx });
-      console.log('[submit] combined PTB submitted, digest:', recordResult.digest);
-
-      // Wait for chain confirmation so we can verify success before showing
-      // the receipt — otherwise a failed PTB would render a "saved forever"
-      // receipt for a tx that actually reverted.
-      setSubmitState({ kind: 'submitting', step: 'Waiting for Sui indexer…', subStep: '~10–20s' });
-      try {
-        const txDetails = await sui.waitForTransaction({
-          digest: recordResult.digest,
-          options: { showEffects: true },
-          timeout: 30_000,
-        });
-        if (txDetails.effects?.status?.status === 'failure') {
-          throw new Error(`On-chain execution failed: ${txDetails.effects.status.error ?? 'unknown'}`);
-        }
-        console.log('[submit] tx confirmed on chain');
-      } catch (waitErr) {
-        // Don't block the receipt entirely — bytes are certified, indexer
-        // is just slow. Show a soft warning but proceed.
-        console.warn('[submit] chain confirmation slow:', waitErr);
-      }
-      // certifyResult digest is the same as recordResult (single PTB).
-      const certifyResult = recordResult;
+      const recordResult = await signAndExecute({ transaction: recordTx });
+      console.log('[submit] Sui form::submit submitted, digest:', recordResult.digest);
 
       setSubmitted({
         persisted: {
@@ -512,7 +494,7 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
                   {' '}Attached files (un-sealed) ride along inside the same Quilt blob.
                 </>
               ) : (
-                <>2 wallet sigs: Walrus reserve, then a single atomic certify+Sui submit PTB. Submission JSON + any attached files all bundle into one Walrus Quilt blob; that blob_id is appended to the on-chain Form.</>
+                <>3 wallet sigs: Walrus reserve → certify → Sui form::submit. Submission JSON + any attached files all bundle into one Walrus Quilt blob; that blob_id is appended to the on-chain Form.</>
               )}
             </p>
             <span className="gas-tip">~ <b>0.0021 SUI</b> · gas</span>
