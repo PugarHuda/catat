@@ -156,7 +156,7 @@ function SchemaLoading({ formId }: { formId: string }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)', padding: 24 }}>
       <div style={{ textAlign: 'center', fontFamily: 'var(--body)', color: 'var(--ink-soft)' }}>
-        <div style={{ width: 24, height: 24, border: '3px dashed var(--sui-blue)', borderRadius: '50%', animation: 'spin 1.4s linear infinite', margin: '0 auto 12px' }} />
+        <div style={{ width: 24, height: 24, border: '3px dashed var(--walrus-deep)', borderRadius: '50%', animation: 'spin 1.4s linear infinite', margin: '0 auto 12px' }} />
         <div style={{ fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--marker-red)' }}>Loading form…</div>
         <div style={{ marginTop: 4, fontFamily: 'var(--mono)', fontSize: 11 }}>{formId.slice(0, 12)}…{formId.slice(-6)}</div>
         <div style={{ marginTop: 8, fontSize: 13 }}>Fetching schema from Walrus + Sui chain.</div>
