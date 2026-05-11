@@ -49,13 +49,14 @@ export interface SubmittedView {
 interface Props {
   schema: FormSchema;
   submission: SubmittedView;
+  embedMode?: boolean;
   onReset: () => void;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
   onHome?: () => void;
 }
 
-export default function RunnerReview({ schema, submission, onReset, surface, onSurfaceChange, onHome }: Props) {
+export default function RunnerReview({ schema, submission, embedMode = false, onReset, surface, onSurfaceChange, onHome }: Props) {
   const { persisted, receipt } = submission;
   const isReal = receipt !== null;
   const submittedAt = new Date(persisted.submitted_at_ms);
@@ -66,15 +67,23 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
   return (
     <>
       <div className="thinbar">
-        <button type="button" onClick={onHome} className="brand-mini" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
-          <BrandGlyph size="sm" />
-          catat
-        </button>
+        {embedMode ? (
+          <span className="brand-mini" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <BrandGlyph size="sm" />
+            catat
+            <small style={{ fontFamily: 'var(--type)', fontSize: 10, marginLeft: 4, color: 'var(--pencil)' }}>· receipt</small>
+          </span>
+        ) : (
+          <button type="button" onClick={onHome} className="brand-mini" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
+            <BrandGlyph size="sm" />
+            catat
+          </button>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <span style={{ fontFamily: 'var(--type)', fontSize: 10, letterSpacing: '.1em' }}>
             FORM {formIdShort} · receipt
           </span>
-          <SurfaceTabs current={surface} onChange={onSurfaceChange} />
+          {!embedMode && <SurfaceTabs current={surface} onChange={onSurfaceChange} />}
           <WalletButton />
         </div>
       </div>

@@ -27,6 +27,20 @@
   --marker-purple: #6b3a8c;
   --highlight:     #ffea7a;
 
+  /* Sui + Walrus brand accents
+   * --sui-blue: from Mysten brand kit (#4DA2FF), used for primary CTAs
+   *   (Publish, Submit, Decrypt, Get WAL).
+   * --walrus-teal: Walrus on-chain "live" indicator. Softer, sea-mammal
+   *   energy; used for verified ✓ badges, "on-chain" tags, and the
+   *   landing live counter.
+   * Marker-red is preserved for warnings/errors and the sealed-field
+   *   border so it stays meaningful when it shows up.
+   */
+  --sui-blue:      #4DA2FF;
+  --sui-blue-deep: #1F76C9;
+  --walrus-teal:   #6BD0E1;
+  --walrus-deep:   #2A8FA8;
+
   /* post-its */
   --postit:        #fff3a6;
   --postit-pink:   #ffd1d9;
@@ -70,6 +84,8 @@
   --color-marker-blue:  var(--marker-blue);
   --color-marker-green: var(--marker-green);
   --color-marker-purple: var(--marker-purple);
+  --color-sui-blue:     var(--sui-blue);
+  --color-walrus-teal:  var(--walrus-teal);
   --color-highlight:    var(--highlight);
   --color-postit:       var(--postit);
   --color-postit-pink:  var(--postit-pink);
@@ -84,7 +100,7 @@
   --color-card-foreground:   var(--ink);
   --color-popover:           var(--paper-2);
   --color-popover-foreground: var(--ink);
-  --color-primary:           var(--marker-red);
+  --color-primary:           var(--sui-blue);
   --color-primary-foreground: var(--paper);
   --color-secondary:         var(--paper-edge);
   --color-secondary-foreground: var(--ink);
@@ -224,7 +240,8 @@ kbd { font-family: var(--mono); }
 .btn:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
 .btn:disabled:hover { transform: none; box-shadow: inset 0 0 0 2px var(--ink), 3px 3px 0 var(--ink); }
 
-.btn-primary { background: var(--marker-red); color: var(--paper); }
+.btn-primary { background: var(--sui-blue); color: var(--paper); border-color: var(--sui-blue-deep); }
+.btn-primary:hover { background: var(--sui-blue-deep); }
 .btn-ghost {
   background: transparent;
   box-shadow: inset 0 0 0 1.5px var(--pencil-soft);
@@ -266,7 +283,7 @@ kbd { font-family: var(--mono); }
 }
 .tag .dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: var(--marker-red); box-shadow: 0 0 0 2px var(--paper);
+  background: var(--walrus-teal); box-shadow: 0 0 0 2px var(--paper);
 }
 
 .lock-tag {
@@ -440,7 +457,7 @@ footer {
   background: var(--ink); border-radius: 50%;
   transition: left 0.15s;
 }
-.toggle.on { background: var(--marker-red); }
+.toggle.on { background: var(--sui-blue); }
 .toggle.on::after { left: 24px; background: var(--paper); }
 
 /* ---- highlighter underline (for headlines) ---- */
@@ -1009,7 +1026,7 @@ footer {
   overflow: hidden;
 }
 .progress .bar .f {
-  height: 100%; background: var(--marker-red);
+  height: 100%; background: var(--sui-blue);
   border-right: 1.5px solid var(--ink);
   transition: width 0.25s;
 }
@@ -1022,41 +1039,44 @@ footer {
  * contrast against the sheet, and a generous gap between them.
  */
 .q {
-  margin: 0 0 32px;
-  padding: 28px 22px 18px;
+  margin: 0 0 40px;
+  padding: 32px 26px 22px;
   position: relative;
   background: var(--paper-2);
   border: 1.5px solid var(--paper-edge);
+  border-left: 4px solid var(--sui-blue);
   border-radius: 4px;
-  box-shadow: 2px 2px 0 var(--paper-edge);
+  box-shadow: 3px 3px 0 var(--paper-edge);
   transition: border-color 140ms ease-out, box-shadow 140ms ease-out, transform 140ms ease-out;
 }
 .q:hover {
   border-color: var(--pencil-soft);
+  border-left-color: var(--sui-blue-deep);
 }
 .q:focus-within {
   border-color: var(--ink);
-  box-shadow: 5px 5px 0 var(--ink-soft);
-  transform: translate(-1px, -1px);
+  border-left-color: var(--sui-blue-deep);
+  box-shadow: 6px 6px 0 var(--sui-blue);
+  transform: translate(-2px, -2px);
 }
 .q.sealed {
   border-left: 4px solid var(--marker-red);
-  background: linear-gradient(to right, var(--postit-pink) 0%, var(--paper-2) 100px);
+  background: linear-gradient(to right, var(--postit-pink) 0%, var(--paper-2) 140px);
 }
 .q.sealed:focus-within {
   border-color: var(--marker-red);
-  box-shadow: 5px 5px 0 var(--marker-red);
+  box-shadow: 6px 6px 0 var(--marker-red);
 }
 .qhead {
-  display: flex; align-items: center; gap: 12px;
-  margin-bottom: 12px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 14px; flex-wrap: wrap;
 }
 .qhead .num {
   position: absolute;
-  top: -14px; left: 14px;
+  top: -14px; left: 18px;
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 44px; height: 28px; padding: 0 12px;
-  background: var(--marker-red); color: var(--paper);
+  min-width: 48px; height: 30px; padding: 0 14px;
+  background: var(--sui-blue); color: var(--paper);
   font-family: var(--type); font-size: 12px; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase;
   border-radius: 4px;
@@ -1066,7 +1086,7 @@ footer {
 .q.sealed .qhead .num { background: var(--marker-red); }
 .qhead h3 {
   font-family: var(--body); font-weight: 700;
-  font-size: 20px; line-height: 1.35;
+  font-size: 22px; line-height: 1.35;
   margin: 0; color: var(--ink);
   letter-spacing: -0.005em;
   flex: 1; min-width: 200px;
@@ -1291,14 +1311,17 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 }
 .btn-submit {
   font-family: var(--hand); font-size: 28px; font-weight: 700;
-  color: var(--paper); background: var(--marker-red);
+  color: var(--paper); background: var(--sui-blue);
   padding: 14px 30px;
-  border: 2.5px solid var(--ink); border-radius: 10px;
+  border: 2.5px solid var(--sui-blue-deep); border-radius: 10px;
   box-shadow: 5px 5px 0 var(--ink);
   transform: rotate(-1deg);
   display: inline-flex; align-items: center; gap: 10px;
   line-height: 1; cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+}
+.btn-submit:hover:not(:disabled) {
+  background: var(--sui-blue-deep);
 }
 .btn-submit:hover {
   transform: rotate(-1deg) translate(-2px, -2px);
@@ -1582,7 +1605,7 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   transform: translate(-1px, -1px);
   box-shadow: 5px 5px 0 var(--ink);
 }
-.r-actions .primary { background: var(--marker-red); color: var(--paper); }
+.r-actions .primary { background: var(--sui-blue); color: var(--paper); border-color: var(--sui-blue-deep); }
 
 .proof-note {
   display: flex; gap: 18px; align-items: center;
@@ -2976,7 +2999,7 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 }
 .wallet-pill .dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--marker-green);
+  background: var(--walrus-teal);
   box-shadow: 0 0 0 2px var(--paper);
 }
 

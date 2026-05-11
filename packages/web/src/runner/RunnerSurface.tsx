@@ -30,6 +30,9 @@ interface Props {
   /** The Form object id this Runner submits into. Lifted from App so Builder
    *  publish can swap it to a wallet-owned form (enabling decrypt round-trip). */
   activeFormId: string;
+  /** Respondent mode — hides surface tabs and home link so people who
+   *  arrive via a share URL only see the form to fill, not the CMS. */
+  embedMode?: boolean;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
   onHome?: () => void;
@@ -130,7 +133,7 @@ function friendlyError(msg: string): string {
   return msg.length > 220 ? msg.slice(0, 220) + '…' : msg;
 }
 
-export default function RunnerSurface({ schema, activeFormId, surface, onSurfaceChange, onHome }: Props) {
+export default function RunnerSurface({ schema, activeFormId, embedMode = false, surface, onSurfaceChange, onHome }: Props) {
   const [values, setValues] = useState<Values>({});
   const [submitted, setSubmitted] = useState<SubmittedView | null>(null);
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
@@ -367,6 +370,7 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
       <RunnerReview
         schema={schema}
         submission={submitted}
+        embedMode={embedMode}
         onReset={() => {
           setValues({});
           setSubmitted(null);
@@ -381,15 +385,23 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
   return (
     <>
       <div className="thinbar">
-        <button type="button" onClick={onHome} className="brand-mini" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
-          <BrandGlyph size="sm" />
-          catat
-        </button>
+        {embedMode ? (
+          <span className="brand-mini" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <BrandGlyph size="sm" />
+            catat
+            <small style={{ fontFamily: 'var(--type)', fontSize: 10, marginLeft: 4, color: 'var(--pencil)' }}>· form by walrus</small>
+          </span>
+        ) : (
+          <button type="button" onClick={onHome} className="brand-mini" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
+            <BrandGlyph size="sm" />
+            catat
+          </button>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <span style={{ fontFamily: 'var(--type)', fontSize: 10, letterSpacing: '.1em' }}>
             FORM {activeFormId.slice(0, 6)}…{activeFormId.slice(-4)}
           </span>
-          <SurfaceTabs current={surface} onChange={onSurfaceChange} />
+          {!embedMode && <SurfaceTabs current={surface} onChange={onSurfaceChange} />}
           <WalletButton />
         </div>
       </div>
