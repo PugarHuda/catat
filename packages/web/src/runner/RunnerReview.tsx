@@ -11,23 +11,44 @@ import {
   walruscanBlob,
 } from '@/lib/contract';
 
-export interface SerializedSubmission {
+/** What's actually written to the Walrus blob — strict subset of fields
+ *  that mirror the on-chain submission JSON spec. */
+export interface PersistedSubmission {
   version: string;
   form_id: string;
   form_schema_blob_id: string;
   submitted_at_ms: number;
   submitter: string;
   values: Record<string, unknown>;
-  _meta_encrypted_field_ids: string[];
-  _real_blob_id?: string;
-  _real_tx_hash?: string;
-  _real_walrus_certify_tx?: string;
-  _real_form_id?: string;
+}
+
+/** Client-only receipt info captured during the live submit flow. Never
+ *  written to chain — used purely to render the "saved forever" view with
+ *  copyable on-chain artifact links. Either ALL fields exist (real submit)
+ *  or the receipt is `null` (preview-only / dry-run). */
+export interface SubmitReceipt {
+  blobId: string;
+  txHash: string;
+  walrusCertifyTx?: string;
+  /** form_id at the moment of submit — usually equals
+   *  `persisted.form_id` but kept separate to survive future migrations. */
+  formId: string;
+  /** Field ids whose values were Seal-encrypted client-side. Used by
+   *  the "🔒 N sealed" badges in the receipt. */
+  encryptedFieldIds: string[];
+}
+
+/** Compose passed into RunnerReview. `receipt: null` = preview/dry-run
+ *  (no real on-chain artifacts yet). `receipt: SubmitReceipt` = live submit
+ *  with all artifact links populated. */
+export interface SubmittedView {
+  persisted: PersistedSubmission;
+  receipt: SubmitReceipt | null;
 }
 
 interface Props {
   schema: FormSchema;
-  submission: SerializedSubmission;
+  submission: SubmittedView;
   onReset: () => void;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
@@ -35,18 +56,11 @@ interface Props {
 }
 
 export default function RunnerReview({ schema, submission, onReset, surface, onSurfaceChange, onHome }: Props) {
-  const {
-    _meta_encrypted_field_ids,
-    _real_blob_id,
-    _real_tx_hash,
-    _real_walrus_certify_tx,
-    _real_form_id,
-  } = submission;
-
-  const isReal = Boolean(_real_blob_id);
-  const submittedAt = new Date(submission.submitted_at_ms);
-  const submitterShort = `${submission.submitter.slice(0, 6)}…${submission.submitter.slice(-4)}`;
-  const displayFormId = _real_form_id ?? submission.form_id;
+  const { persisted, receipt } = submission;
+  const isReal = receipt !== null;
+  const submittedAt = new Date(persisted.submitted_at_ms);
+  const submitterShort = `${persisted.submitter.slice(0, 6)}…${persisted.submitter.slice(-4)}`;
+  const displayFormId = receipt?.formId ?? persisted.form_id;
   const formIdShort = `${displayFormId.slice(0, 6)}…${displayFormId.slice(-4)}`;
 
   return (
@@ -89,16 +103,16 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
           )}
         </p>
 
-        {isReal && _real_blob_id && _real_tx_hash && (
+        {receipt && (
           <ReceiptSheet
-            blobId={_real_blob_id}
-            txHash={_real_tx_hash}
-            walrusCertifyTx={_real_walrus_certify_tx}
+            blobId={receipt.blobId}
+            txHash={receipt.txHash}
+            walrusCertifyTx={receipt.walrusCertifyTx}
             formId={displayFormId}
-            submitter={submission.submitter}
+            submitter={persisted.submitter}
             submitterShort={submitterShort}
             submittedAt={submittedAt}
-            sealedFieldIds={_meta_encrypted_field_ids}
+            sealedFieldIds={receipt.encryptedFieldIds}
             schema={schema}
           />
         )}
@@ -106,14 +120,14 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
         <div className="r-actions">
           <a
             className="primary"
-            href={isReal && _real_blob_id ? walruscanBlob(_real_blob_id) : '#'}
+            href={receipt ? walruscanBlob(receipt.blobId) : '#'}
             target="_blank"
             rel="noopener noreferrer"
           >
             View public proof →
           </a>
-          {isReal && _real_tx_hash && (
-            <a href={suiscanTx(_real_tx_hash)} target="_blank" rel="noopener noreferrer">
+          {receipt && (
+            <a href={suiscanTx(receipt.txHash)} target="_blank" rel="noopener noreferrer">
               🔍 Sui registry tx
             </a>
           )}

@@ -8,7 +8,7 @@ import { SealClient } from '@mysten/seal';
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
 import type { FormSchema } from '../builder/types';
 import RunnerField, { type Values } from './RunnerField';
-import RunnerReview, { type SerializedSubmission } from './RunnerReview';
+import RunnerReview, { type SubmittedView } from './RunnerReview';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
@@ -132,7 +132,7 @@ function friendlyError(msg: string): string {
 
 export default function RunnerSurface({ schema, activeFormId, surface, onSurfaceChange, onHome }: Props) {
   const [values, setValues] = useState<Values>({});
-  const [submitted, setSubmitted] = useState<SerializedSubmission | null>(null);
+  const [submitted, setSubmitted] = useState<SubmittedView | null>(null);
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
 
   const account = useCurrentAccount();
@@ -336,17 +336,21 @@ export default function RunnerSurface({ schema, activeFormId, surface, onSurface
       const recordResult = await signAndExecute({ transaction: recordTx });
 
       setSubmitted({
-        version: '1.0',
-        form_id: submissionPayload.form_id,
-        form_schema_blob_id: 'blob_schema_pending_publish',
-        submitted_at_ms: submissionPayload.submitted_at_ms,
-        submitter: account.address,
-        values: submissionValues,
-        _meta_encrypted_field_ids: encryptedFieldIds,
-        _real_blob_id: blobId,
-        _real_tx_hash: recordResult.digest,
-        _real_walrus_certify_tx: certifyResult.digest,
-        _real_form_id: activeFormId,
+        persisted: {
+          version: '1.0',
+          form_id: submissionPayload.form_id,
+          form_schema_blob_id: 'blob_schema_pending_publish',
+          submitted_at_ms: submissionPayload.submitted_at_ms,
+          submitter: account.address,
+          values: submissionValues,
+        },
+        receipt: {
+          blobId,
+          txHash: recordResult.digest,
+          walrusCertifyTx: certifyResult.digest,
+          formId: activeFormId,
+          encryptedFieldIds,
+        },
       });
       queryClient.invalidateQueries({ queryKey: ['form-stats'] });
       queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });

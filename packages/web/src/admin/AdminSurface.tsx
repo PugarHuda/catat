@@ -5,11 +5,12 @@ import AdminFilters from './AdminFilters';
 import AdminTable from './AdminTable';
 import AdminDetail from './AdminDetail';
 import { useRealSubmissions } from './useRealSubmissions';
+import { useAdminOverlay } from './useAdminOverlay';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
-import { BUG_REPORT_FORM_ID } from '@/lib/contract';
+import { BUG_REPORT_FORM_ID, walruscanBlob } from '@/lib/contract';
 import { useSealDecrypt } from '@/lib/useSealDecrypt';
 
 interface Props {
@@ -55,11 +56,21 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
   // signature.
   const decrypt = useSealDecrypt();
   // Triage overlay for on-chain submissions: real Walrus submissions are
-  // immutable (the blob can't be changed), so triage state — status,
-  // priority, notes — lives in this in-memory Map keyed by submission id
-  // and gets merged on display. Survives only the current session;
-  // persistence to a wallet-owned admin blob is on the roadmap.
-  const [overlay, setOverlay] = useState<Map<string, Partial<Submission>>>(new Map());
+  // immutable, so triage state — status, priority, notes — lives in a
+  // Map keyed by submission id. Persisted via useAdminOverlay:
+  //   • localStorage auto-syncs every change (survives refresh)
+  //   • Walrus backup writes a blob the form owner can restore from
+  //     anywhere by pasting the blob_id.
+  const {
+    overlay,
+    patchSubmission,
+    lastBackup,
+    backupToWalrus,
+    restoreFromWalrus,
+    busy: overlayBusy,
+  } = useAdminOverlay(activeFormId);
+  const [restoreInput, setRestoreInput] = useState('');
+  const [overlayMessage, setOverlayMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const realSubmissions = realQuery.data ?? [];
 
   const allSubmissions = useMemo(
@@ -100,14 +111,40 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
       onSubmissionsChange(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)));
       return;
     }
-    // Walrus submissions are immutable on chain — accumulate the patch into
-    // the overlay map, keyed by id, merged on display.
-    setOverlay(prev => {
-      const next = new Map(prev);
-      const merged = { ...(next.get(id) ?? {}), ...patch };
-      next.set(id, merged);
-      return next;
-    });
+    // Walrus submissions are immutable on chain — patch goes into the
+    // overlay (which auto-syncs to localStorage).
+    patchSubmission(id, patch);
+  };
+
+  const handleBackup = async () => {
+    setOverlayMessage(null);
+    const result = await backupToWalrus();
+    if ('error' in result) {
+      setOverlayMessage({ kind: 'err', text: result.error });
+    } else {
+      setOverlayMessage({
+        kind: 'ok',
+        text: `Backed up ${result.count} submission patches to Walrus blob ${result.blobId.slice(0, 12)}…`,
+      });
+    }
+  };
+
+  const handleRestore = async () => {
+    setOverlayMessage(null);
+    if (!restoreInput.trim()) {
+      setOverlayMessage({ kind: 'err', text: 'Paste a Walrus blob_id to restore from.' });
+      return;
+    }
+    const result = await restoreFromWalrus(restoreInput);
+    if ('error' in result) {
+      setOverlayMessage({ kind: 'err', text: result.error });
+    } else {
+      setOverlayMessage({
+        kind: 'ok',
+        text: `Merged ${result.count} submission patches from blob.`,
+      });
+      setRestoreInput('');
+    }
   };
 
   useEffect(() => {
@@ -252,6 +289,54 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
             totalShown={filtered.length}
             totalAll={counts.total}
           />
+
+          <div className="overlay-toolbar">
+            <div className="ot-section">
+              <span className="ot-label">triage overlay</span>
+              <span className="ot-stat">{overlay.size} {overlay.size === 1 ? 'submission' : 'submissions'} patched</span>
+              {lastBackup && (
+                <a
+                  href={walruscanBlob(lastBackup.blobId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ot-backup-link"
+                  title={`Last backup: ${new Date(lastBackup.savedAtIso).toLocaleString()}`}
+                >
+                  ↗ last backup {lastBackup.blobId.slice(0, 10)}…
+                </a>
+              )}
+            </div>
+            <div className="ot-actions">
+              <button
+                type="button"
+                className="export-btn-paper"
+                onClick={handleBackup}
+                disabled={overlayBusy === 'backing-up' || overlay.size === 0}
+                title="Upload current overlay state as a Walrus blob — share the blob_id to restore from any browser"
+              >
+                {overlayBusy === 'backing-up' ? '⟳ backing up…' : '💾 backup to Walrus'}
+              </button>
+              <input
+                type="text"
+                value={restoreInput}
+                onChange={e => setRestoreInput(e.target.value)}
+                placeholder="paste blob_id to restore…"
+                className="ot-restore-input"
+                spellCheck={false}
+              />
+              <button
+                type="button"
+                className="export-btn-paper"
+                onClick={handleRestore}
+                disabled={overlayBusy === 'restoring' || !restoreInput.trim()}
+              >
+                {overlayBusy === 'restoring' ? '⟳ restoring…' : '📥 restore'}
+              </button>
+            </div>
+          </div>
+          {overlayMessage && (
+            <div className={`ot-message ${overlayMessage.kind}`}>{overlayMessage.text}</div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 14, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button type="button" className="export-btn-paper" onClick={() => realQuery.refetch()} disabled={realQuery.isFetching}>

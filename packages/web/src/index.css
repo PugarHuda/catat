@@ -982,11 +982,11 @@ footer {
 }
 
 .gate-line {
-  font-family: var(--hand); font-size: 18px;
+  font-family: var(--body); font-size: 13px; font-weight: 700;
   color: var(--ink); background: var(--postit-mint);
   border: 1.5px dashed var(--marker-green);
-  padding: 6px 12px; border-radius: 99px;
-  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 99px;
+  display: inline-flex; align-items: center; gap: 8px;
   margin-bottom: 14px;
 }
 .gate-line.warn {
@@ -1014,81 +1014,114 @@ footer {
   transition: width 0.25s;
 }
 
-/* Question blocks */
+/* Question blocks
+ * Each question is its own visual card so users can clearly point to which
+ * one they're answering. Active card (focus-within) gets a subtle lift so
+ * keyboard navigation has a destination. Sealed questions keep their
+ * dashed red left-border; everything else uses a soft paper-edge separator.
+ */
 .q {
-  margin-bottom: 26px;
-  padding: 0 0 0 6px;
+  margin-bottom: 24px;
+  padding: 18px 20px 16px;
   position: relative;
+  background: var(--paper);
+  border: 1.5px solid var(--paper-edge);
+  border-radius: 6px;
+  transition: border-color 140ms ease-out, box-shadow 140ms ease-out, transform 140ms ease-out;
+}
+.q:hover {
+  border-color: var(--pencil-soft);
+}
+.q:focus-within {
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink-soft);
+  transform: translate(-1px, -1px);
 }
 .q.sealed {
-  padding-left: 14px;
-  border-left: 3px dashed var(--marker-red);
+  border-left: 4px dashed var(--marker-red);
+  background: linear-gradient(to right, rgba(255, 209, 217, 0.18) 0%, transparent 80px);
+}
+.q.sealed:focus-within {
+  border-color: var(--marker-red);
+  box-shadow: 4px 4px 0 var(--marker-red);
 }
 .qhead {
-  display: flex; align-items: baseline; gap: 10px;
-  margin-bottom: 8px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px; flex-wrap: wrap;
 }
 .qhead .num {
-  font-family: var(--type); font-size: 11px;
-  letter-spacing: 0.14em; color: var(--marker-red);
-  text-transform: uppercase; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 28px; padding: 0 8px;
+  background: var(--marker-red); color: var(--paper);
+  font-family: var(--type); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: 99px;
+  flex: none;
 }
+.q.sealed .qhead .num { background: var(--marker-red); }
 .qhead h3 {
-  font-family: var(--hand); font-weight: 700;
-  font-size: 26px; line-height: 1.1;
+  font-family: var(--body); font-weight: 700;
+  font-size: 19px; line-height: 1.3;
   margin: 0; color: var(--ink);
+  letter-spacing: -0.005em;
 }
 .qhead .req {
-  font-family: var(--hand); font-size: 22px;
+  font-family: var(--body); font-size: 18px; font-weight: 700;
   color: var(--marker-red); line-height: 1;
 }
 .qhead .seal {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   font-family: var(--type); font-size: 10px;
   letter-spacing: 0.1em; text-transform: uppercase;
   background: var(--postit-pink);
   border: 1.5px dashed var(--marker-red);
   color: var(--marker-red); border-radius: 99px;
+  margin-left: auto;
 }
 .qhead .seal svg { width: 11px; height: 11px; }
 .qhint {
-  font-family: var(--body); font-size: 15px;
-  color: var(--ink-soft); margin: -4px 0 10px;
-  line-height: 1.4;
+  font-family: var(--body); font-size: 14px;
+  color: var(--ink-soft); margin: 0 0 10px;
+  line-height: 1.5;
 }
 
-/* Field input variants — Runner */
+/* Field input variants — Runner
+ * Inputs use --body (Atkinson Hyperlegible) so users can clearly read
+ * what they type. The paper feel comes from the borders, post-its, and
+ * accent colors — not from the font.
+ */
 .in-text {
   width: 100%;
-  font-family: var(--hand); font-size: 24px; color: var(--ink);
+  font-family: var(--body); font-size: 16px; color: var(--ink);
   background: transparent; border: 0;
   border-bottom: 2px solid var(--ink); outline: 0;
-  padding: 6px 4px; line-height: 1.3;
+  padding: 8px 4px; line-height: 1.4;
 }
 .in-text:focus { border-bottom-color: var(--marker-red); }
 .in-text::placeholder { color: var(--pencil-soft); font-style: italic; }
 
 textarea.in-rich {
-  width: 100%; min-height: 130px;
-  font-family: var(--hand); font-size: 22px; color: var(--ink);
-  line-height: 1.45; padding: 14px 16px;
+  width: 100%; min-height: 110px;
+  font-family: var(--body); font-size: 15px; color: var(--ink);
+  line-height: 1.6; padding: 12px 14px;
   background: var(--paper);
-  border: 1.8px solid var(--ink); border-radius: 8px;
+  border: 1.8px solid var(--ink); border-radius: 6px;
   resize: vertical; outline: 0;
-  background-image: repeating-linear-gradient(180deg, transparent 0 30px, rgba(163,196,212,.5) 30px 31px);
-  background-size: 100% 31px; background-position: 0 6px;
+  background-image: repeating-linear-gradient(180deg, transparent 0 24px, rgba(163,196,212,.35) 24px 25px);
+  background-size: 100% 25px; background-position: 0 8px;
 }
 textarea.in-rich:focus {
   border-color: var(--marker-red);
   box-shadow: 3px 3px 0 var(--marker-red);
 }
+textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 
 .in-select {
   position: relative; display: inline-flex; align-items: center; gap: 8px;
   background: var(--paper); border: 1.8px solid var(--ink);
   border-radius: 99px; padding: 8px 16px;
-  font-family: var(--hand); font-size: 22px; color: var(--ink);
+  font-family: var(--body); font-size: 14px; color: var(--ink);
   min-width: 240px; box-shadow: 2px 2px 0 var(--ink);
   cursor: pointer;
 }
@@ -1119,11 +1152,11 @@ textarea.in-rich:focus {
 .opts.row { flex-direction: row; flex-wrap: wrap; gap: 8px; }
 .opt {
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 14px;
-  font-family: var(--hand); font-size: 22px; color: var(--ink);
+  padding: 10px 14px;
+  font-family: var(--body); font-size: 14px; color: var(--ink);
   background: var(--paper);
   border: 1.8px solid var(--ink); border-radius: 8px;
-  cursor: pointer; line-height: 1;
+  cursor: pointer; line-height: 1.2;
   transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
 }
 .opt:hover { background: var(--postit); }
@@ -1163,8 +1196,8 @@ textarea.in-rich:focus {
   fill: currentColor; stroke: var(--ink); stroke-width: 1.5px;
 }
 .stars .lbl {
-  font-family: var(--hand); font-size: 22px;
-  color: var(--ink); margin-left: 8px;
+  font-family: var(--body); font-size: 14px; font-weight: 700;
+  color: var(--ink); margin-left: 10px;
 }
 
 .slider-wrap {
@@ -2099,6 +2132,64 @@ textarea.in-rich:focus {
   border-color: var(--ink-soft);
 }
 
+/* Admin overlay toolbar — backup/restore for triage state */
+.overlay-toolbar {
+  display: flex; flex-wrap: wrap;
+  align-items: center; gap: 12px 16px;
+  padding: 10px 14px; margin-bottom: 10px;
+  background: var(--paper-2);
+  border: 1.5px dashed var(--pencil-soft);
+  border-radius: 6px;
+  font-family: var(--body); font-size: 13px;
+  color: var(--ink);
+}
+.overlay-toolbar .ot-section {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  flex: 1; min-width: 220px;
+}
+.overlay-toolbar .ot-label {
+  font-family: var(--type); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--pencil);
+}
+.overlay-toolbar .ot-stat {
+  font-weight: 700;
+}
+.overlay-toolbar .ot-backup-link {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--marker-blue);
+  text-decoration: underline wavy;
+  text-underline-offset: 2px;
+}
+.overlay-toolbar .ot-actions {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+}
+.overlay-toolbar .ot-restore-input {
+  background: var(--paper);
+  border: 1.5px solid var(--ink-soft);
+  padding: 5px 10px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink); outline: 0;
+  width: 220px; max-width: 100%;
+  border-radius: 4px;
+}
+.overlay-toolbar .ot-restore-input:focus { border-color: var(--marker-red); }
+.ot-message {
+  padding: 8px 14px; margin: 0 0 12px;
+  font-family: var(--body); font-size: 13px;
+  border-radius: 4px;
+}
+.ot-message.ok {
+  background: var(--postit-mint);
+  border: 1.5px solid var(--marker-green);
+  color: var(--ink);
+}
+.ot-message.err {
+  background: var(--postit-pink);
+  border: 1.5px solid var(--marker-red);
+  color: var(--marker-red);
+}
+
 /* templates gallery — modal + cards */
 .tpl-overlay {
   position: fixed; inset: 0;
@@ -2327,8 +2418,8 @@ textarea.in-rich:focus {
   display: flex; align-items: center; gap: 6px; justify-content: space-between;
 }
 .det-answer {
-  font-family: var(--hand); font-size: 22px;
-  color: var(--ink); line-height: 1.2;
+  font-family: var(--body); font-size: 15px; line-height: 1.5;
+  color: var(--ink);
 }
 .det-notes {
   width: 100%;
@@ -2816,4 +2907,81 @@ textarea.in-rich:focus {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--marker-green);
   box-shadow: 0 0 0 2px var(--paper);
+}
+
+/* =====================================================
+   Mobile sweep — unified rules for screens <= 720px
+   Polish-pass for hackathon demo on phones.
+   ===================================================== */
+@media (max-width: 720px) {
+  /* Container & sheet padding — claw back screen edge */
+  .wrap { padding: 0 14px; }
+  .sheet { padding: 22px 18px 26px; }
+  .fsheet { padding: 28px 18px 32px; }
+
+  /* Top nav & thinbar — already wrap; tighten gaps */
+  .nav-row { gap: 8px; padding: 12px 0; }
+  .thinbar { padding: 12px 16px; gap: 8px; }
+  .thinbar > div { gap: 8px !important; }
+
+  /* Builder canvas: palette no longer sticky on small (would float weirdly
+     when grid stacks). Also relax rotation so cards align. */
+  .palette { position: static !important; transform: none; padding: 14px 12px; }
+  .settings { position: static !important; }
+
+  /* Form meta inputs scale down so title doesn't explode the row */
+  .form-meta-l .form-title-input { font-size: 30px; }
+  .form-meta-l .form-desc-input { font-size: 14px; }
+
+  /* Question cards: tighter padding, stronger separation */
+  .q { padding: 14px 14px 12px; margin-bottom: 18px; }
+  .qhead h3 { font-size: 17px; }
+  .in-text { font-size: 16px; padding: 6px 4px; }
+  textarea.in-rich { font-size: 15px; padding: 10px 12px; }
+
+  /* Submit row: stack actions */
+  .fsubmit { flex-direction: column; align-items: stretch; gap: 10px; }
+  .fsubmit .btn-submit { width: 100%; justify-content: center; }
+  .fsubmit .meta-line { font-size: 12px; line-height: 1.45; }
+
+  /* Receipt sheet: tighten */
+  .rsheet { padding: 22px 18px; }
+  .rsheet .rr { flex-wrap: wrap; }
+
+  /* Templates gallery: 1-col cards, full-width modal */
+  .tpl-overlay { padding: 16px 8px; }
+  .tpl-modal { padding: 22px 18px 18px; max-height: calc(100vh - 32px); }
+  .tpl-grid { grid-template-columns: 1fr; gap: 10px; }
+  .tpl-card { padding: 14px 14px 48px; }
+
+  /* Publish modal: scroll on small heights */
+  .publish-overlay { padding: 16px 8px; align-items: flex-start; }
+  .publish-modal { max-height: calc(100vh - 32px); overflow-y: auto; padding: 22px 18px 18px; }
+  .publish-modal h3 { font-size: 32px; }
+  .share-link .sl-row { flex-direction: column; align-items: stretch; }
+  .share-link .sl-row code { font-size: 10px; }
+  .share-link button { width: 100%; }
+
+  /* Admin: filters wrap, table rows already mobile-tuned via existing rules */
+  .adm-stats { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .adm-filters { gap: 6px; }
+  .seed-form-banner { padding: 10px 12px; transform: none; }
+
+  /* Verify: steps stack 1-up on very small to fit explanations */
+  .v-steps { grid-template-columns: 1fr !important; }
+
+  /* Wallet button: reduce footprint */
+  .wallet-pill { padding: 4px 10px; font-size: 11px; }
+}
+
+/* Extra-small phones — defensive rules */
+@media (max-width: 420px) {
+  .sheet { padding: 18px 14px 22px; }
+  .fsheet { padding: 22px 14px 26px; }
+  .ftitle { font-size: 38px !important; }
+  .form-meta-l .form-title-input { font-size: 24px; }
+  .qhead .num { min-width: 24px; height: 24px; padding: 0 6px; font-size: 10px; }
+  .qhead h3 { font-size: 16px; }
+  .qhead .seal { font-size: 9px; padding: 2px 6px; }
+  .stars .star { width: 30px; height: 30px; }
 }
