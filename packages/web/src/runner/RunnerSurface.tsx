@@ -119,13 +119,13 @@ function friendlyError(msg: string): string {
     return 'You rejected the wallet signature. Hit submit again to retry.';
   }
   if (lower.includes('wal') && (lower.includes('insufficient') || lower.includes('not enough') || lower.includes('balance'))) {
-    return 'Wallet has no WAL token. Get testnet WAL from stakely.io/faucet/walrus-testnet-wal then retry.';
+    return 'No spendable WAL. Open wallet popup (top-right) → "Get WAL (swap 0.5 SUI)". Stakely-faucet WAL is wrong package and won\'t work.';
   }
   if (lower.includes('sui') && (lower.includes('insufficient') || lower.includes('not enough') || lower.includes('balance'))) {
-    return 'Wallet has no SUI for gas. Get testnet SUI from faucet.sui.io then retry.';
+    return 'Wallet has no SUI for gas. Get testnet SUI from faucet.sui.io, then click "Get WAL" in your wallet popup.';
   }
   if (lower.includes('coin') && lower.includes('balance')) {
-    return 'Wallet missing required coin balance (SUI for gas + WAL for storage). Fund via faucets and retry.';
+    return 'Wallet missing required coin balance. Need SUI (faucet.sui.io) + WAL (wallet popup → Get WAL).';
   }
   return msg.length > 220 ? msg.slice(0, 220) + '…' : msg;
 }

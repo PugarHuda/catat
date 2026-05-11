@@ -5,12 +5,15 @@ import {
   useDisconnectWallet,
   useWallets,
 } from '@mysten/dapp-kit';
+import { formatMist, useWalSwap } from '@/lib/useWalSwap';
+import { suiscanTx } from '@/lib/contract';
 
 export default function WalletButton() {
   const account = useCurrentAccount();
   const wallets = useWallets();
   const { mutate: connect, isPending: connecting } = useConnectWallet();
   const { mutate: disconnect } = useDisconnectWallet();
+  const { balances, swap, state: swapState } = useWalSwap();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -100,11 +103,66 @@ export default function WalletButton() {
               {copied ? '✓ copied' : 'copy'}
             </span>
           </button>
+
+          <div className="popup-section">balances</div>
+          <BalanceRow
+            label="SUI"
+            value={balances ? `${formatMist(balances.sui)} SUI` : '…'}
+            warn={!!balances && balances.sui < 100_000_000n}
+            warnHint={'Get from faucet.sui.io'}
+            link={'https://faucet.sui.io/'}
+          />
+          <BalanceRow
+            label="WAL"
+            value={balances ? `${formatMist(balances.wal)} WAL` : '…'}
+            warn={!!balances && balances.wal < 50_000_000n}
+            warnHint={
+              balances && balances.stakelyWal > 0n
+                ? `you have ${formatMist(balances.stakelyWal)} stakely-WAL — wrong package, swap below`
+                : 'no spendable WAL — swap below'
+            }
+          />
+
+          <div className="popup-swap">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => swap()}
+              disabled={
+                swapState.kind === 'swapping' ||
+                !balances ||
+                balances.sui < 550_000_000n
+              }
+              style={{ width: '100%', justifyContent: 'center' }}
+              title={
+                balances && balances.sui < 550_000_000n
+                  ? 'Need 0.55 SUI (0.5 swap + 0.05 gas) — get more from faucet first'
+                  : 'Swap 0.5 SUI for ~0.5 WAL via official testnet exchange'
+              }
+            >
+              {swapState.kind === 'swapping' ? '⟳ swapping…' : '⇄ Get WAL (swap 0.5 SUI)'}
+            </button>
+            {swapState.kind === 'done' && (
+              <a
+                href={suiscanTx(swapState.txDigest)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="popup-swap-msg ok"
+              >
+                ✓ swapped — view tx ↗
+              </a>
+            )}
+            {swapState.kind === 'error' && (
+              <div className="popup-swap-msg err">{swapState.message}</div>
+            )}
+          </div>
+
           <a
             href={`https://suiscan.xyz/testnet/account/${account.address}`}
             target="_blank"
             rel="noopener noreferrer"
             className="popup-item"
+            style={{ borderTop: '1px dashed var(--line)' }}
           >
             <span>↗ view on Suiscan</span>
           </a>
@@ -125,6 +183,22 @@ export default function WalletButton() {
   );
 }
 
+function BalanceRow({
+  label, value, warn, warnHint, link,
+}: { label: string; value: string; warn: boolean; warnHint?: string; link?: string }) {
+  return (
+    <div className={`popup-balance${warn ? ' warn' : ''}`}>
+      <span className="bl-label">{label}</span>
+      <span className="bl-value">{value}</span>
+      {warn && warnHint && (
+        link
+          ? <a className="bl-hint" href={link} target="_blank" rel="noopener noreferrer">{warnHint} ↗</a>
+          : <span className="bl-hint">{warnHint}</span>
+      )}
+    </div>
+  );
+}
+
 function PaperPopup({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -132,7 +206,8 @@ function PaperPopup({ children }: { children: React.ReactNode }) {
         position: 'absolute',
         right: 0,
         top: 'calc(100% + 6px)',
-        minWidth: 220,
+        minWidth: 280,
+        maxWidth: 320,
         background: 'var(--paper-2)',
         border: '2px solid var(--ink)',
         borderRadius: 8,
@@ -155,7 +230,7 @@ function PaperPopup({ children }: { children: React.ReactNode }) {
           display: flex; align-items: center; gap: 8px;
           width: 100%;
           padding: 9px 12px;
-          font-family: var(--hand); font-size: 18px;
+          font-family: var(--body); font-size: 14px;
           color: var(--ink);
           background: var(--paper-2);
           border: 0; cursor: pointer;
@@ -164,6 +239,53 @@ function PaperPopup({ children }: { children: React.ReactNode }) {
         }
         .popup-item:hover { background: var(--postit); }
         .popup-item + .popup-item { border-top: 1px dashed var(--line); }
+        .popup-balance {
+          display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+          padding: 7px 12px;
+          font-family: var(--body); font-size: 13px;
+          color: var(--ink);
+          background: var(--paper-2);
+          border-bottom: 1px dashed var(--line);
+        }
+        .popup-balance.warn {
+          background: var(--postit-pink);
+        }
+        .popup-balance .bl-label {
+          font-family: var(--type); font-size: 10px;
+          letter-spacing: .1em; color: var(--pencil);
+          min-width: 32px;
+        }
+        .popup-balance .bl-value {
+          font-family: var(--mono); font-size: 12px; color: var(--ink);
+          font-weight: 700;
+        }
+        .popup-balance .bl-hint {
+          flex-basis: 100%;
+          font-size: 11px; color: var(--marker-red);
+          line-height: 1.3;
+          text-decoration: none;
+        }
+        .popup-balance a.bl-hint:hover { text-decoration: underline; }
+        .popup-swap {
+          padding: 10px 12px;
+          background: var(--paper-2);
+          border-bottom: 1px dashed var(--line);
+          display: flex; flex-direction: column; gap: 8px;
+        }
+        .popup-swap-msg {
+          font-family: var(--body); font-size: 11px;
+          padding: 6px 10px; border-radius: 4px;
+          text-align: center;
+        }
+        .popup-swap-msg.ok {
+          background: var(--postit-mint); color: var(--marker-green);
+          border: 1px solid var(--marker-green);
+          text-decoration: none;
+        }
+        .popup-swap-msg.err {
+          background: var(--postit-pink); color: var(--marker-red);
+          border: 1px solid var(--marker-red);
+        }
       `}</style>
       {children}
     </div>

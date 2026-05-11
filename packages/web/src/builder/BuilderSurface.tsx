@@ -60,8 +60,12 @@ function defaultsForType(type: FieldType): Partial<Field> {
 function friendlyError(msg: string): string {
   const lower = msg.toLowerCase();
   if (lower.includes('user reject') || lower.includes('rejected')) return 'You rejected a wallet signature. Try Publish again.';
-  if (lower.includes('wal') && (lower.includes('insufficient') || lower.includes('balance'))) return 'Wallet has no WAL token. Get testnet WAL from stakely.io/faucet/walrus-testnet-wal.';
-  if (lower.includes('sui') && (lower.includes('insufficient') || lower.includes('balance'))) return 'Wallet has no SUI for gas. Get testnet SUI from faucet.sui.io.';
+  if (lower.includes('wal') && (lower.includes('insufficient') || lower.includes('balance'))) {
+    return 'No spendable WAL token. Click your wallet (top-right) → "Get WAL (swap 0.5 SUI)". Stakely-faucet WAL is the wrong package and won\'t work.';
+  }
+  if (lower.includes('sui') && (lower.includes('insufficient') || lower.includes('balance'))) {
+    return 'Wallet has no SUI for gas. Get testnet SUI from faucet.sui.io, then come back and click "Get WAL" in your wallet popup.';
+  }
   return msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
 }
 

@@ -16,6 +16,22 @@ export const BUG_REPORT_FORM_ID =
 export const SUI_CLOCK_OBJECT_ID = '0x6';
 
 /**
+ * Official Walrus testnet WAL coin + SUI->WAL exchange.
+ * The stakely.io faucet hands out WAL from a different package
+ * (0x8190b041…) which the Walrus client refuses to spend — must use
+ * this exchange to swap real SUI gas into spendable WAL.
+ */
+export const WAL_COIN_TYPE =
+  '0x8270feb7375eee355e64fdb69c50abb6b5f9393a722883c1cf45f8e26048810a::wal::WAL';
+export const WAL_EXCHANGE_PACKAGE =
+  '0x82593828ed3fcb8c6a235eac9abd0adbe9c5f9bbffa9b1e7a45cdd884481ef9f';
+export const WAL_EXCHANGE_OBJECT =
+  '0xf4d164ea2def5fe07dc573992a029e010dba09b1a8dcbc44c5c2e79567f39073';
+
+/** Default swap amount for the in-app "Get WAL" button (0.5 SUI -> ~0.5 WAL). */
+export const DEFAULT_WAL_SWAP_MIST = 500_000_000n;
+
+/**
  * Mysten-allowlisted Seal key server object IDs on Sui testnet.
  * Verified via spike (see spike/src/05-seal-spike.ts) — `getAllowlistedKeyServers`
  * helper is not exported in @mysten/seal v1.1.3+.
