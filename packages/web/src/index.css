@@ -2240,6 +2240,252 @@ textarea.in-rich:focus {
 }
 
 /* =====================================================
+   Verify surface
+   ===================================================== */
+
+.verify-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 30px; align-items: flex-start;
+  margin-top: 8px;
+}
+@media (max-width: 980px) { .verify-grid { grid-template-columns: 1fr; } }
+
+.lookup {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: var(--paper-2);
+  border: 2px solid var(--ink); border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 5px 5px 0 var(--ink);
+  margin-bottom: 24px;
+}
+.lookup label {
+  font-family: var(--type); font-size: 11px;
+  letter-spacing: 0.12em; color: var(--pencil);
+  text-transform: uppercase;
+}
+.lookup input {
+  flex: 1; min-width: 240px;
+  font-family: var(--mono); font-size: 14px;
+  border: 0; border-bottom: 2px solid var(--ink);
+  background: transparent; outline: 0;
+  padding: 6px 4px; color: var(--ink);
+}
+.lookup input:focus { border-bottom-color: var(--marker-red); }
+
+.v-steps {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 22px;
+}
+@media (max-width: 780px) { .v-steps { grid-template-columns: repeat(2, 1fr); } }
+.v-step {
+  position: relative;
+  background: var(--paper-2);
+  border: 2px solid var(--ink); border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: background 0.2s;
+}
+.v-step:nth-child(1) { transform: rotate(-1deg); }
+.v-step:nth-child(2) { transform: rotate(0.6deg); }
+.v-step:nth-child(3) { transform: rotate(-0.4deg); }
+.v-step:nth-child(4) { transform: rotate(0.4deg); }
+.v-step.pass { background: var(--postit-mint); }
+.v-step.fail { background: var(--postit-pink); border-color: var(--marker-red); }
+.v-step.pending { background: var(--paper-edge); }
+.v-step .label {
+  font-family: var(--type); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--pencil); margin-bottom: 2px;
+}
+.v-step h5 {
+  font-family: var(--hand); font-size: 22px;
+  line-height: 1.05; margin: 0 0 4px;
+  color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+}
+.v-step h5 .ck {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--marker-green); color: var(--paper);
+  display: grid; place-items: center;
+  font-family: var(--hand); font-size: 16px;
+  flex: none;
+}
+.v-step.fail h5 .ck { background: var(--marker-red); }
+.v-step.pending h5 .ck { background: var(--pencil-soft); }
+.v-step p {
+  font-family: var(--body); font-size: 13px;
+  color: var(--ink-soft); line-height: 1.4;
+  margin: 0; word-break: break-word;
+}
+
+.proof-card {
+  background: var(--paper-2);
+  border: 2.5px solid var(--ink); border-radius: 10px;
+  padding: 30px 32px;
+  box-shadow: 6px 6px 0 var(--ink);
+  position: relative;
+  transform: rotate(-0.3deg);
+}
+.proof-card .stamp {
+  position: absolute;
+  top: -22px; right: -26px;
+  font-family: var(--hand); font-size: 32px; font-weight: 700;
+  color: var(--marker-green);
+  border: 4px double var(--marker-green);
+  padding: 6px 18px; border-radius: 8px;
+  transform: rotate(8deg);
+  background: rgba(244, 236, 214, 0.9);
+  letter-spacing: 0.04em;
+}
+.proof-card .stamp.fail { color: var(--marker-red); border-color: var(--marker-red); }
+
+.proof-h {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  border-bottom: 1.5px dashed var(--ink);
+  padding-bottom: 8px; margin-bottom: 16px;
+  font-family: var(--type); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pencil); flex-wrap: wrap; gap: 8px;
+}
+.proof-h .id {
+  font-family: var(--hand); font-size: 22px;
+  color: var(--ink); text-transform: none; letter-spacing: 0;
+}
+.proof-card h2 {
+  font-family: var(--hand); font-weight: 700;
+  font-size: 32px; line-height: 1.05;
+  margin: 0 0 8px; color: var(--ink);
+}
+.proof-card .sub {
+  font-family: var(--body); font-size: 16px;
+  color: var(--ink-soft); margin: 0 0 18px;
+}
+.proof-card .sub b {
+  font-family: var(--hand); font-size: 18px;
+  color: var(--ink); font-weight: 400;
+}
+
+.v-proof-row {
+  display: grid;
+  grid-template-columns: 160px 1fr auto;
+  gap: 14px; align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.v-proof-row:last-child { border-bottom: 0; }
+.v-proof-row .key {
+  font-family: var(--type); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pencil);
+}
+.v-proof-row .val {
+  font-family: var(--mono); font-size: 13px;
+  color: var(--ink); word-break: break-all;
+}
+.v-proof-row .val.hand { font-family: var(--hand); font-size: 20px; }
+.v-proof-row .val a {
+  color: var(--marker-blue);
+  text-decoration: underline wavy;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.v-proof-row .check {
+  font-family: var(--hand); font-size: 18px;
+  color: var(--marker-green);
+  justify-self: end;
+  display: flex; align-items: center; gap: 4px;
+  flex: none;
+}
+.v-proof-row .check.fail { color: var(--marker-red); }
+.v-proof-row .check svg { width: 16px; height: 16px; }
+@media (max-width: 680px) {
+  .v-proof-row { grid-template-columns: 1fr; gap: 2px; }
+  .v-proof-row .check { justify-self: flex-start; }
+}
+
+.fields-block {
+  margin-top: 24px; padding-top: 18px;
+  border-top: 2px dashed var(--ink);
+}
+.fields-block h3 {
+  font-family: var(--hand); font-size: 26px;
+  margin: 0 0 12px; color: var(--ink);
+}
+.fld-line {
+  display: flex; justify-content: flex-start; gap: 14px;
+  padding: 8px 0; border-bottom: 1px dashed var(--line);
+  align-items: center; flex-wrap: wrap;
+}
+.fld-line:last-child { border-bottom: 0; }
+.fld-line .q {
+  font-family: var(--type); font-size: 11px;
+  letter-spacing: 0.1em; color: var(--pencil);
+  text-transform: uppercase;
+  flex: none; width: 140px;
+  display: flex; align-items: center; gap: 6px;
+}
+.fld-line .a {
+  font-family: var(--hand); font-size: 20px;
+  color: var(--ink); flex: 1; min-width: 200px;
+}
+.fld-line .a.sealed {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--postit-pink);
+  border: 1.5px dashed var(--marker-red);
+  color: var(--marker-red);
+  padding: 4px 10px; border-radius: 6px;
+  letter-spacing: 0.18em;
+  display: inline-block;
+}
+
+.trust-list { display: flex; flex-direction: column; gap: 14px; }
+.trust-card {
+  background: var(--paper-2);
+  border: 2px solid var(--ink); border-radius: 8px;
+  padding: 18px;
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: rotate(0.5deg);
+}
+.trust-card:nth-child(2) { transform: rotate(-0.5deg); }
+.trust-card h4 {
+  font-family: var(--hand); font-size: 22px;
+  margin: 0 0 6px; color: var(--ink);
+}
+.trust-card p {
+  font-family: var(--body); font-size: 14px;
+  color: var(--ink-soft); margin: 0 0 10px; line-height: 1.45;
+}
+.trust-card p b {
+  font-family: var(--hand); font-size: 16px;
+  color: var(--marker-red); font-weight: 400;
+}
+.trust-card .row {
+  display: flex; justify-content: space-between;
+  font-family: var(--type); font-size: 12px;
+  color: var(--pencil); padding: 3px 0;
+  border-top: 1px dashed var(--line);
+}
+.trust-card .row b {
+  font-family: var(--hand); font-size: 16px;
+  color: var(--ink); font-weight: 400;
+}
+
+.v-empty {
+  padding: 60px 30px; text-align: center;
+  font-family: var(--hand); font-size: 26px;
+  color: var(--pencil); line-height: 1.3;
+  background: var(--paper-2);
+  border: 2px dashed var(--line); border-radius: 10px;
+}
+.v-empty small {
+  display: block; margin-top: 8px;
+  font-family: var(--type); font-size: 12px;
+  color: var(--pencil); letter-spacing: 0.06em;
+}
+
+/* =====================================================
    Publish modal (success after Builder Publish)
    ===================================================== */
 

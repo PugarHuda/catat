@@ -10,12 +10,14 @@ const ORDS: Record<Surface, string> = {
   builder: '01',
   runner: '02',
   admin: '03',
+  verify: '04',
 };
 
 const LABELS: Record<Surface, string> = {
   builder: 'Builder',
   runner: 'Submit',
   admin: 'Inbox',
+  verify: 'Verify',
 };
 
 export default function SurfaceTabs({ current, onChange, count }: Props) {

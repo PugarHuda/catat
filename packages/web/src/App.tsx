@@ -6,10 +6,10 @@ import type { FormSchema } from './builder/types';
 import type { Submission } from './admin/types';
 import type { Surface } from './lib/surfaces';
 
-// Lazy-load surfaces — keeps walrus SDK + WASM (~400 KB) out of landing first paint.
 const BuilderSurface = lazy(() => import('./builder/BuilderSurface'));
 const RunnerSurface = lazy(() => import('./runner/RunnerSurface'));
 const AdminSurface = lazy(() => import('./admin/AdminSurface'));
+const VerifySurface = lazy(() => import('./verify/VerifySurface'));
 
 type View = 'landing' | 'app';
 
@@ -50,6 +50,12 @@ export default function App() {
           onSurfaceChange={setSurface}
           onHome={onHome}
         />
+      ) : surface === 'verify' ? (
+        <VerifySurface
+          surface={surface}
+          onSurfaceChange={setSurface}
+          onHome={onHome}
+        />
       ) : (
         <BuilderSurface
           schema={schema}
@@ -65,12 +71,14 @@ export default function App() {
 
 function SurfaceFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-foreground/40 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-foreground/60" />
-        </span>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--marker-red)' }}>
+        <span style={{
+          width: 18, height: 18,
+          border: '2.5px dashed var(--marker-red)',
+          borderRadius: '50%',
+          animation: 'spin 1.4s linear infinite',
+        }} />
         loading surface…
       </div>
     </div>
