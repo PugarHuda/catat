@@ -157,7 +157,7 @@ function SchemaLoading({ formId }: { formId: string }) {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)', padding: 24 }}>
       <div style={{ textAlign: 'center', fontFamily: 'var(--body)', color: 'var(--ink-soft)' }}>
         <div style={{ width: 24, height: 24, border: '3px dashed var(--marker-blue)', borderRadius: '50%', animation: 'spin 1.4s linear infinite', margin: '0 auto 12px' }} />
-        <div style={{ fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--marker-red)' }}>Loading form…</div>
+        <div style={{ fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--marker-blue)' }}>Loading form…</div>
         <div style={{ marginTop: 4, fontFamily: 'var(--mono)', fontSize: 11 }}>{formId.slice(0, 12)}…{formId.slice(-6)}</div>
         <div style={{ marginTop: 8, fontSize: 13 }}>Fetching schema from Walrus + Sui chain.</div>
       </div>
@@ -197,10 +197,10 @@ function SchemaPlaceholder({ formId, meta, onHome }: { formId: string; meta: { t
 function SurfaceFallback() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--marker-red)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--marker-blue)' }}>
         <span style={{
           width: 18, height: 18,
-          border: '2.5px dashed var(--marker-red)',
+          border: '2.5px dashed var(--marker-blue)',
           borderRadius: '50%',
           animation: 'spin 1.4s linear infinite',
         }} />

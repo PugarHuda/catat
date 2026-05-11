@@ -33,7 +33,7 @@ export default function AdminDetail({ schema, submission, decrypt, onUpdate, onC
         <div className="det-section">
           <div className="label">
             <span>status</span>
-            <button type="button" onClick={onClose} style={{ fontFamily: 'var(--hand)', fontSize: 16, color: 'var(--marker-red)', background: 'none', border: 0, cursor: 'pointer' }}>
+            <button type="button" onClick={onClose} style={{ fontFamily: 'var(--hand)', fontSize: 16, color: 'var(--marker-blue)', background: 'none', border: 0, cursor: 'pointer' }}>
               close ✕
             </button>
           </div>
@@ -205,9 +205,9 @@ function FieldAnswer({
   if (field.type === 'star_rating' && typeof value === 'number') {
     const scale = field.scale ?? 5;
     return (
-      <div className="det-answer" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--marker-red)' }}>
+      <div className="det-answer" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--marker-blue)' }}>
         {Array.from({ length: scale }).map((_, i) => (
-          <span key={i} style={{ fontSize: 22, color: i < value ? 'var(--marker-red)' : 'var(--pencil-soft)' }}>★</span>
+          <span key={i} style={{ fontSize: 22, color: i < value ? 'var(--marker-blue)' : 'var(--pencil-soft)' }}>★</span>
         ))}
         <span style={{ fontSize: 18, color: 'var(--ink)', marginLeft: 4 }}>{value}/{scale}</span>
       </div>

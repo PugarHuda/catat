@@ -228,6 +228,14 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
         <div className="sheet">
           <div className="sheet-head">
             <span>Builder · draft</span>
+            <button
+              type="button"
+              className="tpl-pick-btn"
+              onClick={() => setGalleryOpen(true)}
+              title="Pick from 5 ready-made recipes — bug report, NPS, founder app, contact, feature request"
+            >
+              📚 Browse templates
+            </button>
             <span className="date">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </div>
 
@@ -235,22 +243,8 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
             Sketch your <span className="marker">form</span>.
           </h1>
           <p style={{ fontFamily: 'var(--body)', fontSize: 18, color: 'var(--ink-soft)', margin: '0 0 22px', maxWidth: '60ch' }}>
-            Pick a field type from the palette, click any card to edit, toggle 🔒 to seal. Schema lives on Walrus, the form is a Sui shared object.
+            Pick a field type from the palette, click any card to edit, toggle 🔒 to seal. Or grab a starter via <b>Browse templates</b> above.
           </p>
-
-          <div className="tpl-cta">
-            <div className="tpl-cta-text">
-              <b>Don't start from scratch</b>
-              <span>5 ready-made recipes — bug report, NPS, founder app, contact, feature request</span>
-            </div>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm tpl-cta-btn"
-              onClick={() => setGalleryOpen(true)}
-            >
-              📚 Browse templates →
-            </button>
-          </div>
 
           <div className="builder-grid">
             <aside className="palette">
@@ -362,7 +356,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
             <aside className="settings">
               {selectedField ? (
                 <div className="set-card selected">
-                  <h5>🪶 Field — <span style={{ color: 'var(--marker-red)' }}>{selectedField.type.replace('_', ' ')}</span></h5>
+                  <h5>🪶 Field — <span style={{ color: 'var(--marker-blue)' }}>{selectedField.type.replace('_', ' ')}</span></h5>
                   <div className="set-row">
                     <label>Question</label>
                     <input
