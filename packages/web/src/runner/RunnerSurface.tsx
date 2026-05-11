@@ -303,12 +303,11 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       const flow = walrusClient.walrus.writeFilesFlow({
         files: [submissionFile, ...mediaWalrusFiles],
       });
-      await flow.encode();
-
-      // blob_id is deterministic from the encoded content — read it now so
-      // we can bake it into the combined certify+submit PTB below.
-      const filesEncoded = await flow.listFiles();
-      const blobId = filesEncoded[0]?.blobId;
+      // encode() returns the deterministic blob_id (Merkle root of slivers)
+      // before any network call. We need it here so we can bake it into the
+      // combined certify+submit PTB below.
+      const encoded = await flow.encode();
+      const blobId = encoded.blobId;
       if (!blobId) {
         throw new Error('Walrus encode returned no blobId — refusing to start submit flow');
       }

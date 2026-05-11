@@ -145,12 +145,12 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
 
       setPublishState({ kind: 'publishing', step: 'Encoding schema for Walrus…' });
       const flow = walrusClient.walrus.writeFilesFlow({ files: [file] });
-      await flow.encode();
-
-      // blob_id is deterministic from the encoded content — we can read it
-      // BEFORE certify so we can bake it into the combined PTB below.
-      const filesEncoded = await flow.listFiles();
-      const blobId = filesEncoded[0]?.blobId;
+      // encode() returns the deterministic blob_id (Merkle root of slivers)
+      // before any network call. We need it here so we can bake it into the
+      // combined certify+create_form PTB below — listFiles() can't be used
+      // yet because it requires upload/certify completion first.
+      const encoded = await flow.encode();
+      const blobId = encoded.blobId;
       if (!blobId) {
         throw new Error('Walrus encode returned no blobId — refusing to start publish flow');
       }
