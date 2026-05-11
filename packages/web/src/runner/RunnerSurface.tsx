@@ -171,6 +171,8 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
             encrypted: true,
             scheme: 'seal-ibe-2of3',
             packageId: CATAT_PACKAGE_ID,
+            formId: BUG_REPORT_FORM_ID,
+            fieldId: f.id,
             keyId: sealIdentity(BUG_REPORT_FORM_ID, f.id),
             ciphertext_b64: bytesToBase64(encryptedObject),
             ciphertext_bytes: encryptedObject.length,

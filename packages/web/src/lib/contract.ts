@@ -6,11 +6,11 @@
  */
 
 export const CATAT_PACKAGE_ID =
-  '0xe270518be3f37a2a9c65007af2ace7967ee087cf12c950de16b2987606269441';
+  '0xaf0df999a89d1c50ea692a71723b1ff79bd961a5cdafd9b153a296349d3489b9';
 
 /** The Form object backing the "Walrus Bug Report" template in the demo. */
 export const BUG_REPORT_FORM_ID =
-  '0xe88fda404fe15a122c57ed220e668ec21a3f4119f2c38c65e490fbccd1e3a34e';
+  '0x9f07bece204759981bb05ee93101b0bd09859d75aeb98253a7bff640032af028';
 
 /** Sui's well-known Clock object. Required by submit() for timestamp_ms. */
 export const SUI_CLOCK_OBJECT_ID = '0x6';
@@ -33,10 +33,39 @@ export const walruscanBlob = (blobId: string) =>
 
 /**
  * Build the Seal IBE identity for a sealed field.
- * Pattern: hex-formId concatenated with utf8-fieldId. Decrypt requires a
- * future Move policy `seal_approve_*(id, form, ctx)` that verifies the
- * caller is the form owner before key servers release shares.
+ *
+ * Layout: 32-byte form object id || ":" || utf8 field_id
+ * Returned as a hex string ("0x…") because the @mysten/seal SDK accepts
+ * the `id` arg as hex and decodes it to bytes internally.
+ *
+ * The 32-byte prefix is critical — the on-chain `seal_approve_owner`
+ * function rejects any id whose bytes don't begin with this form's UID,
+ * preventing the form owner from re-using their signature to decrypt
+ * blobs that belong to a different form they happen to own.
  */
 export function sealIdentity(formId: string, fieldId: string): string {
-  return `${formId}::${fieldId}`;
+  const formBytes = hexToBytes(formId);
+  const tail = new TextEncoder().encode(`:${fieldId}`);
+  const out = new Uint8Array(formBytes.length + tail.length);
+  out.set(formBytes, 0);
+  out.set(tail, formBytes.length);
+  return bytesToHex(out);
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
+  if (clean.length % 2 !== 0) throw new Error(`invalid hex: ${hex}`);
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  let s = '0x';
+  for (let i = 0; i < bytes.length; i++) {
+    s += bytes[i]!.toString(16).padStart(2, '0');
+  }
+  return s;
 }

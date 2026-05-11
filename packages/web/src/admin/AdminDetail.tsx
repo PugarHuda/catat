@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { Field, FormSchema } from '../builder/types';
-import type { Submission, Status } from './types';
+import type { Submission } from './types';
 import { statusMeta, statusOrder } from './statusMeta';
 import { suiscanObject, suiscanTx, walruscanBlob } from '@/lib/contract';
+import { useSealDecrypt, type SealedFieldMeta } from '@/lib/useSealDecrypt';
 
 interface Props {
   schema: FormSchema;
@@ -16,6 +17,7 @@ export default function AdminDetail({ schema, submission, onUpdate, onClose }: P
   const submitterShort = submission.submitter
     ? `${submission.submitter.slice(0, 6)}…${submission.submitter.slice(-4)}`
     : 'anonymous';
+  const decrypt = useSealDecrypt();
 
   return (
     <aside className="detail">
@@ -59,7 +61,7 @@ export default function AdminDetail({ schema, submission, onUpdate, onClose }: P
                   </span>
                 )}
               </div>
-              <FieldAnswer field={f} value={v} />
+              <FieldAnswer field={f} value={v} onDecrypt={decrypt} />
             </div>
           );
         })}
@@ -117,22 +119,34 @@ export default function AdminDetail({ schema, submission, onUpdate, onClose }: P
   );
 }
 
-function FieldAnswer({ field, value }: { field: Field; value: unknown }) {
+function FieldAnswer({
+  field,
+  value,
+  onDecrypt,
+}: {
+  field: Field;
+  value: unknown;
+  onDecrypt: (meta: SealedFieldMeta) => Promise<string>;
+}) {
   if (value == null || value === '') {
     return <div className="det-answer" style={{ color: 'var(--pencil-soft)', fontStyle: 'italic' }}>(empty)</div>;
   }
 
   if (typeof value === 'object' && value !== null && (value as { encrypted?: boolean }).encrypted) {
-    const sealed = value as {
-      ciphertext_bytes?: number;
-      plaintext_bytes?: number;
-      ciphertext_placeholder?: string;
-      scheme?: string;
-    };
-    const sizeNote = sealed.ciphertext_bytes
-      ? `${sealed.ciphertext_bytes} ciphertext bytes`
-      : sealed.ciphertext_placeholder ?? '▒▒▒▒';
-    return <SealedAnswer plaintext={sizeNote} />;
+    const meta = value as Partial<SealedFieldMeta> & { ciphertext_placeholder?: string };
+    // Old/demo data may lack the fields needed for real decrypt — fall back
+    // to placeholder UI so the row still renders.
+    const canDecrypt =
+      typeof meta.packageId === 'string' &&
+      typeof meta.formId === 'string' &&
+      typeof meta.ciphertext_b64 === 'string';
+    if (!canDecrypt) {
+      const sizeNote = meta.ciphertext_bytes
+        ? `${meta.ciphertext_bytes} ciphertext bytes`
+        : meta.ciphertext_placeholder ?? '▒▒▒▒';
+      return <SealedPlaceholder plaintext={sizeNote} />;
+    }
+    return <SealedAnswer meta={meta as SealedFieldMeta} onDecrypt={onDecrypt} />;
   }
 
   if (Array.isArray(value)) {
@@ -173,22 +187,94 @@ function FieldAnswer({ field, value }: { field: Field; value: unknown }) {
   return <div className="det-answer">{String(value)}</div>;
 }
 
-function SealedAnswer({ plaintext }: { plaintext: string }) {
-  const [opened, setOpened] = useState(false);
+type DecryptState =
+  | { kind: 'sealed' }
+  | { kind: 'decrypting' }
+  | { kind: 'opened'; plaintext: string }
+  | { kind: 'error'; message: string };
+
+function SealedAnswer({
+  meta,
+  onDecrypt,
+}: {
+  meta: SealedFieldMeta;
+  onDecrypt: (meta: SealedFieldMeta) => Promise<string>;
+}) {
+  const [state, setState] = useState<DecryptState>({ kind: 'sealed' });
+
+  const handleClick = async () => {
+    if (state.kind === 'opened') {
+      setState({ kind: 'sealed' });
+      return;
+    }
+    setState({ kind: 'decrypting' });
+    try {
+      const plaintext = await onDecrypt(meta);
+      setState({ kind: 'opened', plaintext });
+    } catch (err) {
+      setState({ kind: 'error', message: friendlyDecryptError((err as Error).message) });
+    }
+  };
+
+  const buttonLabel =
+    state.kind === 'decrypting'
+      ? 'decrypting…'
+      : state.kind === 'opened'
+        ? '✓ hide'
+        : state.kind === 'error'
+          ? 'try again →'
+          : 'decrypt with wallet →';
+
+  const opened = state.kind === 'opened';
+
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
         <button
           type="button"
           className={`decrypt-btn${opened ? ' opened' : ''}`}
-          onClick={() => setOpened(!opened)}
+          onClick={handleClick}
+          disabled={state.kind === 'decrypting'}
         >
-          {opened ? '✓ decrypted' : 'decrypt with wallet →'}
+          {buttonLabel}
         </button>
       </div>
       <div className={`det-answer sealed${opened ? ' opened' : ''}`}>
-        {opened ? plaintext : '▒▒▒▒-▒▒▒▒-▒▒-▒▒▒▒▒▒▒'}
+        {state.kind === 'opened'
+          ? state.plaintext
+          : state.kind === 'error'
+            ? `❌ ${state.message}`
+            : state.kind === 'decrypting'
+              ? '⌛ key servers releasing shares…'
+              : '▒▒▒▒-▒▒▒▒-▒▒-▒▒▒▒▒▒▒'}
+      </div>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--pencil-soft)', marginTop: 4 }}>
+        {meta.ciphertext_bytes} bytes ciphertext · {meta.scheme}
       </div>
     </>
   );
+}
+
+/** Display-only fallback when sealed value lacks fields needed for real decrypt
+ * (e.g. demo seed data, or submissions made before the metadata format change). */
+function SealedPlaceholder({ plaintext }: { plaintext: string }) {
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+        <span className="decrypt-btn" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+          legacy · no decrypt
+        </span>
+      </div>
+      <div className="det-answer sealed">{plaintext}</div>
+    </>
+  );
+}
+
+function friendlyDecryptError(msg: string): string {
+  const lower = msg.toLowerCase();
+  if (lower.includes('reject')) return 'Wallet signature rejected — click decrypt again to retry.';
+  if (lower.includes('no access') || lower.includes('enoaccess'))
+    return 'Wallet is not the form owner. Only the form creator can decrypt sealed fields.';
+  if (lower.includes('connect')) return 'Connect your wallet first (button top-right).';
+  return msg.length > 180 ? msg.slice(0, 180) + '…' : msg;
 }
