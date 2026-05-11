@@ -388,28 +388,30 @@ kbd { font-family: var(--mono); }
   color: var(--ink); text-transform: none; letter-spacing: 0;
 }
 
-/* Templates picker chip in sheet-head row (replaces the larger CTA banner
-   that used to sit between the page subtitle and the builder grid). */
+/* Templates picker chip in sheet-head row. Larger + handwriting font so
+   it reads as a primary affordance, not buried metadata. */
 .sheet-head .tpl-pick-btn {
   background: var(--postit-mint);
-  border: 1.5px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
-  padding: 5px 12px;
-  font-family: var(--type); font-size: 11px;
-  letter-spacing: 0.08em; text-transform: uppercase;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 7px 16px;
+  font-family: var(--hand); font-size: 19px; font-weight: 700;
+  letter-spacing: 0; text-transform: none;
   color: var(--ink); cursor: pointer;
   transform: rotate(-1deg);
   transition: transform 120ms, box-shadow 120ms;
   margin: 0 auto 0 12px;
+  line-height: 1;
 }
 .sheet-head .tpl-pick-btn:hover {
-  transform: rotate(0) translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
+  transform: rotate(0) translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink);
 }
 @media (max-width: 720px) {
   .sheet-head .tpl-pick-btn {
     margin: 0;
     width: 100%; text-align: center;
+    font-size: 17px;
   }
 }
 
@@ -2304,13 +2306,29 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 .tpl-modal {
   position: relative;
   background: var(--paper);
-  width: min(960px, 100%);
-  max-height: calc(100vh - 64px);
+  width: min(1180px, 100%);
+  max-height: calc(100vh - 48px);
   overflow-y: auto;
   border: 2px solid var(--ink);
   box-shadow: 10px 10px 0 var(--ink-soft);
-  padding: 28px 32px 24px;
+  padding: 32px 36px 28px;
   font-family: var(--body);
+  /* Visible custom scrollbar (Webkit) so users notice they can scroll. */
+  scrollbar-color: var(--marker-blue) var(--paper-edge);
+  scrollbar-width: thin;
+}
+.tpl-modal::-webkit-scrollbar { width: 12px; }
+.tpl-modal::-webkit-scrollbar-track {
+  background: var(--paper-edge);
+  border-left: 1.5px solid var(--ink);
+}
+.tpl-modal::-webkit-scrollbar-thumb {
+  background: var(--marker-blue);
+  border: 2px solid var(--paper-edge);
+  border-radius: 6px;
+}
+.tpl-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--walrus-deep, #0e3b66);
 }
 .tpl-stamp {
   position: absolute; top: -14px; left: 28px;
@@ -2349,8 +2367,8 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 .tpl-close:hover { transform: rotate(90deg); transition: transform 200ms ease-out; }
 
 .tpl-grid {
-  display: grid; gap: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
 }
 .tpl-card {
   position: relative;

@@ -229,6 +229,316 @@ export const featureRequestTemplate: FormSchema = {
   ],
 };
 
+export const eventRsvpTemplate: FormSchema = {
+  id: 'tpl_event_rsvp',
+  title: 'Event RSVP',
+  description: 'Headcount + dietary + sealed contact for a real-world meetup. Email stays encrypted until the day-of mailing list export.',
+  fields: [
+    {
+      id: 'f_name',
+      type: 'short_text',
+      label: 'Your name',
+      required: true,
+    },
+    {
+      id: 'f_attending',
+      type: 'dropdown',
+      label: 'Will you be there?',
+      required: true,
+      options: ['Yes, definitely', 'Maybe', 'No, but keep me posted'],
+    },
+    {
+      id: 'f_plus_ones',
+      type: 'number',
+      label: 'Number of guests (you + plus-ones)',
+      required: true,
+    },
+    {
+      id: 'f_dietary',
+      type: 'checkboxes',
+      label: 'Dietary preferences',
+      required: false,
+      options: ['Vegetarian', 'Vegan', 'Halal', 'Gluten-free', 'No restrictions'],
+    },
+    {
+      id: 'f_date',
+      type: 'date',
+      label: 'When would you arrive?',
+      required: false,
+    },
+    {
+      id: 'f_email',
+      type: 'email',
+      label: 'Email for confirmation',
+      required: true,
+      encrypted: true,
+    },
+  ],
+};
+
+export const jobApplicationTemplate: FormSchema = {
+  id: 'tpl_job_application',
+  title: 'Job Application',
+  description: 'Sealed resume + sealed wallet + open work samples. Screening team only unlocks personal info after deciding to interview.',
+  fields: [
+    {
+      id: 'f_full_name',
+      type: 'short_text',
+      label: 'Full name',
+      required: true,
+    },
+    {
+      id: 'f_role',
+      type: 'dropdown',
+      label: 'Which role are you applying for?',
+      required: true,
+      options: ['Senior Engineer', 'Mid Engineer', 'Junior Engineer', 'Designer', 'PM', 'Other'],
+    },
+    {
+      id: 'f_portfolio',
+      type: 'url',
+      label: 'Portfolio / GitHub link',
+      required: true,
+    },
+    {
+      id: 'f_pitch',
+      type: 'rich_text',
+      label: 'Why are you a fit?',
+      required: true,
+      help: 'Two paragraphs is plenty.',
+    },
+    {
+      id: 'f_resume',
+      type: 'image_upload',
+      label: 'Resume (PDF preferred — first image used as preview)',
+      required: false,
+    },
+    {
+      id: 'f_email',
+      type: 'email',
+      label: 'Email',
+      required: true,
+      encrypted: true,
+    },
+    {
+      id: 'f_wallet',
+      type: 'wallet_address',
+      label: 'Wallet for sign-on bonus / payments',
+      required: false,
+      encrypted: true,
+    },
+  ],
+};
+
+export const newsletterSignupTemplate: FormSchema = {
+  id: 'tpl_newsletter',
+  title: 'Newsletter Signup',
+  description: 'Email-collection form done right: address never sits in plaintext on a backend, only the form owner decrypts on send-day.',
+  fields: [
+    {
+      id: 'f_email',
+      type: 'email',
+      label: 'Your email',
+      required: true,
+      encrypted: true,
+      help: 'Sealed with Seal — only the publisher’s wallet can decrypt.',
+    },
+    {
+      id: 'f_topics',
+      type: 'checkboxes',
+      label: 'What do you want updates on?',
+      required: false,
+      options: ['Product changelog', 'Engineering deep-dives', 'Hiring announcements', 'Community events'],
+    },
+    {
+      id: 'f_frequency',
+      type: 'dropdown',
+      label: 'How often?',
+      required: true,
+      options: ['Weekly', 'Bi-weekly', 'Monthly'],
+    },
+  ],
+};
+
+export const userResearchTemplate: FormSchema = {
+  id: 'tpl_user_research',
+  title: 'User Research Screener',
+  description: 'Screener for a 30-min user interview. Sealed contact + open demographic answers so screeners can sort without seeing PII.',
+  fields: [
+    {
+      id: 'f_persona',
+      type: 'dropdown',
+      label: 'You describe yourself as…',
+      required: true,
+      options: ['Builder / dev', 'Designer', 'PM / ops', 'Curious user', 'Researcher / academic'],
+    },
+    {
+      id: 'f_usage',
+      type: 'star_rating',
+      label: 'How often do you use products in our category?',
+      required: true,
+      scale: 5,
+      help: '1 = never, 5 = daily',
+    },
+    {
+      id: 'f_pain',
+      type: 'rich_text',
+      label: 'What’s your biggest pain point right now?',
+      required: true,
+    },
+    {
+      id: 'f_availability',
+      type: 'checkboxes',
+      label: 'When are you free for a 30-min call?',
+      required: true,
+      options: ['Mon-Fri morning', 'Mon-Fri afternoon', 'Weekday evening', 'Weekend'],
+    },
+    {
+      id: 'f_email',
+      type: 'email',
+      label: 'Email to schedule',
+      required: true,
+      encrypted: true,
+    },
+  ],
+};
+
+export const hackathonSubmissionTemplate: FormSchema = {
+  id: 'tpl_hackathon_submission',
+  title: 'Hackathon Submission',
+  description: 'Team intake for a hackathon — project pitch, demo URL, team wallets (kept sealed until selection).',
+  fields: [
+    {
+      id: 'f_project_name',
+      type: 'short_text',
+      label: 'Project name',
+      required: true,
+    },
+    {
+      id: 'f_track',
+      type: 'dropdown',
+      label: 'Track',
+      required: true,
+      options: ['DeFi', 'Infra / Tooling', 'Consumer / Social', 'AI x Crypto', 'Other'],
+    },
+    {
+      id: 'f_one_liner',
+      type: 'short_text',
+      label: 'One-line pitch',
+      required: true,
+    },
+    {
+      id: 'f_description',
+      type: 'rich_text',
+      label: 'What did you build?',
+      required: true,
+    },
+    {
+      id: 'f_demo_url',
+      type: 'url',
+      label: 'Demo URL',
+      required: true,
+    },
+    {
+      id: 'f_video',
+      type: 'video_upload',
+      label: 'Demo video (optional, will Walrus-Quilt with submission)',
+      required: false,
+    },
+    {
+      id: 'f_team_wallet',
+      type: 'wallet_address',
+      label: 'Team wallet for prize payout',
+      required: true,
+      encrypted: true,
+    },
+  ],
+};
+
+export const daoVoteTemplate: FormSchema = {
+  id: 'tpl_dao_vote',
+  title: 'DAO Vote',
+  description: 'Off-chain governance vote with on-chain receipts. Each ballot is a verifiable Walrus blob, voter wallet stays sealed.',
+  fields: [
+    {
+      id: 'f_proposal',
+      type: 'short_text',
+      label: 'Which proposal are you voting on?',
+      required: true,
+      placeholder: 'CIP-001: …',
+    },
+    {
+      id: 'f_choice',
+      type: 'dropdown',
+      label: 'Your vote',
+      required: true,
+      options: ['For', 'Against', 'Abstain'],
+    },
+    {
+      id: 'f_rationale',
+      type: 'rich_text',
+      label: 'Why did you vote this way? (public — recorded on chain)',
+      required: false,
+    },
+    {
+      id: 'f_wallet',
+      type: 'wallet_address',
+      label: 'Your voter wallet',
+      required: true,
+      encrypted: true,
+      help: 'Sealed for ballot privacy until reveal period.',
+    },
+  ],
+};
+
+export const refundRequestTemplate: FormSchema = {
+  id: 'tpl_refund_request',
+  title: 'Refund Request',
+  description: 'Support intake with sealed contact info and severity routing. Keeps PII off-server while still letting team triage by urgency.',
+  fields: [
+    {
+      id: 'f_order_id',
+      type: 'short_text',
+      label: 'Order ID',
+      required: true,
+      placeholder: 'e.g. ORD-12345',
+    },
+    {
+      id: 'f_reason',
+      type: 'dropdown',
+      label: 'Reason for refund',
+      required: true,
+      options: ['Item not received', 'Item damaged', 'Wrong item', 'Changed mind', 'Other'],
+    },
+    {
+      id: 'f_severity',
+      type: 'dropdown',
+      label: 'Severity',
+      required: true,
+      options: ['Low', 'Medium', 'High', 'Critical'],
+    },
+    {
+      id: 'f_explanation',
+      type: 'rich_text',
+      label: 'What happened?',
+      required: true,
+    },
+    {
+      id: 'f_evidence',
+      type: 'image_upload',
+      label: 'Photos / screenshots (optional)',
+      required: false,
+    },
+    {
+      id: 'f_email',
+      type: 'email',
+      label: 'Reply-to email',
+      required: true,
+      encrypted: true,
+    },
+  ],
+};
+
 /** Registry consumed by TemplatesGallery. Order = display order in the picker. */
 export interface TemplateMeta {
   id: string;
@@ -254,13 +564,6 @@ export const templateRegistry: TemplateMeta[] = [
     schema: npsSurveyTemplate,
   },
   {
-    id: founderApplicationTemplate.id,
-    name: founderApplicationTemplate.title,
-    emoji: '🚀',
-    description: 'Pitch form. Founder wallet + email sealed until selection.',
-    schema: founderApplicationTemplate,
-  },
-  {
     id: contactFormTemplate.id,
     name: contactFormTemplate.title,
     emoji: '✉️',
@@ -268,10 +571,66 @@ export const templateRegistry: TemplateMeta[] = [
     schema: contactFormTemplate,
   },
   {
+    id: newsletterSignupTemplate.id,
+    name: newsletterSignupTemplate.title,
+    emoji: '📬',
+    description: 'Email + topic prefs. Address sealed end-to-end.',
+    schema: newsletterSignupTemplate,
+  },
+  {
+    id: eventRsvpTemplate.id,
+    name: eventRsvpTemplate.title,
+    emoji: '🎟️',
+    description: 'Headcount + dietary + sealed contact for a meetup.',
+    schema: eventRsvpTemplate,
+  },
+  {
     id: featureRequestTemplate.id,
     name: featureRequestTemplate.title,
     emoji: '💡',
     description: 'Feature voting form with optional voter wallet.',
     schema: featureRequestTemplate,
+  },
+  {
+    id: founderApplicationTemplate.id,
+    name: founderApplicationTemplate.title,
+    emoji: '🚀',
+    description: 'Pitch form. Founder wallet + email sealed until selection.',
+    schema: founderApplicationTemplate,
+  },
+  {
+    id: jobApplicationTemplate.id,
+    name: jobApplicationTemplate.title,
+    emoji: '💼',
+    description: 'Sealed PII, open work samples, screener flow.',
+    schema: jobApplicationTemplate,
+  },
+  {
+    id: userResearchTemplate.id,
+    name: userResearchTemplate.title,
+    emoji: '🔍',
+    description: 'Screener for 30-min user interviews. Sealed contact.',
+    schema: userResearchTemplate,
+  },
+  {
+    id: hackathonSubmissionTemplate.id,
+    name: hackathonSubmissionTemplate.title,
+    emoji: '🏆',
+    description: 'Project intake — pitch, demo URL, sealed team wallet.',
+    schema: hackathonSubmissionTemplate,
+  },
+  {
+    id: daoVoteTemplate.id,
+    name: daoVoteTemplate.title,
+    emoji: '🗳️',
+    description: 'Off-chain ballot with sealed voter wallet, on-chain receipt.',
+    schema: daoVoteTemplate,
+  },
+  {
+    id: refundRequestTemplate.id,
+    name: refundRequestTemplate.title,
+    emoji: '↩️',
+    description: 'Refund triage with severity routing + sealed reply-to.',
+    schema: refundRequestTemplate,
   },
 ];

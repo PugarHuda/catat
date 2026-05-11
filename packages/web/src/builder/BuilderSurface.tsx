@@ -69,10 +69,24 @@ function friendlyError(msg: string): string {
   return msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
 }
 
+const GALLERY_SEEN_KEY = 'catat:templates-seen';
+
 export default function BuilderSurface({ schema, onSchemaChange: setSchema, activeFormId, onFormPublished, surface, onSurfaceChange, onHome }: Props) {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(schema.fields[0]?.id ?? null);
   const [publishState, setPublishState] = useState<PublishState>({ kind: 'idle' });
-  const [galleryOpen, setGalleryOpen] = useState(false);
+  // Templates gallery auto-opens the first time a user lands on Builder
+  // per browser session. After they close or pick once, they have to
+  // click "Browse templates" to re-open — no nag-loop on every reload.
+  const [galleryOpen, setGalleryOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem(GALLERY_SEEN_KEY) !== '1';
+  });
+  const closeGallery = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(GALLERY_SEEN_KEY, '1');
+    }
+    setGalleryOpen(false);
+  };
 
   const account = useCurrentAccount();
   const sui = useSuiClient();
@@ -441,10 +455,12 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
             // Loading a template replaces the draft entirely. The user can
             // then edit any field — they're not coupled to the on-disk
             // template after load. Selected field resets to the first.
+            // The gallery component calls onClose() after onPick, which
+            // routes to closeGallery() and persists the seen flag.
             setSchema(picked);
             setSelectedFieldId(picked.fields[0]?.id ?? null);
           }}
-          onClose={() => setGalleryOpen(false)}
+          onClose={closeGallery}
         />
       )}
     </>
