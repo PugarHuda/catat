@@ -64,9 +64,15 @@ export function useRealSubmissions(formId: string = BUG_REPORT_FORM_ID) {
 
       const submissions = await Promise.allSettled(
         blobIds.map(async (blobId): Promise<Submission> => {
-          const bytes = await walrusClient.walrus.readBlob({ blobId });
-          const text = new TextDecoder().decode(bytes);
-          const parsed = JSON.parse(text) as OnChainSubmission;
+          // Submissions are Quilt blobs: submission.json + (optional) media files.
+          // Quilt-aware read by identifier; fall back to whole-blob-as-file if
+          // the Quilt happened to be created with no identifier metadata.
+          const blob = await walrusClient.walrus.getBlob({ blobId });
+          const files = await blob.files({ identifiers: ['submission.json'] });
+          const submissionFile = files[0];
+          const parsed = (submissionFile
+            ? await submissionFile.json()
+            : await blob.asFile().json()) as OnChainSubmission;
           return {
             id: `walrus_${blobId}`,
             blob_id: blobId,

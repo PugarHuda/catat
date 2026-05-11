@@ -159,9 +159,13 @@ export function useAdminOverlay(activeFormId: string) {
   const restoreFromWalrus = useCallback(async (blobId: string): Promise<{ count: number } | { error: string }> => {
     setBusy('restoring');
     try {
-      const bytes = await walrusClient.walrus.readBlob({ blobId: blobId.trim() });
-      const text = new TextDecoder().decode(bytes);
-      const parsed = JSON.parse(text) as PersistedShape;
+      // Overlay backup is Quilt-wrapped (identifier matches the file name
+      // written by backupToWalrus). Quilt-aware read with whole-blob fallback
+      // for older single-blob backups.
+      const blob = await walrusClient.walrus.getBlob({ blobId: blobId.trim() });
+      const files = await blob.files({});
+      const overlayFile = files[0] ?? blob.asFile();
+      const parsed = (await overlayFile.json()) as PersistedShape;
       if (parsed.version !== 1) return { error: `Unsupported overlay version: ${parsed.version}` };
       // Merge — restore doesn't wipe, so user keeps their unsaved local edits.
       setOverlay(prev => {

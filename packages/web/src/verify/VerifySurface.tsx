@@ -108,29 +108,27 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
       currentStep = 2;
       setState({ kind: 'verifying', steps: [...steps] });
 
-      // Step 3: fetch blob from Walrus
-      let blobBytes: Uint8Array;
+      // Step 3 + 4 combined: fetch blob from Walrus (Quilt-aware) + parse body.
+      // The submission is a Quilt with submission.json + optional media files.
+      let body: VerifiedSubmission['body'];
+      let blobByteCount = 0;
       try {
-        blobBytes = await walrusClient.walrus.readBlob({ blobId: parsed.blob_id });
+        const blob = await walrusClient.walrus.getBlob({ blobId: parsed.blob_id });
+        const files = await blob.files({ identifiers: ['submission.json'] });
+        const submissionFile = files[0] ?? blob.asFile();
+        const bytes = await submissionFile.bytes();
+        blobByteCount = bytes.length;
+        body = JSON.parse(new TextDecoder().decode(bytes));
       } catch (e) {
         steps[2] = { kind: 'fail', detail: `Walrus read failed: ${(e as Error).message.slice(0, 80)}` };
-        setState({ kind: 'failed', steps: [...steps], error: 'Walrus blob unreachable' });
+        setState({ kind: 'failed', steps: [...steps], error: 'Walrus blob unreachable or unparseable' });
         return;
       }
-      steps[2] = { kind: 'pass', detail: `Walrus returned ${blobBytes.length} bytes.` };
+      steps[2] = { kind: 'pass', detail: `Walrus returned ${blobByteCount} bytes.` };
       currentStep = 3;
       setState({ kind: 'verifying', steps: [...steps] });
 
-      // Step 4: parse + validate body
-      let body: VerifiedSubmission['body'];
-      try {
-        const text = new TextDecoder().decode(blobBytes);
-        body = JSON.parse(text);
-      } catch (e) {
-        steps[3] = { kind: 'fail', detail: 'Blob is not valid JSON.' };
-        setState({ kind: 'failed', steps: [...steps], error: 'Invalid blob' });
-        return;
-      }
+      // Step 4: validate body matches the event payload
       const formMatches = body.form_id === parsed.form_id;
       const submitterMatches = body.submitter === parsed.submitter;
       if (!formMatches || !submitterMatches) {

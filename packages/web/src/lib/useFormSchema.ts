@@ -69,15 +69,27 @@ export function useFormSchema(formId: string | null) {
         submissionCount: (fields.submission_blob_ids ?? []).length,
       };
 
-      // Step 2: fetch schema blob (skip if placeholder)
+      // Step 2: fetch schema blob (skip if placeholder).
+      // Builder publish writes the schema as a Quilt file named "schema.json",
+      // so we must use the Quilt-aware reader path — `readBlob` would hand
+      // back the raw Quilt encoding bytes (not parseable JSON).
       if (!fields.schema_blob_id || fields.schema_blob_id.startsWith('blob_pending') || fields.schema_blob_id === 'blob_pending_schema_upload') {
         return { meta, schema: null };
       }
       try {
-        const bytes = await walrusClient.walrus.readBlob({ blobId: fields.schema_blob_id });
-        const text = new TextDecoder().decode(bytes);
-        const schema = JSON.parse(text) as FormSchema;
-        // Defensive: ensure shape matches what Runner expects.
+        const blob = await walrusClient.walrus.getBlob({ blobId: fields.schema_blob_id });
+        const files = await blob.files({ identifiers: ['schema.json'] });
+        const schemaFile = files[0];
+        let schema: FormSchema;
+        if (schemaFile) {
+          schema = (await schemaFile.json()) as FormSchema;
+        } else {
+          // Backward compat: older single-blob publishes (or test data) might
+          // store the schema as the whole blob without a Quilt identifier.
+          // Fall back to treating the entire blob as raw JSON.
+          const fallbackFile = blob.asFile();
+          schema = (await fallbackFile.json()) as FormSchema;
+        }
         if (!Array.isArray(schema.fields)) {
           throw new Error('Schema blob is not a valid FormSchema (missing fields array)');
         }
