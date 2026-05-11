@@ -53,17 +53,21 @@ export default function App() {
   // Respondent mode: hides Builder/Inbox/Verify tabs so people who clicked
   // a share URL only see the form to fill, not the whole CMS.
   const [embedMode, setEmbedMode] = useState<boolean>(false);
+  // True only when activeFormId came from a share URL — meaning the local
+  // `schema` state is stale and we must fetch from chain. After Builder
+  // publishes a form, this stays false because the local `schema` is the
+  // schema we just published. Without this guard, publishing would mount
+  // SchemaLoading, unmounting BuilderSurface and discarding its
+  // publishState — the success modal would never render.
+  const [needsRemoteFetch, setNeedsRemoteFetch] = useState<boolean>(false);
 
-  // Fetch schema for the currently-active form from chain. Falls back to
-  // the local bugReportTemplate when no formId / fetch fails so Builder
-  // still has something to draft from.
-  const isUrlFormId = activeFormId !== BUG_REPORT_FORM_ID;
-  const remoteSchemaQuery = useFormSchema(isUrlFormId ? activeFormId : null);
+  const remoteSchemaQuery = useFormSchema(needsRemoteFetch ? activeFormId : null);
 
   useEffect(() => {
     const fetched = remoteSchemaQuery.data?.schema;
     if (fetched) {
       setSchema(fetched);
+      setNeedsRemoteFetch(false); // local state now matches chain
     }
   }, [remoteSchemaQuery.data]);
 
@@ -71,7 +75,10 @@ export default function App() {
   // straight into the requested surface with the named form active.
   useEffect(() => {
     const { formId, surface: targetSurface, embed } = parseUrlParams();
-    if (formId) setActiveFormId(formId);
+    if (formId) {
+      setActiveFormId(formId);
+      setNeedsRemoteFetch(true); // URL-supplied form, need to fetch schema
+    }
     if (formId || targetSurface) {
       setSurface(targetSurface ?? 'runner');
       setView('app');
@@ -79,6 +86,13 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Builder calls this after a successful publish. The local `schema` is
+  // already correct for this formId — DON'T trigger a remote fetch.
+  const handleFormPublished = (formId: string) => {
+    setActiveFormId(formId);
+    setNeedsRemoteFetch(false);
+  };
 
   if (view === 'landing') {
     return (
@@ -93,20 +107,20 @@ export default function App() {
 
   const onHome = () => {
     setActiveFormId(BUG_REPORT_FORM_ID);
+    setNeedsRemoteFetch(false);
     setEmbedMode(false);
     setView('landing');
   };
 
-  // When opening a share URL, wait for the schema to load before rendering
-  // Runner — otherwise the user sees the wrong (default) form for a beat,
-  // which is the exact bug they reported.
-  if (isUrlFormId && remoteSchemaQuery.isLoading) {
+  // Loading/error/placeholder views ONLY when we genuinely need to fetch
+  // schema from chain (URL-supplied formId, no local schema).
+  if (needsRemoteFetch && remoteSchemaQuery.isLoading) {
     return <SchemaLoading formId={activeFormId} />;
   }
-  if (isUrlFormId && remoteSchemaQuery.isError) {
+  if (needsRemoteFetch && remoteSchemaQuery.isError) {
     return <SchemaError formId={activeFormId} message={(remoteSchemaQuery.error as Error).message} onHome={onHome} />;
   }
-  if (isUrlFormId && remoteSchemaQuery.data && !remoteSchemaQuery.data.schema) {
+  if (needsRemoteFetch && remoteSchemaQuery.data && !remoteSchemaQuery.data.schema) {
     return <SchemaPlaceholder formId={activeFormId} meta={remoteSchemaQuery.data.meta} onHome={onHome} />;
   }
 
@@ -142,7 +156,7 @@ export default function App() {
           schema={schema}
           onSchemaChange={setSchema}
           activeFormId={activeFormId}
-          onFormPublished={setActiveFormId}
+          onFormPublished={handleFormPublished}
           surface={surface}
           onSurfaceChange={setSurface}
           onHome={onHome}
