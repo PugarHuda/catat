@@ -6,60 +6,50 @@
    ===================================================== */
 
 :root {
-  /* paper / ink — Walrus-aligned (off-white + deep teal-ink instead of cream + brown) */
-  --paper:        #FAF8F5;        /* Walrus off-white (was warm cream #f4ecd6) */
-  --paper-2:      #FFFCF7;        /* slightly brighter sheet */
-  --paper-edge:   #EDE9E0;        /* desaturated cream-grey edge */
-  --paper-dark:   #DBD5C8;
-  --ink:          #0E2E26;        /* deep teal-black, Walrus body text vibe */
-  --ink-soft:     #1C3D34;
-  --pencil:       #969593;        /* Walrus mid-grey */
-  --pencil-soft:  #AFAEAC;        /* Walrus light grey */
-  --line:         #CDD9D4;        /* cool greenish ruling */
-  --line-soft:    #DDE7E1;
-  --rule:         #67E3CA;        /* Walrus light teal — notebook rule */
-  --margin:       #d68a8a;        /* coral margin keep (legacy) */
+  /* === Catat — Walrus Blue palette ===
+   * Paper neutrals carry over from the design handoff (warm cream).
+   * All chromatic accents are now Walrus Blue family per the user-supplied
+   * palette spec. Marker-red preserved ONLY for warnings/errors. */
 
-  /* markers / accents — Walrus + supporting roles
-   * marker-green is now the *primary* brand color (Walrus deep teal-green).
-   * Was previously a secondary tag color; promoted because everywhere we
-   * reach for "primary action" should be Walrus brand.
-   * marker-blue repurposed to Walrus purple (deep) — used for links + Sui
-   * chain references.
-   */
-  --marker-red:    #c0392b;
-  --marker-blue:   #5F3CAA;       /* Walrus deep purple (was navy) */
-  --marker-green:  #1C947C;       /* Walrus deep teal-green — PRIMARY brand */
-  --marker-purple: #A074FF;       /* Walrus bright purple (accent) */
-  --highlight:     #67E3CA;       /* Walrus light teal highlighter */
+  /* Neutrals / paper (unchanged) */
+  --paper:        #f4ecd6;     /* body background */
+  --paper-2:      #fbf5dc;     /* card / sheet / form bg */
+  --paper-edge:   #e9dfc1;     /* edge gradient */
+  --paper-dark:   #e2d6b1;     /* divider tebal, paper shadow */
+  --ink:          #211b14;     /* main text + 2px border + drop shadow */
+  --ink-soft:     #3a3128;     /* paragraph soft, lede */
+  --pencil:       #6b665e;     /* caption, label uppercase, meta */
+  --pencil-soft:  #9c958a;     /* placeholder */
+  --line:         #cdbf94;     /* divider dashed */
+  --line-soft:    #dccfa8;     /* divider dotted */
+  --rule:         #1f6fb2;     /* horizontal ruled lines — Walrus Blue */
+  --margin:       #7fb6dd;     /* vertical margin line — Walrus Blue light */
 
-  /* Brand colors — Walrus first, Sui as secondary
-   * --walrus-deep:  the Walrus primary teal-green (#1C947C). Used for
-   *                  primary CTAs (Publish, Submit, Decrypt, Get WAL).
-   * --walrus-teal:  bright teal (#45D2B6) — live/verified indicators,
-   *                  positive states.
-   * --walrus-mint:  pale background tint (#C9F4E9) for success post-its.
-   * --walrus-purple: deep purple secondary brand (#5F3CAA), for special
-   *                  actions like Seal decrypt + Sui object links.
-   * --sui-blue:     retained as a tertiary Sui-ecosystem accent (chain
-   *                  references like "Sign Sui tx", wallet pill). Not the
-   *                  primary CTA color anymore.
-   */
-  --walrus-deep:    #1C947C;
+  /* Walrus Blue accent family */
+  --marker-blue:    #1f6fb2;   /* PRIMARY — CTA, marker title, live badge, Q-pill, card shadow */
+  --walrus-deep:    #0e3b66;   /* secondary — verify link, testnet badge, headline contrast */
+  --marker-green:   #1c8a7a;   /* success — verified ✓, big check, on-chain status */
+  --marker-purple:  #5b6fb2;   /* tertiary accent */
+  --highlight:      #9bd2ff;   /* highlighter behind .underline, hover nav-link */
+
+  /* Warning ONLY (semantic) */
+  --marker-red:     #c0392b;   /* warnings / errors / sealed-field indicator */
+
+  /* Post-its — full Walrus Blue family per spec */
+  --postit:         #cfe6fb;   /* callout / em-tag / selected option (was yellow) */
+  --postit-pink:    #bfe0ff;   /* sealed field slot (was warm pink) */
+  --postit-mint:    #c5e9e3;   /* success / WAL holder / verified */
+  --postit-blue:    #9fcdee;   /* info / timeline activity */
+  --postit-purple:  #cdd5f0;   /* advanced tag */
+  --tape:           rgba(155, 210, 255, 0.5);
+
+  /* Legacy Walrus/Sui vars — unused now but kept for compat */
   --walrus-teal:    #45D2B6;
   --walrus-mint:    #C9F4E9;
   --walrus-purple:  #5F3CAA;
   --walrus-lilac:   #E2D5FA;
   --sui-blue:       #4DA2FF;
   --sui-blue-deep:  #1F76C9;
-
-  /* post-its — repainted to match Walrus surface family */
-  --postit:        #FFF3A6;       /* highlighter yellow keep (Walrus highlighter) */
-  --postit-pink:   #FFD1D9;       /* sealed/warning */
-  --postit-mint:   #C9F4E9;       /* Walrus mint (success/live) */
-  --postit-blue:   #E2D5FA;       /* Walrus lilac (info) */
-  --postit-purple: #E2D5FA;       /* unified */
-  --tape:          rgba(103, 227, 202, 0.5);
 
   /* type
    * Atkinson Hyperlegible: designed by Braille Institute for max readability,
@@ -116,7 +106,7 @@
   --color-card-foreground:   var(--ink);
   --color-popover:           var(--paper-2);
   --color-popover-foreground: var(--ink);
-  --color-primary:           var(--walrus-deep);
+  --color-primary:           var(--marker-blue);
   --color-primary-foreground: var(--paper);
   --color-secondary:         var(--paper-edge);
   --color-secondary-foreground: var(--ink);
@@ -200,7 +190,7 @@ kbd { font-family: var(--mono); }
   background: var(--ink); color: var(--paper);
   display: grid; place-items: center;
   transform: rotate(-3deg);
-  box-shadow: 2px 2px 0 var(--walrus-deep);
+  box-shadow: 2px 2px 0 var(--marker-blue);
 }
 .brand .glyph svg { width: 22px; height: 22px; }
 .brand small {
@@ -214,7 +204,7 @@ kbd { font-family: var(--mono); }
   background: var(--ink); color: var(--paper);
   display: grid; place-items: center;
   transform: rotate(-3deg);
-  box-shadow: 2px 2px 0 var(--walrus-deep);
+  box-shadow: 2px 2px 0 var(--marker-blue);
 }
 .brand-mini-glyph svg { width: 18px; height: 18px; }
 
@@ -222,7 +212,7 @@ kbd { font-family: var(--mono); }
 .nav-links { display: flex; gap: 26px; font-family: var(--body); font-size: 18px; }
 .nav-links a, .nav-links button { position: relative; padding: 4px 2px; }
 .nav-links a:hover, .nav-links a.active,
-.nav-links button:hover, .nav-links button.active { color: var(--walrus-deep); }
+.nav-links button:hover, .nav-links button.active { color: var(--marker-blue); }
 .nav-links a:hover::after, .nav-links a.active::after,
 .nav-links button:hover::after, .nav-links button.active::after {
   content: ""; position: absolute;
@@ -256,13 +246,7 @@ kbd { font-family: var(--mono); }
 .btn:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
 .btn:disabled:hover { transform: none; box-shadow: inset 0 0 0 2px var(--ink), 3px 3px 0 var(--ink); }
 
-.btn-primary {
-  background: var(--walrus-deep); color: var(--paper);
-  border-color: var(--ink);
-}
-.btn-primary:hover {
-  background: color-mix(in oklab, var(--walrus-deep) 88%, black);
-}
+.btn-primary { background: var(--marker-blue); color: var(--paper); }
 .btn-ghost {
   background: transparent;
   box-shadow: inset 0 0 0 1.5px var(--pencil-soft);
@@ -304,7 +288,7 @@ kbd { font-family: var(--mono); }
 }
 .tag .dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: var(--walrus-teal); box-shadow: 0 0 0 2px var(--paper);
+  background: var(--marker-green); box-shadow: 0 0 0 2px var(--paper);
 }
 
 .lock-tag {
@@ -444,7 +428,7 @@ footer {
   margin-top: 40px;
 }
 .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
-.foot a:hover { color: var(--walrus-deep); }
+.foot a:hover { color: var(--marker-blue); }
 .signature-line {
   font-family: var(--hand); font-size: 24px;
   color: var(--ink-soft); margin-top: 8px;
@@ -461,7 +445,7 @@ footer {
   outline: 0;
 }
 .textarea { min-height: 90px; resize: vertical; padding-bottom: 6px; line-height: 1.3; }
-.input:focus, .textarea:focus { border-bottom-color: var(--walrus-deep); }
+.input:focus, .textarea:focus { border-bottom-color: var(--marker-blue); }
 .input::placeholder, .textarea::placeholder { color: var(--pencil-soft); font-style: italic; }
 
 /* ---- toggle (paper switch) ---- */
@@ -478,7 +462,7 @@ footer {
   background: var(--ink); border-radius: 50%;
   transition: left 0.15s;
 }
-.toggle.on { background: var(--walrus-deep); }
+.toggle.on { background: var(--marker-blue); }
 .toggle.on::after { left: 24px; background: var(--paper); }
 
 /* ---- highlighter underline (for headlines) ---- */
@@ -493,7 +477,7 @@ footer {
   border-radius: 60% 40% 50% 50% / 30% 60% 40% 70%;
   transform: rotate(-1deg);
 }
-.marker { color: var(--walrus-deep); font-style: italic; }
+.marker { color: var(--marker-blue); font-style: italic; }
 .strike { position: relative; color: var(--pencil); font-weight: 500; font-size: 0.7em; }
 .strike::after {
   content: ""; position: absolute;
@@ -1047,7 +1031,7 @@ footer {
   overflow: hidden;
 }
 .progress .bar .f {
-  height: 100%; background: var(--walrus-deep);
+  height: 100%; background: var(--marker-blue);
   border-right: 1.5px solid var(--ink);
   transition: width 0.25s;
 }
@@ -1065,19 +1049,17 @@ footer {
   position: relative;
   background: var(--paper-2);
   border: 1.5px solid var(--paper-edge);
-  border-left: 4px solid var(--walrus-deep);
+  border-left: 4px solid var(--marker-blue);
   border-radius: 4px;
   box-shadow: 3px 3px 0 var(--paper-edge);
   transition: border-color 140ms ease-out, box-shadow 140ms ease-out, transform 140ms ease-out;
 }
 .q:hover {
   border-color: var(--pencil-soft);
-  border-left-color: var(--walrus-teal);
 }
 .q:focus-within {
   border-color: var(--ink);
-  border-left-color: var(--walrus-teal);
-  box-shadow: 6px 6px 0 var(--walrus-deep);
+  box-shadow: 6px 6px 0 var(--marker-blue);
   transform: translate(-2px, -2px);
 }
 .q.sealed {
@@ -1097,7 +1079,7 @@ footer {
   top: -14px; left: 18px;
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 48px; height: 30px; padding: 0 14px;
-  background: var(--walrus-deep); color: var(--paper);
+  background: var(--marker-blue); color: var(--paper);
   font-family: var(--type); font-size: 12px; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase;
   border-radius: 4px;
@@ -1259,13 +1241,13 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 }
 .slider-wrap input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 24px; height: 24px;
-  background: var(--walrus-deep);
+  background: var(--marker-blue);
   border: 2px solid var(--ink); border-radius: 50%;
   cursor: pointer; box-shadow: 2px 2px 0 var(--ink);
 }
 .slider-wrap input[type="range"]::-moz-range-thumb {
   width: 24px; height: 24px;
-  background: var(--walrus-deep);
+  background: var(--marker-blue);
   border: 2px solid var(--ink); border-radius: 50%;
   cursor: pointer;
 }
@@ -1332,17 +1314,14 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 }
 .btn-submit {
   font-family: var(--hand); font-size: 28px; font-weight: 700;
-  color: var(--paper); background: var(--walrus-deep);
+  color: var(--paper); background: var(--marker-blue);
   padding: 14px 30px;
   border: 2.5px solid var(--ink); border-radius: 10px;
   box-shadow: 5px 5px 0 var(--ink);
   transform: rotate(-1deg);
   display: inline-flex; align-items: center; gap: 10px;
   line-height: 1; cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
-}
-.btn-submit:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--walrus-deep) 88%, black);
+  transition: transform 0.12s, box-shadow 0.12s;
 }
 .btn-submit:hover {
   transform: rotate(-1deg) translate(-2px, -2px);
@@ -1626,7 +1605,7 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   transform: translate(-1px, -1px);
   box-shadow: 5px 5px 0 var(--ink);
 }
-.r-actions .primary { background: var(--walrus-deep); color: var(--paper); border-color: var(--ink); }
+.r-actions .primary { background: var(--marker-blue); color: var(--paper); }
 
 .proof-note {
   display: flex; gap: 18px; align-items: center;
@@ -3020,7 +2999,7 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
 }
 .wallet-pill .dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--walrus-teal);
+  background: var(--marker-green);
   box-shadow: 0 0 0 2px var(--paper);
 }
 
