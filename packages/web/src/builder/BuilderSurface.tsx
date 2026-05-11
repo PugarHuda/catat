@@ -543,6 +543,15 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, onClose }: ModalP
             <button type="button" onClick={copyShare} className="btn btn-sm btn-primary">
               {copied ? '✓ copied' : 'Copy link'}
             </button>
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm"
+              title="Open the standalone form in a new tab"
+            >
+              Open ↗
+            </a>
           </div>
           <small>opens this form directly in Submit mode for anyone with the URL</small>
         </div>

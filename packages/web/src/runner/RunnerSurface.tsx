@@ -392,11 +392,21 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
     <>
       <div className="thinbar">
         {embedMode ? (
-          <span className="brand-mini" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          // In embed mode the brand becomes a "powered by" link that opens
+          // the catat home page in a NEW TAB so respondents don't lose
+          // their in-progress form by accident.
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="brand-mini"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: 'inherit' }}
+            title="Built with catat — open the home page"
+          >
             <BrandGlyph size="sm" />
             catat
-            <small style={{ fontFamily: 'var(--type)', fontSize: 10, marginLeft: 4, color: 'var(--pencil)' }}>· form by walrus</small>
-          </span>
+            <small style={{ fontFamily: 'var(--type)', fontSize: 10, marginLeft: 4, color: 'var(--pencil)' }}>· form by walrus ↗</small>
+          </a>
         ) : (
           <button type="button" onClick={onHome} className="brand-mini" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
             <BrandGlyph size="sm" />
@@ -429,7 +439,7 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
           </div>
 
           <h1 className="ftitle">
-            Tell us what <span className="marker">broke</span>.
+            <FormHeadline title={schema.title} />
           </h1>
           {schema.description && <p className="fdesc">{schema.description}</p>}
           <div className="byline">
@@ -516,6 +526,20 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       </main>
     </>
   );
+}
+
+/** Headline derived from the form title — last word marker-styled like
+ *  the design pattern (e.g. "NPS Survey" → "NPS [Survey]"). Single-word
+ *  titles get the whole word marker-styled. Falls back gracefully for
+ *  empty titles. */
+function FormHeadline({ title }: { title: string }) {
+  const trimmed = title.trim();
+  if (!trimmed) return <>Untitled <span className="marker">form</span>.</>;
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) return <span className="marker">{parts[0]}</span>;
+  const last = parts[parts.length - 1]!;
+  const rest = parts.slice(0, -1).join(' ');
+  return <>{rest} <span className="marker">{last}</span></>;
 }
 
 function CheckIcon() {

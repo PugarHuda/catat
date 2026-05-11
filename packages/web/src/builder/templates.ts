@@ -1,5 +1,15 @@
 import type { FormSchema } from './types';
 
+/** Empty starting point — what users see when entering Builder fresh.
+ *  Picked from TemplatesGallery's "+ Blank canvas" card; lifted into a
+ *  reusable constant so App.tsx can use the same shape as the default. */
+export const blankCanvasTemplate: FormSchema = {
+  id: 'tpl_blank',
+  title: 'Untitled form',
+  description: '',
+  fields: [],
+};
+
 export const bugReportTemplate: FormSchema = {
   id: 'tpl_bug_report',
   title: 'Walrus Bug Report',

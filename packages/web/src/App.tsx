@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import LandingPage from './landing/LandingPage';
-import { bugReportTemplate } from './builder/templates';
+import { blankCanvasTemplate } from './builder/templates';
 import { generateMockSubmissions } from './admin/mockSubmissions';
 import type { FormSchema } from './builder/types';
 import type { Submission } from './admin/types';
@@ -46,7 +46,11 @@ function parseUrlParams(): { formId?: string; surface?: Surface; embed: boolean 
 
 export default function App() {
   const [view, setView] = useState<View>('landing');
-  const [schema, setSchema] = useState<FormSchema>(bugReportTemplate);
+  // Default to blank canvas — Templates gallery auto-opens on first
+  // Builder visit anyway, so users see the recipe options up-front. If
+  // they close the gallery, they're left with the empty draft to build
+  // from scratch (instead of the previously-default Walrus Bug Report).
+  const [schema, setSchema] = useState<FormSchema>(blankCanvasTemplate);
   const [submissions, setSubmissions] = useState<Submission[]>(() => generateMockSubmissions());
   const [surface, setSurface] = useState<Surface>('builder');
   const [activeFormId, setActiveFormId] = useState<string>(BUG_REPORT_FORM_ID);
