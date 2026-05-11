@@ -12,7 +12,6 @@ import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
 import {
-  BUG_REPORT_FORM_ID,
   CATAT_PACKAGE_ID,
   suiscanObject,
   suiscanTx,
@@ -22,6 +21,10 @@ import {
 interface Props {
   schema: FormSchema;
   onSchemaChange: Dispatch<SetStateAction<FormSchema>>;
+  activeFormId: string;
+  /** Called after Builder successfully creates a new Form object on-chain.
+   *  App lifts this id into state so Runner + Admin start operating on it. */
+  onFormPublished: (formId: string) => void;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
   onHome?: () => void;
@@ -30,7 +33,7 @@ interface Props {
 type PublishState =
   | { kind: 'idle' }
   | { kind: 'publishing'; step: string; subStep?: string }
-  | { kind: 'success'; blobId: string; txHash: string }
+  | { kind: 'success'; blobId: string; txHash: string; formId: string }
   | { kind: 'error'; message: string };
 
 let nextId = 1000;
@@ -61,7 +64,7 @@ function friendlyError(msg: string): string {
   return msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
 }
 
-export default function BuilderSurface({ schema, onSchemaChange: setSchema, surface, onSurfaceChange, onHome }: Props) {
+export default function BuilderSurface({ schema, onSchemaChange: setSchema, activeFormId, onFormPublished, surface, onSurfaceChange, onHome }: Props) {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(schema.fields[0]?.id ?? null);
   const [publishState, setPublishState] = useState<PublishState>({ kind: 'idle' });
 
@@ -164,7 +167,25 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
       });
       const createResult = await signAndExecute({ transaction: createTx });
 
-      setPublishState({ kind: 'success', blobId, txHash: createResult.digest });
+      // Extract the freshly-created Form object id so Runner + Admin can switch
+      // to it. signAndExecute by default returns just the digest — we need to
+      // wait for indexing then fetch the tx with showObjectChanges to see the
+      // Form created by create_form().
+      const txDetails = await sui.waitForTransaction({
+        digest: createResult.digest,
+        options: { showObjectChanges: true },
+      });
+      const formChange = txDetails.objectChanges?.find(
+        (c): c is Extract<typeof c, { type: 'created' }> =>
+          c.type === 'created' && c.objectType.endsWith('::form::Form'),
+      );
+      const newFormId = formChange?.objectId;
+      if (!newFormId) {
+        throw new Error('create_form succeeded but Form object id was not found in objectChanges');
+      }
+      onFormPublished(newFormId);
+
+      setPublishState({ kind: 'success', blobId, txHash: createResult.digest, formId: newFormId });
       queryClient.invalidateQueries({ queryKey: ['form-stats'] });
       queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
     } catch (e) {
@@ -251,9 +272,9 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
                   />
                 </div>
                 <div className="form-meta-r">
-                  REFERENCE FORM<br />
+                  ACTIVE FORM<br />
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: 0, textTransform: 'none' }}>
-                    {BUG_REPORT_FORM_ID.slice(0, 8)}…{BUG_REPORT_FORM_ID.slice(-4)}
+                    {activeFormId.slice(0, 8)}…{activeFormId.slice(-4)}
                   </span>
                 </div>
               </div>
@@ -389,6 +410,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
         <PublishedModal
           blobId={publishState.blobId}
           txHash={publishState.txHash}
+          formId={publishState.formId}
           schemaTitle={schema.title}
           onClose={() => setPublishState({ kind: 'idle' })}
         />
@@ -400,13 +422,15 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
 interface ModalProps {
   blobId: string;
   txHash: string;
+  formId: string;
   schemaTitle: string;
   onClose: () => void;
 }
 
-function PublishedModal({ blobId, txHash, schemaTitle, onClose }: ModalProps) {
+function PublishedModal({ blobId, txHash, formId, schemaTitle, onClose }: ModalProps) {
   const blobShort = `${blobId.slice(0, 12)}…${blobId.slice(-6)}`;
   const txShort = `${txHash.slice(0, 12)}…${txHash.slice(-6)}`;
+  const formShort = `${formId.slice(0, 12)}…${formId.slice(-6)}`;
 
   return (
     <div className="publish-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -414,9 +438,19 @@ function PublishedModal({ blobId, txHash, schemaTitle, onClose }: ModalProps) {
         <div className="publish-stamp">published!</div>
         <h3>Your form is on-chain.</h3>
         <p>
-          <b>{schemaTitle}</b> — schema lives on Walrus, registry minted on Sui as a fresh Form object owned by your wallet. Share the Sui tx with respondents.
+          <b>{schemaTitle}</b> — schema on Walrus, Form minted on Sui owned by your wallet.
+          {' '}
+          <b style={{ color: 'var(--marker-green)' }}>Submit + Inbox now point to this form.</b>
+          {' '}
+          Decrypt sealed fields from Inbox after collecting replies.
         </p>
 
+        <div className="receipt-row">
+          <span>form object</span>
+          <a href={suiscanObject(formId)} target="_blank" rel="noopener noreferrer">
+            {formShort}
+          </a>
+        </div>
         <div className="receipt-row">
           <span>schema blob</span>
           <a href={walruscanBlob(blobId)} target="_blank" rel="noopener noreferrer">
@@ -439,18 +473,14 @@ function PublishedModal({ blobId, txHash, schemaTitle, onClose }: ModalProps) {
           <span>storage</span>
           <b>26 epochs (~26 days)</b>
         </div>
-        <div className="receipt-row">
-          <span>find your Form</span>
-          <b>via objectChanges in tx ↗</b>
-        </div>
 
         <div className="actions">
           <button type="button" className="btn btn-primary btn-sm" onClick={onClose}>Close</button>
-          <a className="btn btn-sm" href={suiscanTx(txHash)} target="_blank" rel="noopener noreferrer">
-            Open Suiscan ↗
+          <a className="btn btn-sm" href={suiscanObject(formId)} target="_blank" rel="noopener noreferrer">
+            Open Form ↗
           </a>
-          <a className="btn btn-sm" href={walruscanBlob(blobId)} target="_blank" rel="noopener noreferrer">
-            Open Walruscan ↗
+          <a className="btn btn-sm" href={suiscanTx(txHash)} target="_blank" rel="noopener noreferrer">
+            create_form tx ↗
           </a>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { generateMockSubmissions } from './admin/mockSubmissions';
 import type { FormSchema } from './builder/types';
 import type { Submission } from './admin/types';
 import type { Surface } from './lib/surfaces';
+import { BUG_REPORT_FORM_ID } from './lib/contract';
 
 const BuilderSurface = lazy(() => import('./builder/BuilderSurface'));
 const RunnerSurface = lazy(() => import('./runner/RunnerSurface'));
@@ -18,6 +19,10 @@ export default function App() {
   const [schema, setSchema] = useState<FormSchema>(bugReportTemplate);
   const [submissions, setSubmissions] = useState<Submission[]>(() => generateMockSubmissions());
   const [surface, setSurface] = useState<Surface>('builder');
+  // The form_id that Runner submits into and Admin reads from.
+  // Defaults to the seed form (owned by the deploy wallet, decrypt always denied).
+  // Builder Publish overrides it with a wallet-owned form so the decrypt loop closes.
+  const [activeFormId, setActiveFormId] = useState<string>(BUG_REPORT_FORM_ID);
 
   if (view === 'landing') {
     return (
@@ -30,13 +35,17 @@ export default function App() {
     );
   }
 
-  const onHome = () => setView('landing');
+  const onHome = () => {
+    setActiveFormId(BUG_REPORT_FORM_ID);
+    setView('landing');
+  };
 
   return (
     <Suspense fallback={<SurfaceFallback />}>
       {surface === 'runner' ? (
         <RunnerSurface
           schema={schema}
+          activeFormId={activeFormId}
           surface={surface}
           onSurfaceChange={setSurface}
           onHome={onHome}
@@ -44,6 +53,7 @@ export default function App() {
       ) : surface === 'admin' ? (
         <AdminSurface
           schema={schema}
+          activeFormId={activeFormId}
           submissions={submissions}
           onSubmissionsChange={setSubmissions}
           surface={surface}
@@ -60,6 +70,8 @@ export default function App() {
         <BuilderSurface
           schema={schema}
           onSchemaChange={setSchema}
+          activeFormId={activeFormId}
+          onFormPublished={setActiveFormId}
           surface={surface}
           onSurfaceChange={setSurface}
           onHome={onHome}

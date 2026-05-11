@@ -5,7 +5,6 @@ import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
 import {
-  BUG_REPORT_FORM_ID,
   CATAT_PACKAGE_ID,
   suiscanObject,
   suiscanTx,
@@ -47,7 +46,8 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
   const isReal = Boolean(_real_blob_id);
   const submittedAt = new Date(submission.submitted_at_ms);
   const submitterShort = `${submission.submitter.slice(0, 6)}…${submission.submitter.slice(-4)}`;
-  const formIdShort = `${BUG_REPORT_FORM_ID.slice(0, 6)}…${BUG_REPORT_FORM_ID.slice(-4)}`;
+  const displayFormId = _real_form_id ?? submission.form_id;
+  const formIdShort = `${displayFormId.slice(0, 6)}…${displayFormId.slice(-4)}`;
 
   return (
     <>
@@ -94,7 +94,7 @@ export default function RunnerReview({ schema, submission, onReset, surface, onS
             blobId={_real_blob_id}
             txHash={_real_tx_hash}
             walrusCertifyTx={_real_walrus_certify_tx}
-            formId={_real_form_id ?? BUG_REPORT_FORM_ID}
+            formId={displayFormId}
             submitter={submission.submitter}
             submitterShort={submitterShort}
             submittedAt={submittedAt}

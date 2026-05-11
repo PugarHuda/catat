@@ -13,7 +13,6 @@ import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
 import {
-  BUG_REPORT_FORM_ID,
   CATAT_PACKAGE_ID,
   SEAL_KEY_SERVERS_TESTNET,
   SUI_CLOCK_OBJECT_ID,
@@ -37,6 +36,9 @@ type SubmitState =
 
 interface Props {
   schema: FormSchema;
+  /** The Form object id this Runner submits into. Lifted from App so Builder
+   *  publish can swap it to a wallet-owned form (enabling decrypt round-trip). */
+  activeFormId: string;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
   onHome?: () => void;
@@ -73,7 +75,7 @@ function friendlyError(msg: string): string {
   return msg.length > 220 ? msg.slice(0, 220) + '…' : msg;
 }
 
-export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome }: Props) {
+export default function RunnerSurface({ schema, activeFormId, surface, onSurfaceChange, onHome }: Props) {
   const [values, setValues] = useState<Values>({});
   const [submitted, setSubmitted] = useState<SerializedSubmission | null>(null);
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
@@ -164,16 +166,16 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
           const { encryptedObject } = await sealClient.encrypt({
             threshold: 2,
             packageId: CATAT_PACKAGE_ID,
-            id: sealIdentity(BUG_REPORT_FORM_ID, f.id),
+            id: sealIdentity(activeFormId, f.id),
             data: new TextEncoder().encode(plaintext),
           });
           submissionValues[f.id] = {
             encrypted: true,
             scheme: 'seal-ibe-2of3',
             packageId: CATAT_PACKAGE_ID,
-            formId: BUG_REPORT_FORM_ID,
+            formId: activeFormId,
             fieldId: f.id,
-            keyId: sealIdentity(BUG_REPORT_FORM_ID, f.id),
+            keyId: sealIdentity(activeFormId, f.id),
             ciphertext_b64: bytesToBase64(encryptedObject),
             ciphertext_bytes: encryptedObject.length,
             plaintext_bytes: plaintext.length,
@@ -189,7 +191,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
 
     const submissionPayload = {
       version: '1.0',
-      form_id: BUG_REPORT_FORM_ID,
+      form_id: activeFormId,
       submitted_at_ms: Date.now(),
       submitter: account.address,
       values: submissionValues,
@@ -229,7 +231,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
       recordTx.moveCall({
         target: `${CATAT_PACKAGE_ID}::form::submit`,
         arguments: [
-          recordTx.object(BUG_REPORT_FORM_ID),
+          recordTx.object(activeFormId),
           recordTx.pure.string(blobId),
           recordTx.object(SUI_CLOCK_OBJECT_ID),
         ],
@@ -247,7 +249,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
         _real_blob_id: blobId,
         _real_tx_hash: recordResult.digest,
         _real_walrus_certify_tx: certifyResult.digest,
-        _real_form_id: BUG_REPORT_FORM_ID,
+        _real_form_id: activeFormId,
       });
       queryClient.invalidateQueries({ queryKey: ['form-stats'] });
       queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
@@ -284,7 +286,7 @@ export default function RunnerSurface({ schema, surface, onSurfaceChange, onHome
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <span style={{ fontFamily: 'var(--type)', fontSize: 10, letterSpacing: '.1em' }}>
-            FORM {BUG_REPORT_FORM_ID.slice(0, 6)}…{BUG_REPORT_FORM_ID.slice(-4)}
+            FORM {activeFormId.slice(0, 6)}…{activeFormId.slice(-4)}
           </span>
           <SurfaceTabs current={surface} onChange={onSurfaceChange} />
           <WalletButton />

@@ -12,6 +12,8 @@ import type { Surface } from '@/lib/surfaces';
 
 interface Props {
   schema: FormSchema;
+  /** Form object id this Inbox queries. Set by Builder publish flow via App. */
+  activeFormId: string;
   submissions: Submission[];
   onSubmissionsChange: Dispatch<SetStateAction<Submission[]>>;
   surface: Surface;
@@ -34,7 +36,7 @@ function hasEncryptedField(s: Submission): boolean {
   );
 }
 
-export default function AdminSurface({ schema, submissions, onSubmissionsChange, surface, onSurfaceChange, onHome }: Props) {
+export default function AdminSurface({ schema, activeFormId, submissions, onSubmissionsChange, surface, onSurfaceChange, onHome }: Props) {
   const [filters, setFilters] = useState<Filters>({
     status: new Set<Status>(),
     severity: new Set<string>(),
@@ -44,7 +46,7 @@ export default function AdminSurface({ schema, submissions, onSubmissionsChange,
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const realQuery = useRealSubmissions();
+  const realQuery = useRealSubmissions(activeFormId);
   const realSubmissions = realQuery.data ?? [];
 
   const allSubmissions = useMemo(
