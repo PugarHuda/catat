@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Wallet, ChevronDown, LogOut, Copy, Check, ExternalLink } from 'lucide-react';
 import {
   useCurrentAccount,
   useConnectWallet,
   useDisconnectWallet,
   useWallets,
 } from '@mysten/dapp-kit';
-import { cn } from '@/lib/utils';
 
 export default function WalletButton() {
   const account = useCurrentAccount();
@@ -32,32 +30,27 @@ export default function WalletButton() {
           href="https://chromewebstore.google.com/detail/sui-wallet/opcgpfmipidbgpenhmajoajpbobppdil"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground"
+          className="btn btn-sm"
           title="Install a Sui wallet to connect"
         >
-          <Wallet className="h-3.5 w-3.5" /> Install wallet
-          <ExternalLink className="h-3 w-3" />
+          install wallet ↗
         </a>
       );
     }
 
     return (
-      <div ref={ref} className="relative">
+      <div ref={ref} style={{ position: 'relative' }}>
         <button
           type="button"
           onClick={() => setOpen(o => !o)}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition hover:bg-accent disabled:opacity-50"
+          className="btn btn-primary btn-sm"
           disabled={connecting}
         >
-          <Wallet className="h-3.5 w-3.5" />
-          {connecting ? 'Connecting…' : 'Connect wallet'}
-          <ChevronDown className="h-3 w-3" />
+          {connecting ? 'connecting…' : 'connect wallet'} ▾
         </button>
         {open && (
-          <div className="absolute right-0 top-full z-30 mt-1 min-w-48 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
-            <div className="border-b border-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-              choose wallet
-            </div>
+          <PaperPopup>
+            <div className="popup-section">choose wallet</div>
             {wallets.map(w => (
               <button
                 key={w.name}
@@ -66,13 +59,13 @@ export default function WalletButton() {
                   connect({ wallet: w });
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-accent"
+                className="popup-item"
               >
-                {w.icon && <img src={w.icon} className="h-4 w-4 rounded" alt="" />}
-                <span className="truncate">{w.name}</span>
+                {w.icon && <img src={w.icon} alt="" style={{ width: 20, height: 20, borderRadius: 4 }} />}
+                <span>{w.name}</span>
               </button>
             ))}
-          </div>
+          </PaperPopup>
         )}
       </div>
     );
@@ -83,51 +76,37 @@ export default function WalletButton() {
   const copy = async () => {
     await navigator.clipboard.writeText(account.address);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} style={{ position: 'relative' }}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={cn(
-          'flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 font-mono text-xs transition',
-          'hover:bg-accent',
-        )}
+        className="wallet-pill"
+        style={{ cursor: 'pointer' }}
       >
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        </span>
+        <span className="dot" />
         {short}
-        <ChevronDown className="h-3 w-3" />
+        <span style={{ marginLeft: 4, fontFamily: 'var(--type)', fontSize: 10 }}>▾</span>
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 min-w-56 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
-          <div className="border-b border-border px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-            connected · testnet
-          </div>
-          <button
-            type="button"
-            onClick={copy}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition hover:bg-accent"
-          >
-            {copied ? (
-              <Check className="h-3 w-3 text-emerald-600" />
-            ) : (
-              <Copy className="h-3 w-3 text-muted-foreground" />
-            )}
-            <span className="font-mono text-foreground">{short}</span>
-            <span className="ml-auto text-muted-foreground">{copied ? 'copied' : 'copy'}</span>
+        <PaperPopup>
+          <div className="popup-section">connected · sui testnet</div>
+          <button type="button" onClick={copy} className="popup-item">
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{short}</span>
+            <span style={{ marginLeft: 'auto', fontFamily: 'var(--type)', fontSize: 10, color: copied ? 'var(--marker-green)' : 'var(--pencil)' }}>
+              {copied ? '✓ copied' : 'copy'}
+            </span>
           </button>
           <a
             href={`https://suiscan.xyz/testnet/account/${account.address}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-left text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            className="popup-item"
           >
-            <ExternalLink className="h-3 w-3" /> View on Suiscan
+            <span>↗ view on Suiscan</span>
           </a>
           <button
             type="button"
@@ -135,12 +114,58 @@ export default function WalletButton() {
               disconnect();
               setOpen(false);
             }}
-            className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-left text-xs text-muted-foreground transition hover:bg-accent hover:text-destructive"
+            className="popup-item"
+            style={{ color: 'var(--marker-red)', borderTop: '1px dashed var(--line)' }}
           >
-            <LogOut className="h-3 w-3" /> Disconnect
+            <span>disconnect</span>
           </button>
-        </div>
+        </PaperPopup>
       )}
+    </div>
+  );
+}
+
+function PaperPopup({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        right: 0,
+        top: 'calc(100% + 6px)',
+        minWidth: 220,
+        background: 'var(--paper-2)',
+        border: '2px solid var(--ink)',
+        borderRadius: 8,
+        boxShadow: '4px 4px 0 var(--ink)',
+        zIndex: 50,
+        overflow: 'hidden',
+        transform: 'rotate(-0.5deg)',
+      }}
+    >
+      <style>{`
+        .popup-section {
+          padding: 6px 12px;
+          font-family: var(--type); font-size: 10px;
+          letter-spacing: .12em; text-transform: uppercase;
+          color: var(--pencil);
+          background: var(--paper-edge);
+          border-bottom: 1.5px dashed var(--line);
+        }
+        .popup-item {
+          display: flex; align-items: center; gap: 8px;
+          width: 100%;
+          padding: 9px 12px;
+          font-family: var(--hand); font-size: 18px;
+          color: var(--ink);
+          background: var(--paper-2);
+          border: 0; cursor: pointer;
+          text-align: left;
+          transition: background .12s;
+        }
+        .popup-item:hover { background: var(--postit); }
+        .popup-item + .popup-item { border-top: 1px dashed var(--line); }
+      `}</style>
+      {children}
     </div>
   );
 }

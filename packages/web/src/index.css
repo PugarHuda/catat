@@ -2239,6 +2239,91 @@ textarea.in-rich:focus {
   transform: none; box-shadow: 2px 2px 0 var(--ink);
 }
 
+/* =====================================================
+   Publish modal (success after Builder Publish)
+   ===================================================== */
+
+.publish-overlay {
+  position: fixed; inset: 0;
+  background: rgba(33, 27, 20, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  padding: 30px;
+}
+.publish-modal {
+  position: relative;
+  max-width: 560px; width: 100%;
+  background: var(--paper-2);
+  background-image:
+    repeating-linear-gradient(180deg, transparent 0 31px, var(--rule) 31px 32px),
+    linear-gradient(90deg, transparent 0 56px, var(--margin) 56px 57px, transparent 57px 100%);
+  border-radius: 6px;
+  padding: 42px 36px 28px 70px;
+  box-shadow:
+    8px 8px 0 var(--ink),
+    0 30px 60px -10px rgba(0, 0, 0, 0.5);
+  transform: rotate(-1deg);
+}
+.publish-stamp {
+  position: absolute;
+  top: -20px; right: -26px;
+  font-family: var(--hand); font-size: 38px; font-weight: 700;
+  color: var(--marker-red);
+  border: 4px double var(--marker-red);
+  padding: 8px 20px; border-radius: 8px;
+  transform: rotate(8deg);
+  background: rgba(244, 236, 214, 0.9);
+  letter-spacing: 0.04em;
+}
+.publish-modal h3 {
+  font-family: var(--hand); font-size: 44px; font-weight: 700;
+  margin: 0 0 6px; color: var(--ink); line-height: 1;
+}
+.publish-modal p {
+  font-family: var(--body); font-size: 16px;
+  color: var(--ink-soft); margin: 0 0 18px;
+}
+.publish-modal .receipt-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0; border-bottom: 1px dashed var(--line);
+  font-family: var(--type); font-size: 12px;
+  color: var(--pencil); letter-spacing: 0.06em;
+  gap: 8px;
+}
+.publish-modal .receipt-row b {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--ink); font-weight: 400;
+  word-break: break-all;
+}
+.publish-modal .receipt-row a {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--marker-blue);
+  text-decoration: underline wavy;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+.publish-modal .actions {
+  margin-top: 18px;
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+
+.publish-progress {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--postit-mint);
+  border: 1.5px dashed var(--marker-green);
+  border-radius: 8px;
+  font-family: var(--hand); font-size: 18px;
+  color: var(--marker-green);
+  margin-top: 12px;
+}
+.publish-progress small {
+  font-family: var(--type); font-size: 11px;
+  letter-spacing: 0.06em; color: var(--pencil);
+}
+
 /* ---- wallet pill (connected state) ---- */
 .wallet-pill {
   display: inline-flex; align-items: center; gap: 8px;

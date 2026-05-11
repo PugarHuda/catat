@@ -1,4 +1,9 @@
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { useQueryClient } from '@tanstack/react-query';
+import { Transaction } from '@mysten/sui/transactions';
+import { walrus, WalrusFile } from '@mysten/walrus';
+import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
 import type { Field, FieldType, FormSchema } from './types';
 import { fieldMeta, groupOrder, groupLabels } from './fieldMeta';
 import FieldRow from './FieldRow';
@@ -6,7 +11,13 @@ import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
-import { BUG_REPORT_FORM_ID } from '@/lib/contract';
+import {
+  BUG_REPORT_FORM_ID,
+  CATAT_PACKAGE_ID,
+  suiscanObject,
+  suiscanTx,
+  walruscanBlob,
+} from '@/lib/contract';
 
 interface Props {
   schema: FormSchema;
@@ -15,6 +26,12 @@ interface Props {
   onSurfaceChange: (s: Surface) => void;
   onHome?: () => void;
 }
+
+type PublishState =
+  | { kind: 'idle' }
+  | { kind: 'publishing'; step: string; subStep?: string }
+  | { kind: 'success'; blobId: string; txHash: string }
+  | { kind: 'error'; message: string };
 
 let nextId = 1000;
 const newId = () => `f${nextId++}`;
@@ -36,8 +53,34 @@ function defaultsForType(type: FieldType): Partial<Field> {
   }
 }
 
+function friendlyError(msg: string): string {
+  const lower = msg.toLowerCase();
+  if (lower.includes('user reject') || lower.includes('rejected')) return 'You rejected a wallet signature. Try Publish again.';
+  if (lower.includes('wal') && (lower.includes('insufficient') || lower.includes('balance'))) return 'Wallet has no WAL token. Get testnet WAL from stakely.io/faucet/walrus-testnet-wal.';
+  if (lower.includes('sui') && (lower.includes('insufficient') || lower.includes('balance'))) return 'Wallet has no SUI for gas. Get testnet SUI from faucet.sui.io.';
+  return msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
+}
+
 export default function BuilderSurface({ schema, onSchemaChange: setSchema, surface, onSurfaceChange, onHome }: Props) {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(schema.fields[0]?.id ?? null);
+  const [publishState, setPublishState] = useState<PublishState>({ kind: 'idle' });
+
+  const account = useCurrentAccount();
+  const sui = useSuiClient();
+  const queryClient = useQueryClient();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+
+  const walrusClient = useMemo(() => {
+    return sui.$extend(
+      walrus({
+        wasmUrl: walrusWasmUrl,
+        uploadRelay: {
+          host: 'https://upload-relay.testnet.walrus.space',
+          sendTip: { max: 1_000 },
+        },
+      }),
+    );
+  }, [sui]);
 
   const addField = (type: FieldType) => {
     const id = newId();
@@ -47,14 +90,9 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
     }));
     setSelectedFieldId(id);
   };
-
   const updateField = (id: string, patch: Partial<Field>) => {
-    setSchema(s => ({
-      ...s,
-      fields: s.fields.map(f => (f.id === id ? { ...f, ...patch } : f)),
-    }));
+    setSchema(s => ({ ...s, fields: s.fields.map(f => (f.id === id ? { ...f, ...patch } : f)) }));
   };
-
   const removeField = (id: string) => {
     setSchema(s => ({ ...s, fields: s.fields.filter(f => f.id !== id) }));
     if (selectedFieldId === id) {
@@ -62,7 +100,6 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
       setSelectedFieldId(remaining[0]?.id ?? null);
     }
   };
-
   const moveField = (id: string, dir: -1 | 1) => {
     setSchema(s => {
       const i = s.fields.findIndex(f => f.id === id);
@@ -78,8 +115,68 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
     });
   };
 
+  const handlePublish = async () => {
+    if (!account) {
+      setPublishState({ kind: 'error', message: 'Connect wallet first (top-right button).' });
+      return;
+    }
+    if (schema.fields.length === 0) {
+      setPublishState({ kind: 'error', message: 'Add at least one field before publishing.' });
+      return;
+    }
+
+    try {
+      // 1. Upload schema as Walrus blob
+      const schemaJson = JSON.stringify(schema, null, 2);
+      const file = WalrusFile.from({
+        contents: new TextEncoder().encode(schemaJson),
+        identifier: 'schema.json',
+        tags: { 'content-type': 'application/json' },
+      });
+
+      setPublishState({ kind: 'publishing', step: 'Encoding schema for Walrus…' });
+      const flow = walrusClient.walrus.writeFilesFlow({ files: [file] });
+      await flow.encode();
+
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 3' });
+      const reserveTx = flow.register({ epochs: 26, owner: account.address, deletable: false });
+      const reserveResult = await signAndExecute({ transaction: reserveTx });
+
+      setPublishState({ kind: 'publishing', step: 'Uploading via Walrus relay…' });
+      await flow.upload({ digest: reserveResult.digest });
+
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus certify', subStep: '2 of 3' });
+      const certifyTx = flow.certify();
+      await signAndExecute({ transaction: certifyTx });
+
+      const filesUploaded = await flow.listFiles();
+      const blobId = filesUploaded[0]?.blobId ?? '';
+
+      // 2. Mint a new Form on Sui via catat::form::create_form
+      setPublishState({ kind: 'publishing', step: 'Sign Sui create_form', subStep: '3 of 3' });
+      const createTx = new Transaction();
+      createTx.moveCall({
+        target: `${CATAT_PACKAGE_ID}::form::create_form`,
+        arguments: [
+          createTx.pure.string(schema.title),
+          createTx.pure.string(blobId),
+        ],
+      });
+      const createResult = await signAndExecute({ transaction: createTx });
+
+      setPublishState({ kind: 'success', blobId, txHash: createResult.digest });
+      queryClient.invalidateQueries({ queryKey: ['form-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
+    } catch (e) {
+      console.error('Publish failed:', e);
+      const msg = (e as Error).message || 'Unknown error';
+      setPublishState({ kind: 'error', message: friendlyError(msg) });
+    }
+  };
+
   const sealedCount = schema.fields.filter(f => f.encrypted).length;
   const selectedField = selectedFieldId ? schema.fields.find(f => f.id === selectedFieldId) ?? null : null;
+  const publishing = publishState.kind === 'publishing';
 
   return (
     <>
@@ -154,7 +251,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
                   />
                 </div>
                 <div className="form-meta-r">
-                  FORM ID<br />
+                  REFERENCE FORM<br />
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink)', letterSpacing: 0, textTransform: 'none' }}>
                     {BUG_REPORT_FORM_ID.slice(0, 8)}…{BUG_REPORT_FORM_ID.slice(-4)}
                   </span>
@@ -176,21 +273,43 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
                   />
                 ))}
                 {schema.fields.length === 0 && (
-                  <div className="adm-empty">
-                    No fields yet. Pick from the palette on the left.
-                  </div>
+                  <div className="adm-empty">No fields yet. Pick from the palette on the left.</div>
                 )}
               </div>
+
+              {publishState.kind === 'error' && (
+                <div className="submit-error" style={{ marginTop: 16 }}>
+                  <div className="body">
+                    <b>Publish failed</b>
+                    <code>{publishState.message}</code>
+                  </div>
+                </div>
+              )}
+              {publishing && (
+                <div className="publish-progress">
+                  <span style={{ width: 16, height: 16, border: '2px dashed var(--marker-green)', borderRadius: '50%', animation: 'spin 1.4s linear infinite' }} />
+                  {publishState.step}
+                  {publishState.subStep && <small>· {publishState.subStep}</small>}
+                </div>
+              )}
 
               <div className="publish-bar">
                 <div className="left">
                   <b>{schema.fields.length} fields</b>
-                  · {sealedCount} sealed · gate off · 10 epochs
+                  · {sealedCount} sealed · gate off · 26 epochs
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button type="button" className="btn btn-sm" onClick={() => onSurfaceChange('runner')}>Preview</button>
-                  <button type="button" className="btn btn-primary btn-sm" title="Coming soon — schema upload to Walrus">
-                    Publish to Walrus →
+                  <button type="button" className="btn btn-sm" onClick={() => onSurfaceChange('runner')} disabled={publishing}>
+                    Preview
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={handlePublish}
+                    disabled={publishing || !account || schema.fields.length === 0}
+                    title={!account ? 'Connect wallet first' : schema.fields.length === 0 ? 'Add a field first' : 'Upload schema to Walrus + create Form on Sui'}
+                  >
+                    {publishing ? 'publishing…' : 'Publish to Walrus →'}
                   </button>
                 </div>
               </div>
@@ -249,7 +368,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
                 </div>
                 <div className="set-row">
                   <label>Epochs</label>
-                  <span style={{ fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--ink)' }}>10</span>
+                  <span style={{ fontFamily: 'var(--hand)', fontSize: 22, color: 'var(--ink)' }}>26</span>
                 </div>
                 <div className="set-row">
                   <label>Public count</label>
@@ -259,13 +378,83 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, surf
 
               <div className="postit blue" style={{ transform: 'rotate(-2deg)' }}>
                 <b>tip</b>
-                Click a field card to edit it. Sealed fields render as <code>▒▒▒▒</code> for everyone except you.
+                Publish creates a NEW Form on-chain owned by your wallet — anyone can fork the demo. The reference form ID at top stays the same.
               </div>
             </aside>
           </div>
         </div>
       </div>
+
+      {publishState.kind === 'success' && (
+        <PublishedModal
+          blobId={publishState.blobId}
+          txHash={publishState.txHash}
+          schemaTitle={schema.title}
+          onClose={() => setPublishState({ kind: 'idle' })}
+        />
+      )}
     </>
+  );
+}
+
+interface ModalProps {
+  blobId: string;
+  txHash: string;
+  schemaTitle: string;
+  onClose: () => void;
+}
+
+function PublishedModal({ blobId, txHash, schemaTitle, onClose }: ModalProps) {
+  const blobShort = `${blobId.slice(0, 12)}…${blobId.slice(-6)}`;
+  const txShort = `${txHash.slice(0, 12)}…${txHash.slice(-6)}`;
+
+  return (
+    <div className="publish-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="publish-modal">
+        <div className="publish-stamp">published!</div>
+        <h3>Your form is on-chain.</h3>
+        <p>
+          <b>{schemaTitle}</b> — schema lives on Walrus, registry minted on Sui as a fresh Form object owned by your wallet. Share the Sui tx with respondents.
+        </p>
+
+        <div className="receipt-row">
+          <span>schema blob</span>
+          <a href={walruscanBlob(blobId)} target="_blank" rel="noopener noreferrer">
+            {blobShort}
+          </a>
+        </div>
+        <div className="receipt-row">
+          <span>create_form tx</span>
+          <a href={suiscanTx(txHash)} target="_blank" rel="noopener noreferrer">
+            {txShort}
+          </a>
+        </div>
+        <div className="receipt-row">
+          <span>move package</span>
+          <a href={suiscanObject(CATAT_PACKAGE_ID)} target="_blank" rel="noopener noreferrer">
+            {`${CATAT_PACKAGE_ID.slice(0, 12)}…`}
+          </a>
+        </div>
+        <div className="receipt-row">
+          <span>storage</span>
+          <b>26 epochs (~26 days)</b>
+        </div>
+        <div className="receipt-row">
+          <span>find your Form</span>
+          <b>via objectChanges in tx ↗</b>
+        </div>
+
+        <div className="actions">
+          <button type="button" className="btn btn-primary btn-sm" onClick={onClose}>Close</button>
+          <a className="btn btn-sm" href={suiscanTx(txHash)} target="_blank" rel="noopener noreferrer">
+            Open Suiscan ↗
+          </a>
+          <a className="btn btn-sm" href={walruscanBlob(blobId)} target="_blank" rel="noopener noreferrer">
+            Open Walruscan ↗
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
 
