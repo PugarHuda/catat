@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  catat logo — paper-tab style with the BrandGlyph + wordmark + tagline.
-  Used as the OpenGraph share image (1200x630 standard) so links to
-  catat-walrus.vercel.app render with the brand on Twitter/Discord/etc.
+  catat OpenGraph logo — paper sheet with the new "c" monogram brand
+  card on the left, wordmark + tagline on the right. Used as the
+  share image on Twitter/Discord/Telegram/Slack via og:image.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <!-- paper background with subtle off-cream variation -->
+  <!-- paper background -->
   <defs>
     <pattern id="grain" patternUnits="userSpaceOnUse" width="200" height="200">
       <rect width="200" height="200" fill="#f4ecd6"/>
@@ -17,7 +17,7 @@
   </defs>
   <rect width="1200" height="630" fill="url(#grain)"/>
 
-  <!-- horizontal ruled lines (Walrus blue notebook ruling) -->
+  <!-- Walrus blue notebook ruling -->
   <g stroke="#1f6fb2" stroke-width="0.6" opacity="0.18">
     <line x1="0" y1="80"  x2="1200" y2="80"/>
     <line x1="0" y1="160" x2="1200" y2="160"/>
@@ -27,26 +27,33 @@
     <line x1="0" y1="480" x2="1200" y2="480"/>
     <line x1="0" y1="560" x2="1200" y2="560"/>
   </g>
-  <!-- red margin line -->
   <line x1="120" y1="0" x2="120" y2="630" stroke="#7fb6dd" stroke-width="2"/>
 
-  <!-- brand glyph card (rotated, ink + walrus blue shadow) -->
-  <g transform="translate(180 240) rotate(-3)">
-    <rect x="8" y="10" width="120" height="120" rx="22" fill="#1f6fb2"/>
-    <rect x="0" y="0" width="120" height="120" rx="22" fill="#211b14"/>
-    <g stroke="#f4ecd6" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
-      <path d="M88 36A36 36 0 1 0 88 84"/>
-      <path d="M52 56l11 11L88 41"/>
-    </g>
+  <!-- Brand mark card — the new monogram, scaled up -->
+  <g transform="translate(180 230) rotate(-3)">
+    <!-- ink card with Walrus blue drop shadow -->
+    <rect x="8" y="10" width="160" height="160" rx="22" fill="#1f6fb2"/>
+    <rect x="0" y="0" width="160" height="160" rx="22" fill="#211b14"/>
+    <!-- highlighter strip behind letter -->
+    <rect x="22" y="86" width="116" height="36" rx="6" fill="#9bd2ff"/>
+    <!-- handwritten c -->
+    <path
+      d="M122 64 C 105 42, 53 42, 41 75 C 31 102, 53 134, 99 134 C 113 134, 128 128, 134 117"
+      stroke="#f4ecd6" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- marker dot -->
+    <circle cx="135" cy="120" r="11" fill="#1f6fb2"/>
   </g>
 
   <!-- wordmark + tagline -->
-  <g font-family="Caveat, 'Patrick Hand', cursive" fill="#211b14">
-    <text x="340" y="320" font-size="160" font-weight="700">catat</text>
-    <text x="340" y="380" font-size="36" font-weight="400" fill="#3a3128" font-family="'Atkinson Hyperlegible', system-ui, sans-serif">
+  <g fill="#211b14">
+    <text x="380" y="320" font-family="Caveat, 'Patrick Hand', cursive"
+          font-size="170" font-weight="700">catat</text>
+    <text x="380" y="380" font-family="'Atkinson Hyperlegible', system-ui, sans-serif"
+          font-size="36" fill="#3a3128">
       Walrus-native form &amp; feedback platform
     </text>
-    <text x="340" y="430" font-size="22" fill="#6b665e" font-family="'Special Elite', monospace" letter-spacing="2">
+    <text x="380" y="430" font-family="'Special Elite', monospace"
+          font-size="22" fill="#6b665e" letter-spacing="2">
       WALRUS · SUI · SEAL · ON-CHAIN PROOF
     </text>
   </g>

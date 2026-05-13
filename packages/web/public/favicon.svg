@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  catat favicon — paper-square with "C-curve + checkmark" glyph that
-  matches the in-app BrandGlyph component. Cream paper bg + ink stroke
-  for the icon, with a Walrus-blue marker shadow accent (matches the
-  brand-glyph 2px ink-blue shadow used at the brand mark in the nav).
+  catat favicon — handwritten "c" monogram on cream paper with a Walrus
+  Blue highlighter swipe behind. Single-letter mark scales cleanly to
+  16/32/48px favicon sizes. The highlighter strip is the brand visual
+  language carrier (matches .marker class behind hero headlines).
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow underneath (Walrus blue marker accent) -->
-  <rect x="6" y="8" width="50" height="50" rx="10" fill="#1f6fb2" transform="rotate(-3 32 32)"/>
-  <!-- paper-square top with ink rotated tab -->
-  <rect x="4" y="4" width="50" height="50" rx="10" fill="#211b14" transform="rotate(-3 32 32)"/>
-  <!-- glyph: open C-curve + checkmark, matches BrandGlyph svg -->
-  <g transform="rotate(-3 32 32)" stroke="#f4ecd6" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <path d="M44 19A18 18 0 1 0 44 39"/>
-    <path d="M26 28.5l5.5 5.5L44 21"/>
+  <!-- paper square base, rounded + slight rotation for the "tilted page" feel -->
+  <rect x="3" y="3" width="58" height="58" rx="10" fill="#f4ecd6" transform="rotate(-3 32 32)"/>
+  <!-- Walrus Blue highlighter swipe behind the letter -->
+  <rect x="11" y="34" width="42" height="14" rx="2" fill="#9bd2ff"
+        transform="rotate(-3 32 32)" opacity="0.95"/>
+  <!-- handwritten "c" — single open arc, ink stroke, rotated slightly -->
+  <g transform="rotate(-3 32 32)" stroke="#211b14" stroke-width="6"
+     stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M48 24 C 41 16, 23 16, 18 28 C 14 38, 22 50, 36 49 C 42 49, 47 46, 50 42"/>
   </g>
+  <!-- tiny marker dot — the "i love it" tick that says completion/check -->
+  <circle cx="49.5" cy="44.5" r="3" fill="#1f6fb2" transform="rotate(-3 32 32)"/>
 </svg>

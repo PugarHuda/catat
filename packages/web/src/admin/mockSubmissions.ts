@@ -159,6 +159,75 @@ const SAMPLE: Sample[] = [
     status: 'archived',
     priority: 'low',
   },
+  // --- new: variety pass — edge cases that show off field types ---
+  {
+    title: 'Detailed repro with annotated screenshots — 3 attached',
+    severity: 'High',
+    description:
+      'Step 1: connect wallet on testnet → OK.\n' +
+      'Step 2: pick "Walrus Bug Report" template → OK.\n' +
+      'Step 3: hit Publish → wallet pops sig 1 → I close it accidentally.\n' +
+      'Step 4: reopen Publish → wallet pops sig 1 again → tx now fails with "blob already registered".\n\n' +
+      'Should idempotency check before re-prompting register, or surface a clear "your previous reservation is still pending" UI.',
+    repro_url: 'https://github.com/example/walrus-double-register',
+    rating: 4,
+    submitter: '0xa9b8c7d6e5f40312b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7',
+    age_minutes: 16,
+    screenshots: 3,
+    has_email: true,
+    status: 'new',
+    priority: 'high',
+  },
+  {
+    title: 'Burst — same submitter, third report this week',
+    severity: 'Medium',
+    description:
+      'Reporter has filed two prior issues on similar surface area. Pattern: testnet RPC returning 503 during peak hours (UTC 14:00-16:00). Likely Mysten side, not catat. Linking back: see #4 + #6 in this inbox.',
+    submitter: '0xa9f2c4e1d7b3856042f1a8d9c2e5b78f1234567890abcdef0123456789abcdef',
+    age_minutes: 32,
+    screenshots: 0,
+    has_email: true,
+    status: 'triaging',
+    priority: 'medium',
+  },
+  {
+    title: 'Loom video walkthrough — 2-min repro',
+    severity: 'High',
+    description:
+      'Hard to describe in text — recorded a 2-minute Loom showing the exact flow. URL above. TL;DR: form submit succeeds but Inbox shows nothing for 30+ seconds, then suddenly all submissions appear at once.\n\nLikely useRealSubmissions polling interval issue.',
+    repro_url: 'https://www.loom.com/share/example-walrus-bug-walkthrough',
+    rating: 5,
+    submitter: '0xb2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3',
+    age_minutes: 5,
+    screenshots: 0,
+    has_email: true,
+    status: 'new',
+    priority: 'high',
+  },
+  {
+    title: 'Anonymous: Are submissions GDPR-compliant by default?',
+    severity: 'Medium',
+    description:
+      'Asking for a friend in EU. If form has sealed email field, is the encrypted blob still considered PII under GDPR? Where is it stored geographically? Need a compliance one-pager.',
+    submitter: null,
+    age_minutes: 1080,
+    screenshots: 0,
+    has_email: false,
+    status: 'triaging',
+    priority: 'medium',
+  },
+  {
+    title: 'Just shipped — seconds-old test ping',
+    severity: 'Low',
+    description:
+      'Smoke test from automated CI. If you see this, the publish→submit pipeline is healthy as of 30 seconds ago.',
+    submitter: '0xf1e2d3c4b5a69788776655443322110099aabbccddeeff00112233445566778899',
+    age_minutes: 1,
+    screenshots: 0,
+    has_email: false,
+    status: 'new',
+    priority: 'low',
+  },
 ];
 
 const hex = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16)).join('');

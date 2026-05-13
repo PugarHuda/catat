@@ -37,7 +37,6 @@ function Header({ onEnterApp }: Props) {
         <nav className="nav-links">
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
-          <button type="button" onClick={() => onEnterApp()}>Live demo ↗</button>
           <button type="button" onClick={() => onEnterApp('verify')}>Verify ↗</button>
           <a
             href="https://github.com/PugarHuda/catat#readme"
@@ -45,13 +44,6 @@ function Header({ onEnterApp }: Props) {
             rel="noopener noreferrer"
           >
             Docs ↗
-          </a>
-          <a
-            href="https://github.com/PugarHuda/catat"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open source ↗
           </a>
         </nav>
         <div className="nav-cta">
