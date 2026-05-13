@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import LandingPage from './landing/LandingPage';
-import { blankCanvasTemplate } from './builder/templates';
+import { blankCanvasTemplate, bugReportTemplate } from './builder/templates';
 import type { FormSchema } from './builder/types';
 import type { Submission } from './admin/types';
 import type { Surface } from './lib/surfaces';
@@ -100,6 +100,22 @@ export default function App() {
     setNeedsRemoteFetch(false);
   };
 
+  // Picker (in Admin / Builder header) calls this when user switches
+  // focused form. For seed form we have the bundled bugReportTemplate —
+  // use it directly instead of fetching from chain (the on-chain seed
+  // form was created with a placeholder schema_blob_id by the publish
+  // workflow). For user-published forms, schema must come from Walrus.
+  const handleActiveFormChange = (formId: string) => {
+    if (formId === activeFormId) return;
+    setActiveFormId(formId);
+    if (formId === BUG_REPORT_FORM_ID) {
+      setSchema(bugReportTemplate);
+      setNeedsRemoteFetch(false);
+    } else {
+      setNeedsRemoteFetch(true);
+    }
+  };
+
   if (view === 'landing') {
     return (
       <LandingPage
@@ -145,6 +161,7 @@ export default function App() {
         <AdminSurface
           schema={schema}
           activeFormId={activeFormId}
+          onActiveFormChange={handleActiveFormChange}
           submissions={submissions}
           onSubmissionsChange={setSubmissions}
           surface={surface}

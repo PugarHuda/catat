@@ -1,0 +1,55 @@
+name: Seed test submissions
+
+# Manually populate a Form's inbox with N varied test submissions, signed
+# by the deploy wallet (anyone can submit; the form just needs to exist).
+# Use after publishing a fresh form to get a populated demo state.
+on:
+  workflow_dispatch:
+    inputs:
+      form_id:
+        description: 'Sui Form object id (0x...) to submit to'
+        required: true
+      count:
+        description: 'How many submissions to seed (1-10)'
+        required: true
+        default: '5'
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install spike deps
+        working-directory: spike
+        run: bun install
+
+      - name: Run seed script
+        working-directory: spike
+        env:
+          SUI_PRIVATE_KEY: ${{ secrets.SUI_BECH32_PRIVATE_KEY }}
+          FORM_ID: ${{ inputs.form_id }}
+          COUNT: ${{ inputs.count }}
+        run: |
+          set -euo pipefail
+          bun src/08-seed-submissions.ts | tee seed-output.txt
+
+      - name: Summarize results
+        working-directory: spike
+        run: |
+          {
+            echo '## ✅ Seeded submissions'
+            echo ''
+            echo "**Form ID**: \`${{ inputs.form_id }}\`"
+            echo "**Count**: ${{ inputs.count }}"
+            echo ''
+            echo '### Submission digests'
+            grep -E '^\[seed\] (submission|tx)' seed-output.txt || echo '(no detail lines found)'
+            echo ''
+            echo "Suiscan form: https://suiscan.xyz/testnet/object/${{ inputs.form_id }}"
+          } >> "$GITHUB_STEP_SUMMARY"

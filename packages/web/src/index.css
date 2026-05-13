@@ -2508,6 +2508,68 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   to   { opacity: 1; }
 }
 
+/* MyFormsPicker — pill row above admin/builder for switching focused form */
+.my-forms-picker {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px; padding: 12px 14px; margin: 0 0 16px;
+  background: var(--paper-2);
+  border: 1.5px dashed var(--pencil-soft);
+  border-radius: 6px;
+  font-family: var(--body); font-size: 13px;
+}
+.my-forms-picker .mfp-label {
+  font-family: var(--type); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--pencil); margin-right: 4px;
+}
+.my-forms-picker .mfp-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 99px;
+  font-family: var(--body); font-size: 13px;
+  color: var(--ink); cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.my-forms-picker .mfp-pill small {
+  font-family: var(--type); font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pencil);
+}
+.my-forms-picker .mfp-pill:hover:not(.on) {
+  background: var(--postit-mint);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--ink-soft);
+}
+.my-forms-picker .mfp-pill.on {
+  background: var(--marker-blue); color: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+.my-forms-picker .mfp-pill.on small { color: var(--paper); opacity: 0.7; }
+.my-forms-picker .mfp-emoji { font-size: 14px; line-height: 1; }
+.my-forms-picker .mfp-status {
+  font-family: var(--type); font-size: 11px;
+  color: var(--pencil); letter-spacing: 0.05em;
+  margin-left: 6px;
+}
+.my-forms-picker .mfp-status.err { color: var(--marker-red); }
+.my-forms-picker .mfp-hint {
+  font-family: var(--body); font-size: 12px;
+  color: var(--pencil); font-style: italic;
+}
+.my-forms-picker .mfp-refresh {
+  margin-left: auto;
+  background: transparent; border: 1.5px solid var(--ink-soft); border-radius: 50%;
+  width: 26px; height: 26px;
+  cursor: pointer; font-size: 12px; color: var(--pencil);
+  transition: transform 0.6s;
+}
+.my-forms-picker .mfp-refresh:hover { transform: rotate(360deg); color: var(--marker-blue); }
+.my-forms-picker .mfp-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* Templates gallery — sections + custom cards */
 .tpl-section-label {
   font-family: var(--type); font-size: 11px;

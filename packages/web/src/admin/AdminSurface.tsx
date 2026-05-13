@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import type { FormSchema } from '../builder/types';
 import type { Submission, Status, AdminFilters as Filters, SortKey } from './types';
 import AdminFilters from './AdminFilters';
+import MyFormsPicker from '@/components/MyFormsPicker';
 import AdminTable from './AdminTable';
 import AdminDetail from './AdminDetail';
 import { useRealSubmissions } from './useRealSubmissions';
@@ -17,6 +18,9 @@ interface Props {
   schema: FormSchema;
   /** Form object id this Inbox queries. Set by Builder publish flow via App. */
   activeFormId: string;
+  /** Switch focused form via the picker — same callback used in App's
+   *  handleFormPublished, but exposed here so MyFormsPicker can drive it. */
+  onActiveFormChange: (formId: string) => void;
   submissions: Submission[];
   onSubmissionsChange: Dispatch<SetStateAction<Submission[]>>;
   surface: Surface;
@@ -39,7 +43,7 @@ function hasEncryptedField(s: Submission): boolean {
   );
 }
 
-export default function AdminSurface({ schema, activeFormId, submissions, onSubmissionsChange, surface, onSurfaceChange, onHome }: Props) {
+export default function AdminSurface({ schema, activeFormId, onActiveFormChange, submissions, onSubmissionsChange, surface, onSurfaceChange, onHome }: Props) {
   const [filters, setFilters] = useState<Filters>({
     status: new Set<Status>(),
     severity: new Set<string>(),
@@ -259,6 +263,8 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
           <p style={{ fontFamily: 'var(--body)', fontSize: 18, color: 'var(--ink-soft)', margin: '0 0 22px', maxWidth: '60ch' }}>
             Every reply has an on-chain receipt. Sealed fields stay encrypted — click decrypt to fetch the Seal share with your wallet.
           </p>
+
+          <MyFormsPicker activeFormId={activeFormId} onPick={onActiveFormChange} />
 
           {activeFormId === BUG_REPORT_FORM_ID && (
             <div className="seed-form-banner">
