@@ -101,8 +101,8 @@ export default function App() {
   if (view === 'landing') {
     return (
       <LandingPage
-        onEnterApp={() => {
-          setSurface('builder');
+        onEnterApp={(targetSurface) => {
+          setSurface(targetSurface ?? 'builder');
           setView('app');
         }}
       />

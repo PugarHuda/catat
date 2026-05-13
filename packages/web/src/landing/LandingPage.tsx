@@ -2,9 +2,13 @@ import type { ReactNode } from 'react';
 import { useFormStats } from './useFormStats';
 import { BUG_REPORT_FORM_ID, suiscanObject } from '@/lib/contract';
 import BrandGlyph from '@/components/BrandGlyph';
+import type { Surface } from '@/lib/surfaces';
 
 interface Props {
-  onEnterApp: () => void;
+  /** Enter the app, optionally jumping straight to a non-default surface
+   *  (e.g. 'verify' when the user clicks the Verify nav link). Default
+   *  surface when called with no argument is 'builder'. */
+  onEnterApp: (surface?: Surface) => void;
 }
 
 export default function LandingPage({ onEnterApp }: Props) {
@@ -33,7 +37,8 @@ function Header({ onEnterApp }: Props) {
         <nav className="nav-links">
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
-          <button type="button" onClick={onEnterApp}>Live demo ↗</button>
+          <button type="button" onClick={() => onEnterApp()}>Live demo ↗</button>
+          <button type="button" onClick={() => onEnterApp('verify')}>Verify ↗</button>
           <a
             href="https://github.com/PugarHuda/catat#readme"
             target="_blank"
@@ -50,7 +55,7 @@ function Header({ onEnterApp }: Props) {
           </a>
         </nav>
         <div className="nav-cta">
-          <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+          <button type="button" className="btn btn-primary" onClick={() => onEnterApp()}>
             Connect wallet
             <Arrow />
           </button>
@@ -95,11 +100,11 @@ function Hero({ onEnterApp }: Props) {
           </p>
 
           <div className="cta-row">
-            <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+            <button type="button" className="btn btn-primary" onClick={() => onEnterApp()}>
               Start a notebook
               <Arrow />
             </button>
-            <button type="button" className="btn" onClick={onEnterApp}>See live demo</button>
+            <button type="button" className="btn" onClick={() => onEnterApp()}>See live demo</button>
             <span className="handnote">
               <svg viewBox="0 0 60 30" width={48} height={24} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 22 C 14 5, 30 4, 50 16" />
@@ -364,7 +369,7 @@ function CTA({ onEnterApp }: Props) {
             <h2>Ship the first form on <span className="marker">Walrus.</span></h2>
             <p>Free on testnet. Connect a Sui wallet, pick a template, and have a verifiable form live in 90 seconds.</p>
             <div className="cta-row" style={{ marginTop: 24 }}>
-              <button type="button" className="btn btn-primary" onClick={onEnterApp}>
+              <button type="button" className="btn btn-primary" onClick={() => onEnterApp()}>
                 Open the notebook
                 <Arrow />
               </button>
