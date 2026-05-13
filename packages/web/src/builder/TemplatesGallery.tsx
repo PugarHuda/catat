@@ -1,10 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { templateRegistry, type TemplateMeta } from './templates';
+import { loadCustomTemplates, deleteCustomTemplate, type CustomTemplate } from './customTemplates';
 import type { FormSchema } from './types';
 
 interface Props {
   /** id of the template currently loaded in Builder, used to mark "active". */
   currentSchemaId: string;
+  /** Bumped by parent every time a custom template is added/deleted so
+   *  this component re-reads from localStorage. Pure cache-bust signal. */
+  customTplVersion?: number;
+  /** Called after a custom template is deleted so parent can bump version. */
+  onCustomTplDeleted?: () => void;
   onPick: (schema: FormSchema) => void;
   onClose: () => void;
 }
@@ -15,7 +21,13 @@ interface Props {
  * built-in templates are read-only on disk; once loaded into Builder they
  * become a draft the user can edit freely before publishing.
  */
-export default function TemplatesGallery({ currentSchemaId, onPick, onClose }: Props) {
+export default function TemplatesGallery({
+  currentSchemaId,
+  customTplVersion = 0,
+  onCustomTplDeleted,
+  onPick,
+  onClose,
+}: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -23,6 +35,13 @@ export default function TemplatesGallery({ currentSchemaId, onPick, onClose }: P
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // Re-read user templates whenever the cache-bust version changes.
+  const customTemplates = useMemo(
+    () => loadCustomTemplates(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [customTplVersion],
+  );
 
   return (
     <div className="tpl-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -42,6 +61,32 @@ export default function TemplatesGallery({ currentSchemaId, onPick, onClose }: P
             </p>
             <button type="button" className="tpl-close" onClick={onClose} aria-label="Close gallery">✕</button>
           </header>
+
+          {customTemplates.length > 0 && (
+            <>
+              <div className="tpl-section-label">📦 your templates</div>
+              <div className="tpl-grid">
+                {customTemplates.map(t => (
+                  <CustomTemplateCard
+                    key={t.id}
+                    tpl={t}
+                    isActive={t.schema.id === currentSchemaId}
+                    onPick={() => {
+                      onPick(t.schema);
+                      onClose();
+                    }}
+                    onDelete={() => {
+                      if (confirm(`Delete template "${t.name}"?`)) {
+                        deleteCustomTemplate(t.id);
+                        onCustomTplDeleted?.();
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="tpl-section-label" style={{ marginTop: 20 }}>📚 ready-made</div>
+            </>
+          )}
 
           <div className="tpl-grid">
             {/* Blank canvas first — many users start from scratch and were
@@ -82,9 +127,54 @@ export default function TemplatesGallery({ currentSchemaId, onPick, onClose }: P
 
           <footer className="tpl-foot">
             <span className="kbd">esc</span> to close · {templateRegistry.length} ready-made + 1 blank
+            {customTemplates.length > 0 && <> · {customTemplates.length} yours</>}
           </footer>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CustomTemplateCard({
+  tpl,
+  isActive,
+  onPick,
+  onDelete,
+}: {
+  tpl: CustomTemplate;
+  isActive: boolean;
+  onPick: () => void;
+  onDelete: () => void;
+}) {
+  const sealedCount = tpl.schema.fields.filter(f => f.encrypted).length;
+  const requiredCount = tpl.schema.fields.filter(f => f.required).length;
+  const ageDays = Math.floor((Date.now() - tpl.createdAtMs) / 86_400_000);
+  const ageLabel = ageDays === 0 ? 'today' : ageDays === 1 ? 'yesterday' : `${ageDays}d ago`;
+
+  return (
+    <div className={`tpl-card tpl-custom${isActive ? ' active' : ''}`}>
+      <button
+        type="button"
+        className="tpl-delete"
+        onClick={e => { e.stopPropagation(); onDelete(); }}
+        aria-label="Delete this template"
+        title="Delete template (browser-local only)"
+      >
+        ✕
+      </button>
+      <button type="button" className="tpl-card-inner" onClick={onPick}>
+        <div className="tpl-emoji">{tpl.emoji}</div>
+        <h4>{tpl.name}</h4>
+        <p>{tpl.description}</p>
+        <div className="tpl-stats">
+          <span><b>{tpl.schema.fields.length}</b> fields</span>
+          <span><b>{requiredCount}</b> required</span>
+          {sealedCount > 0 && <span>🔒 <b>{sealedCount}</b> sealed</span>}
+          <span className="tpl-age">saved {ageLabel}</span>
+        </div>
+        {isActive && <div className="tpl-active-tag">currently loaded</div>}
+        <span className="tpl-cta">Load →</span>
+      </button>
     </div>
   );
 }

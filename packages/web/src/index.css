@@ -2222,6 +2222,46 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   font-family: var(--hand); font-size: 22px;
   color: var(--pencil); line-height: 1.3;
 }
+
+/* Empty inbox — shown when activeFormId has zero submissions on chain. */
+.inbox-empty {
+  padding: 36px 24px 28px; text-align: center;
+  max-width: 540px; margin: 0 auto;
+  font-family: var(--body);
+}
+.inbox-empty .ie-illu {
+  font-size: 64px; line-height: 1;
+  filter: grayscale(0.2);
+  margin-bottom: 12px;
+}
+.inbox-empty h5 {
+  font-family: var(--hand); font-size: 36px; font-weight: 700;
+  margin: 0 0 8px; color: var(--ink);
+}
+.inbox-empty p {
+  font-size: 15px; color: var(--ink-soft);
+  line-height: 1.55; margin: 0 0 18px;
+}
+.inbox-empty .ie-share {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 12px 14px; margin-bottom: 14px;
+  background: var(--postit-mint);
+  border: 1.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink-soft);
+  transform: rotate(-0.3deg);
+}
+.inbox-empty .ie-share code {
+  flex: 1; min-width: 200px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink); background: rgba(255,255,255,0.5);
+  padding: 6px 8px; border-radius: 2px;
+  word-break: break-all; text-align: left;
+}
+.inbox-empty .ie-hint {
+  display: block; margin-top: 6px;
+  font-family: var(--type); font-size: 11px;
+  color: var(--pencil); letter-spacing: 0.04em;
+}
 .adm-empty small {
   display: block; margin-top: 6px;
   font-family: var(--type); font-size: 11px;
@@ -2468,6 +2508,129 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   to   { opacity: 1; }
 }
 
+/* Templates gallery — sections + custom cards */
+.tpl-section-label {
+  font-family: var(--type); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--pencil);
+  margin: 0 0 10px;
+  border-bottom: 1.5px dashed var(--pencil-soft);
+  padding-bottom: 6px;
+}
+.tpl-card.tpl-custom {
+  position: relative;
+  background: var(--postit-mint);
+  cursor: default;
+  padding: 0;
+}
+.tpl-card.tpl-custom .tpl-card-inner {
+  display: block; width: 100%;
+  background: transparent; border: 0; padding: 18px 18px 56px;
+  text-align: left; cursor: pointer;
+  font-family: inherit; color: inherit;
+}
+.tpl-card.tpl-custom .tpl-card-inner:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.tpl-card.tpl-custom:hover {
+  transform: translate(-2px, -2px) rotate(-0.5deg);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.tpl-card .tpl-delete {
+  position: absolute; top: 8px; right: 8px;
+  width: 26px; height: 26px;
+  background: var(--paper);
+  border: 1.5px solid var(--ink); border-radius: 50%;
+  font-family: var(--type); font-size: 12px; color: var(--ink);
+  cursor: pointer; line-height: 1;
+  z-index: 2;
+  transition: background 0.12s, transform 0.12s;
+}
+.tpl-card .tpl-delete:hover {
+  background: var(--postit-pink);
+  color: var(--marker-red);
+  transform: rotate(90deg);
+}
+.tpl-card .tpl-age {
+  font-style: italic;
+  color: var(--marker-green);
+}
+
+/* Save-as-template modal — reuses .publish-overlay backdrop */
+.save-template-modal {
+  position: relative;
+  background: var(--paper);
+  width: min(560px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border: 2px solid var(--ink);
+  box-shadow: 10px 10px 0 var(--ink-soft);
+  padding: 28px 32px 24px;
+  font-family: var(--body);
+}
+.save-template-modal h3 {
+  font-family: var(--hand); font-size: 36px; font-weight: 700;
+  margin: 12px 0 6px; color: var(--ink); line-height: 1.05;
+}
+.save-template-modal > p {
+  margin: 0 0 18px;
+  font-size: 14px; color: var(--ink-soft); line-height: 1.45;
+}
+.save-template-modal .set-row {
+  margin-bottom: 14px;
+}
+.save-template-modal .set-row label {
+  display: block; margin-bottom: 4px;
+  font-family: var(--type); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pencil);
+}
+.save-template-modal .set-row input[type="text"] {
+  width: 100%;
+  font-family: var(--body); font-size: 15px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--ink-soft); border-radius: 4px;
+  padding: 8px 10px;
+  outline: 0;
+  color: var(--ink);
+}
+.save-template-modal .set-row input[type="text"]:focus {
+  border-color: var(--marker-blue);
+}
+.stm-emoji-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.stm-emoji {
+  width: 36px; height: 36px;
+  font-size: 20px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--ink-soft); border-radius: 6px;
+  cursor: pointer; line-height: 1;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.stm-emoji:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--ink-soft);
+}
+.stm-emoji.on {
+  background: var(--postit-mint);
+  border-color: var(--marker-blue);
+  box-shadow: 2px 2px 0 var(--marker-blue);
+}
+.stm-summary {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; margin: 12px 0 18px;
+  background: var(--paper-edge);
+  border: 1.5px dashed var(--pencil-soft);
+  font-family: var(--mono); font-size: 12px;
+  color: var(--ink-soft);
+}
+.stm-summary b { color: var(--ink); }
+.save-template-modal .actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 4px;
+}
+
 /* admin filter row */
 .adm-filters {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
@@ -2514,28 +2677,47 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   letter-spacing: 0.04em; padding: 4px 8px;
 }
 
-/* admin detail */
+/* admin detail — sits on top of .sheet (paper-2). Use a brighter
+   off-white bg so the panel reads as a distinct "card on top of the
+   page", not blended-in. Strong outer shadow + inner ruled lines for
+   the paper-binder feel. */
 .detail { position: sticky; top: 96px; }
 .det-card {
-  background: var(--paper-2);
-  background-image: repeating-linear-gradient(180deg, transparent 0 31px, var(--rule) 31px 32px);
-  border: 2px solid var(--ink); border-radius: 8px;
-  padding: 22px 22px 18px;
-  box-shadow: 5px 5px 0 var(--ink);
+  background: #fffdf5;
+  background-image: repeating-linear-gradient(180deg, transparent 0 31px, rgba(31,111,178,0.25) 31px 32px);
+  border: 2.5px solid var(--ink); border-radius: 10px;
+  padding: 24px 24px 20px;
+  box-shadow: 7px 7px 0 var(--ink), 0 2px 18px -6px rgba(33,27,20,0.18);
   transform: rotate(0.6deg);
+  position: relative;
+  z-index: 2;
+}
+/* Tape-style accent at top so the card reads as "pinned on" */
+.det-card::before {
+  content: "";
+  position: absolute;
+  left: 22px; top: -10px;
+  width: 56px; height: 18px;
+  background: var(--tape);
+  border-left: 1px dashed rgba(0,0,0,0.1);
+  border-right: 1px dashed rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transform: rotate(-3deg);
+  pointer-events: none;
 }
 .det-card h4 {
-  font-family: var(--hand); font-size: 28px;
+  font-family: var(--hand); font-size: 30px;
   margin: 0 0 4px; color: var(--ink); line-height: 1.05;
+  font-weight: 700;
 }
 .det-meta {
   font-family: var(--type); font-size: 11px;
   color: var(--pencil); letter-spacing: 0.06em;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .det-section {
-  margin-top: 14px; padding-top: 12px;
-  border-top: 1px dashed var(--ink);
+  margin-top: 16px; padding-top: 14px;
+  border-top: 1.5px dashed var(--marker-blue);
 }
 .det-section .label {
   font-family: var(--type); font-size: 11px;

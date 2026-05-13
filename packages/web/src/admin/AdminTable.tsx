@@ -1,15 +1,33 @@
+import { useState } from 'react';
 import type { Submission } from './types';
 
 interface Props {
   submissions: Submission[];
+  /** Total (pre-filter) submission count, so we can show a different
+   *  empty state for "no submissions at all yet" vs "all filtered out". */
+  totalUnfiltered: number;
+  /** Share URL of the active form — shown in the truly-empty state so
+   *  the publisher can copy and start collecting responses. */
+  shareUrl: string;
   focusedId: string | null;
   openId: string | null;
   onFocus: (id: string) => void;
   onOpen: (id: string) => void;
 }
 
-export default function AdminTable({ submissions, openId, onFocus, onOpen }: Props) {
+export default function AdminTable({ submissions, totalUnfiltered, shareUrl, openId, onFocus, onOpen }: Props) {
   if (submissions.length === 0) {
+    // Distinguish empty-because-filtered vs empty-because-no-submissions.
+    if (totalUnfiltered === 0) {
+      return (
+        <div className="ledger">
+          <div className="ledger-h">
+            <h4>Recent submissions</h4>
+          </div>
+          <EmptyInbox shareUrl={shareUrl} />
+        </div>
+      );
+    }
     return (
       <div className="ledger">
         <div className="ledger-h">
@@ -71,6 +89,45 @@ export default function AdminTable({ submissions, openId, onFocus, onOpen }: Pro
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Shown when there are zero submissions for this form yet — guide the
+ *  publisher to share the URL so respondents can start filling it. */
+function EmptyInbox({ shareUrl }: { shareUrl: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (err) {
+      console.warn('clipboard write blocked:', err);
+      alert(`Copy this URL manually:\n\n${shareUrl}`);
+    }
+  };
+  return (
+    <div className="inbox-empty">
+      <div className="ie-illu">📬</div>
+      <h5>No submissions yet.</h5>
+      <p>
+        Your inbox is plugged into the Walrus blob list on the on-chain Form
+        object. As soon as anyone fills the share URL, their reply appears
+        here in real-time.
+      </p>
+      <div className="ie-share">
+        <code>{shareUrl}</code>
+        <button type="button" className="btn btn-sm btn-primary" onClick={copy}>
+          {copied ? '✓ copied' : 'Copy share URL'}
+        </button>
+        <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm">
+          Open ↗
+        </a>
+      </div>
+      <small className="ie-hint">
+        Tip: hit ⟳ refresh chain above to re-query Sui RPC if you just submitted.
+      </small>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import LandingPage from './landing/LandingPage';
 import { blankCanvasTemplate } from './builder/templates';
-import { generateMockSubmissions } from './admin/mockSubmissions';
 import type { FormSchema } from './builder/types';
 import type { Submission } from './admin/types';
 import type { Surface } from './lib/surfaces';
@@ -51,7 +50,10 @@ export default function App() {
   // they close the gallery, they're left with the empty draft to build
   // from scratch (instead of the previously-default Walrus Bug Report).
   const [schema, setSchema] = useState<FormSchema>(blankCanvasTemplate);
-  const [submissions, setSubmissions] = useState<Submission[]>(() => generateMockSubmissions());
+  // Local mutable list of submissions seeded as empty. Real on-chain
+  // submissions are fetched via useRealSubmissions in AdminSurface.
+  // Mocks dropped per user direction — Inbox now reflects actual state.
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [surface, setSurface] = useState<Surface>('builder');
   const [activeFormId, setActiveFormId] = useState<string>(BUG_REPORT_FORM_ID);
   // Respondent mode: hides Builder/Inbox/Verify tabs so people who clicked

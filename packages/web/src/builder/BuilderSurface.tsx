@@ -8,6 +8,8 @@ import type { Field, FieldType, FormSchema } from './types';
 import { fieldMeta, groupOrder, groupLabels } from './fieldMeta';
 import FieldRow from './FieldRow';
 import TemplatesGallery from './TemplatesGallery';
+import SaveTemplateModal from './SaveTemplateModal';
+import { saveCustomTemplate } from './customTemplates';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
@@ -81,6 +83,9 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
     if (typeof window === 'undefined') return false;
     return sessionStorage.getItem(GALLERY_SEEN_KEY) !== '1';
   });
+  const [saveTplOpen, setSaveTplOpen] = useState(false);
+  // Bumped on each save so TemplatesGallery re-reads localStorage.
+  const [customTplVersion, setCustomTplVersion] = useState(0);
   const closeGallery = () => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem(GALLERY_SEEN_KEY, '1');
@@ -381,6 +386,15 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
                   · {sealedCount} sealed · gate off · 26 epochs
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => setSaveTplOpen(true)}
+                    disabled={publishing || schema.fields.length === 0}
+                    title={schema.fields.length === 0 ? 'Add a field first' : 'Save this draft as a reusable template (browser-local)'}
+                  >
+                    💾 Save as template
+                  </button>
                   <button type="button" className="btn btn-sm" onClick={() => onSurfaceChange('runner')} disabled={publishing}>
                     Preview
                   </button>
@@ -480,6 +494,8 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       {galleryOpen && (
         <TemplatesGallery
           currentSchemaId={schema.id}
+          customTplVersion={customTplVersion}
+          onCustomTplDeleted={() => setCustomTplVersion(v => v + 1)}
           onPick={picked => {
             // Loading a template replaces the draft entirely. The user can
             // then edit any field — they're not coupled to the on-disk
@@ -490,6 +506,18 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
             setSelectedFieldId(picked.fields[0]?.id ?? null);
           }}
           onClose={closeGallery}
+        />
+      )}
+
+      {saveTplOpen && (
+        <SaveTemplateModal
+          schema={schema}
+          onSave={({ name, emoji, description }) => {
+            saveCustomTemplate({ name, emoji, description, schema });
+            setCustomTplVersion(v => v + 1);
+            setSaveTplOpen(false);
+          }}
+          onClose={() => setSaveTplOpen(false)}
         />
       )}
     </>

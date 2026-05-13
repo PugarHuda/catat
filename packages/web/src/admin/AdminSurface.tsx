@@ -73,22 +73,16 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
   const [overlayMessage, setOverlayMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const realSubmissions = realQuery.data ?? [];
 
-  // Mock submissions only show when viewing the SEED form (= demo data
-  // for first-time visitors who haven't published their own form yet).
-  // For user-published forms, the inbox starts empty until real
-  // submissions land via the share URL — no fake noise from another form.
-  const showMocks = activeFormId === BUG_REPORT_FORM_ID;
+  // Inbox now shows ONLY real on-chain submissions. The mock data path
+  // is preserved (submissions prop) for legacy callers but is empty by
+  // default — App.tsx initializes it to []. Anything in `submissions`
+  // is rendered alongside real data via overlay merge.
   const allSubmissions = useMemo(
-    () => {
-      const merged = showMocks
-        ? [...realSubmissions, ...submissions]
-        : [...realSubmissions];
-      return merged.map(s => {
-        const patch = overlay.get(s.id);
-        return patch ? { ...s, ...patch } : s;
-      });
-    },
-    [realSubmissions, submissions, overlay, showMocks],
+    () => [...realSubmissions, ...submissions].map(s => {
+      const patch = overlay.get(s.id);
+      return patch ? { ...s, ...patch } : s;
+    }),
+    [realSubmissions, submissions, overlay],
   );
 
   // Schema-aware filter visibility — severity filter only makes sense
@@ -379,6 +373,10 @@ export default function AdminSurface({ schema, activeFormId, submissions, onSubm
           <div className="admin-grid">
             <AdminTable
               submissions={filtered}
+              totalUnfiltered={allSubmissions.length}
+              shareUrl={typeof window !== 'undefined'
+                ? `${window.location.origin}/?f=${activeFormId}&go=submit`
+                : `https://catat-walrus.vercel.app/?f=${activeFormId}&go=submit`}
               focusedId={focusedId}
               openId={openId}
               onFocus={setFocusedId}
