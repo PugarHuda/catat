@@ -149,12 +149,20 @@ async function submitOne(index: number, sample: (typeof SAMPLES)[number]): Promi
   const encoded = await flow.encode();
   const blobId = encoded.blobId;
 
+  // Each signAndExecuteTransaction returns immediately on submission;
+  // the gas coin's NEW version isn't yet known to the local SDK cache,
+  // so subsequent tx-build picks the OLD version and validators reject
+  // with "object version unavailable for consumption". Fix: wait for
+  // full finalization between tx's so the SDK sees the bumped gas
+  // coin version before constructing the next tx.
   const reserveTx = flow.register({ epochs: 5, owner: address, deletable: false });
   const reserveResult = await sui.signAndExecuteTransaction({ transaction: reserveTx, signer: kp });
+  await sui.waitForTransaction({ digest: reserveResult.digest });
   await flow.upload({ digest: reserveResult.digest });
 
   const certifyTx = flow.certify();
-  await sui.signAndExecuteTransaction({ transaction: certifyTx, signer: kp });
+  const certifyResult = await sui.signAndExecuteTransaction({ transaction: certifyTx, signer: kp });
+  await sui.waitForTransaction({ digest: certifyResult.digest });
 
   const recordTx = new Transaction();
   recordTx.moveCall({
@@ -166,6 +174,7 @@ async function submitOne(index: number, sample: (typeof SAMPLES)[number]): Promi
     ],
   });
   const recordResult = await sui.signAndExecuteTransaction({ transaction: recordTx, signer: kp });
+  await sui.waitForTransaction({ digest: recordResult.digest });
 
   console.log(`[seed] submission ${index + 1}/${COUNT}: ${sample.f_title.slice(0, 50)}…`);
   console.log(`[seed] tx ${recordResult.digest}`);
