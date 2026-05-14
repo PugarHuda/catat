@@ -2223,6 +2223,109 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   color: var(--pencil); line-height: 1.3;
 }
 
+/* === Inline triage badges inside ledger row .lr-who small === */
+.lr-status-pill, .lr-prio-pill, .lr-notes-pill {
+  display: inline-flex; align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-family: var(--type); font-size: 9px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border-radius: 99px;
+  vertical-align: 1px;
+}
+.lr-status-pill.triaging   { background: var(--postit-blue); color: var(--marker-blue); border: 1px solid var(--marker-blue); }
+.lr-status-pill.in_progress { background: var(--postit); color: var(--ink); border: 1px solid var(--marker-blue); }
+.lr-status-pill.resolved   { background: var(--postit-mint); color: var(--marker-green); border: 1px solid var(--marker-green); }
+.lr-status-pill.archived   { background: var(--paper-edge); color: var(--pencil); border: 1px solid var(--pencil-soft); }
+
+.lr-prio-pill.high     { color: var(--marker-red); font-weight: 700; }
+.lr-prio-pill.low      { color: var(--pencil); }
+
+.lr-notes-pill {
+  background: var(--postit);
+  border: 1px dashed var(--ink-soft);
+  color: var(--ink);
+  font-family: var(--body); font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Status-modified row backgrounds (gentle tint to scan at a glance) */
+.ledger-row.lr-status-resolved   { opacity: 0.85; background: rgba(199, 233, 208, 0.18); }
+.ledger-row.lr-status-archived   { opacity: 0.65; }
+.ledger-row.lr-status-in_progress { background: rgba(255, 243, 166, 0.18); }
+
+/* === InboxStats: sparkline + breakdown bars === */
+.inbox-stats {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+.inbox-stats .ix-block {
+  background: var(--paper-2);
+  border: 1.5px solid var(--paper-edge);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-family: var(--body);
+}
+.inbox-stats .ix-h {
+  display: flex; align-items: baseline; gap: 6px;
+  margin-bottom: 8px;
+  font-family: var(--type); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pencil);
+}
+.inbox-stats .ix-h b {
+  font-family: var(--hand); font-size: 28px;
+  color: var(--ink); letter-spacing: 0; text-transform: none;
+}
+.ix-spark-svg {
+  width: 100%; height: 56px;
+  display: block;
+}
+.ix-bars {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ix-bar-row {
+  display: grid; grid-template-columns: 70px 1fr 28px;
+  align-items: center; gap: 6px;
+  font-size: 11px;
+}
+.ix-bar-label {
+  font-family: var(--type); font-size: 10px;
+  letter-spacing: 0.08em; color: var(--ink-soft);
+}
+.ix-bar-track {
+  height: 12px;
+  background: var(--paper-edge);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.ix-bar-fill {
+  height: 100%;
+  transition: width 200ms ease-out;
+}
+.ix-bar-fill.status-new          { background: var(--marker-blue); }
+.ix-bar-fill.status-triaging     { background: var(--marker-blue); opacity: 0.7; }
+.ix-bar-fill.status-in_progress  { background: var(--postit); border-right: 1px solid var(--ink); }
+.ix-bar-fill.status-resolved     { background: var(--marker-green); }
+.ix-bar-fill.status-archived     { background: var(--pencil-soft); }
+.ix-bar-fill.sev-critical { background: var(--marker-red); }
+.ix-bar-fill.sev-high     { background: var(--marker-red); opacity: 0.75; }
+.ix-bar-fill.sev-medium   { background: var(--marker-blue); opacity: 0.75; }
+.ix-bar-fill.sev-low      { background: var(--marker-green); }
+.ix-bar-count {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--ink); text-align: right;
+}
+
+@media (max-width: 780px) {
+  .inbox-stats { grid-template-columns: 1fr; }
+}
+
 /* Empty inbox — shown when activeFormId has zero submissions on chain. */
 .inbox-empty {
   padding: 36px 24px 28px; text-align: center;

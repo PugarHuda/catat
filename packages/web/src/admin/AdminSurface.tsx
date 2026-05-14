@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import type { FormSchema } from '../builder/types';
 import type { Submission, Status, AdminFilters as Filters, SortKey } from './types';
 import AdminFilters from './AdminFilters';
+import InboxStats from './InboxStats';
 import MyFormsPicker from '@/components/MyFormsPicker';
 import AdminTable from './AdminTable';
 import AdminDetail from './AdminDetail';
@@ -308,6 +309,8 @@ export default function AdminSurface({ schema, activeFormId, onActiveFormChange,
               <small>per submission</small>
             </div>
           </div>
+
+          <InboxStats submissions={allSubmissions} hasSeverityField={hasSeverityField} />
 
           <AdminFilters
             filters={filters}

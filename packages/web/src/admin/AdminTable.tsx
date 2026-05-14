@@ -56,7 +56,21 @@ export default function AdminTable({ submissions, totalUnfiltered, shareUrl, ope
       </div>
       {submissions.map((s, i) => {
         const sev = (s.values.f_severity as string | undefined)?.toLowerCase() ?? '';
-        const title = (s.values.f_title as string | undefined) ?? '(no title)';
+        // Headline falls back across template shapes so the inbox feels
+        // populated for non-bug forms (NPS reason, hackathon project name,
+        // contact name, job applicant name, feature title).
+        const headline =
+          (s.values.f_title as string | undefined) ??
+          (s.values.f_project_name as string | undefined) ??
+          (s.values.f_full_name as string | undefined) ??
+          (s.values.f_name as string | undefined) ??
+          (typeof s.values.f_reason === 'string' && s.values.f_reason.length > 0
+            ? `${(s.values.f_reason as string).slice(0, 40)}…`
+            : undefined) ??
+          (typeof s.values.f_score === 'number'
+            ? `NPS score: ${s.values.f_score}`
+            : undefined) ??
+          '(no headline)';
         const isOpen = openId === s.id;
         const submitterAlias = s.submitter
           ? `${s.submitter.slice(0, 6)}…${s.submitter.slice(-4)}`
@@ -64,12 +78,14 @@ export default function AdminTable({ submissions, totalUnfiltered, shareUrl, ope
         const txShort = s.tx_hash
           ? `${s.tx_hash.slice(0, 8)}…`
           : `${s.blob_id.slice(0, 8)}…`;
+        const statusMod = s.status !== 'new' ? ` lr-status-${s.status}` : '';
+        const hasNotes = !!s.notes && s.notes.trim().length > 0;
 
         return (
           <button
             key={s.id}
             type="button"
-            className={`ledger-row${isOpen ? ' selected' : ''}`}
+            className={`ledger-row${isOpen ? ' selected' : ''}${statusMod}`}
             onClick={() => {
               onFocus(s.id);
               onOpen(s.id);
@@ -80,8 +96,22 @@ export default function AdminTable({ submissions, totalUnfiltered, shareUrl, ope
               #{i + 1}
             </span>
             <span className="lr-who">
-              <b>{title}</b>
-              <small>{submitterAlias}{s.source === 'walrus' && ' · live'}</small>
+              <b>{headline}</b>
+              <small>
+                {submitterAlias}
+                {s.source === 'walrus' && ' · live'}
+                {/* Triage badges — only shown when the user has actually
+                    moved the row from "new". Makes their work visible. */}
+                {s.status !== 'new' && (
+                  <span className={`lr-status-pill ${s.status}`}>{s.status}</span>
+                )}
+                {s.priority !== 'medium' && (
+                  <span className={`lr-prio-pill ${s.priority}`}>· {s.priority}</span>
+                )}
+                {hasNotes && (
+                  <span className="lr-notes-pill" title={s.notes}>📝 {(s.notes ?? '').slice(0, 40)}{(s.notes ?? '').length > 40 ? '…' : ''}</span>
+                )}
+              </small>
             </span>
             <span className="lr-tx">{txShort}</span>
             <span className={`lr-sev ${sev}`}>{sev || '—'}</span>
