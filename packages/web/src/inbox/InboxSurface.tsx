@@ -1,5 +1,6 @@
 import { useInboxFeed, type InboxFeedEntry } from '@/lib/useInboxFeed';
-import { suiscanObject } from '@/lib/contract';
+import { useRecentSubmissions, type RecentSubmission } from '@/lib/useRecentSubmissions';
+import { suiscanObject, walruscanBlob } from '@/lib/contract';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
@@ -22,8 +23,11 @@ interface Props {
 export default function InboxSurface({ surface, onSurfaceChange, onOpenInAdmin, onHome }: Props) {
   const account = useCurrentAccount();
   const feedQuery = useInboxFeed();
+  const recentQuery = useRecentSubmissions();
   const entries = feedQuery.data ?? [];
+  const recents = recentQuery.data ?? [];
   const newCount = entries.reduce((sum, e) => sum + e.submissionCount, 0);
+  const formCount = entries.length;
 
   return (
     <>
@@ -51,9 +55,31 @@ export default function InboxSurface({ surface, onSurfaceChange, onOpenInAdmin, 
             Your <span className="marker">activity feed.</span>
           </h1>
           <p style={{ fontFamily: 'var(--body)', fontSize: 18, color: 'var(--ink-soft)', margin: '0 0 22px', maxWidth: '60ch' }}>
-            One line per form. Click a form to drill into <b>Admin</b> for triage,
-            decrypt, filters, and exports.
+            What got new — across every form you own. Click a row to drill into <b>Admin</b>
+            for triage, decrypt, filters, and exports.
           </p>
+
+          {/* aggregate counters — gives "what's new" at a glance */}
+          {account && (
+            <div className="inbox-summary">
+              <div className="is-card">
+                <b>{newCount}</b>
+                <span>total submissions</span>
+              </div>
+              <div className="is-card">
+                <b>{formCount}</b>
+                <span>{formCount === 1 ? 'form' : 'forms'} active</span>
+              </div>
+              <div className="is-card">
+                <b>{recents.length}</b>
+                <span>recent (last 100 events)</span>
+              </div>
+              <div className="is-card">
+                <b>{recents.filter(r => Date.now() - r.submittedAtMs < 24 * 60 * 60 * 1000).length}</b>
+                <span>last 24 hours</span>
+              </div>
+            </div>
+          )}
 
           {!account && (
             <div className="seed-form-banner">
@@ -80,12 +106,41 @@ export default function InboxSurface({ surface, onSurfaceChange, onOpenInAdmin, 
             </div>
           )}
 
-          {entries.length > 0 && (
-            <div className="inbox-feed">
-              {entries.map(entry => (
-                <FeedRow key={entry.formId} entry={entry} onOpen={() => onOpenInAdmin(entry.formId)} />
-              ))}
+          {/* PRIMARY: per-submission timeline (with content preview) */}
+          {recents.length > 0 && (
+            <>
+              <h3 className="inbox-section-h">📥 recent submissions
+                {recentQuery.isFetching && <small> · refreshing…</small>}
+              </h3>
+              <div className="recent-feed">
+                {recents.map(r => (
+                  <RecentRow
+                    key={r.blobId}
+                    sub={r}
+                    onOpen={() => onOpenInAdmin(r.formId)}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {recentQuery.isLoading && entries.length > 0 && (
+            <div className="adm-empty" style={{ padding: '24px 16px' }}>
+              ⟳ loading recent submissions…
+              <small>fetching latest blob bodies from Walrus</small>
             </div>
+          )}
+
+          {/* SECONDARY: per-form summary */}
+          {entries.length > 0 && (
+            <>
+              <h3 className="inbox-section-h" style={{ marginTop: 28 }}>📋 by form</h3>
+              <div className="inbox-feed">
+                {entries.map(entry => (
+                  <FeedRow key={entry.formId} entry={entry} onOpen={() => onOpenInAdmin(entry.formId)} />
+                ))}
+              </div>
+            </>
           )}
 
           <p style={{ marginTop: 22, textAlign: 'center', fontFamily: 'var(--type)', fontSize: 11, color: 'var(--pencil)', letterSpacing: '.06em' }}>
@@ -135,6 +190,40 @@ function FeedRow({ entry, onOpen }: { entry: InboxFeedEntry; onOpen: () => void 
         </a>
       </div>
     </div>
+  );
+}
+
+function RecentRow({ sub, onOpen }: { sub: RecentSubmission; onOpen: () => void }) {
+  const submitterAlias = `${sub.submitter.slice(0, 6)}…${sub.submitter.slice(-4)}`;
+  return (
+    <button type="button" className={`recent-row${sub.loadError ? ' err' : ''}`} onClick={onOpen}>
+      <div className="rr-form-pill">{sub.formTitle}</div>
+      <div className="rr-headline">
+        {sub.loadError ? (
+          <span className="rr-err">⚠ blob unreachable — open in Admin to retry</span>
+        ) : sub.headline ? (
+          <>"{sub.headline}"</>
+        ) : (
+          <span className="rr-noheadline">(no headline value)</span>
+        )}
+      </div>
+      <div className="rr-meta">
+        <code>{submitterAlias}</code>
+        <span>·</span>
+        <span>{timeAgo(sub.submittedAtMs)}</span>
+        <span>·</span>
+        <a
+          href={walruscanBlob(sub.blobId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          className="rr-blob-link"
+          title="View Walrus blob on walruscan"
+        >
+          ↗ blob
+        </a>
+      </div>
+    </button>
   );
 }
 

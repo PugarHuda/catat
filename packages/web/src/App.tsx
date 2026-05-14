@@ -94,6 +94,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Prefetch lazy surface chunks once the app is idle — kills the
+  // "first click on a tab takes 800ms" perf footgun. Browser will
+  // fetch+parse the chunks in background after landing settles, so
+  // navigation between surfaces becomes instant on subsequent clicks.
+  useEffect(() => {
+    if (view !== 'app') return;
+    const handle = setTimeout(() => {
+      void import('./builder/BuilderSurface');
+      void import('./runner/RunnerSurface');
+      void import('./inbox/InboxSurface');
+      void import('./admin/AdminSurface');
+      void import('./verify/VerifySurface');
+    }, 1500);
+    return () => clearTimeout(handle);
+  }, [view]);
+
   // Builder calls this after a successful publish. The local `schema` is
   // already correct for this formId — DON'T trigger a remote fetch.
   const handleFormPublished = (formId: string) => {

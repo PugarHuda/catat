@@ -205,6 +205,18 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
             Paste any catat <code style={{ fontFamily: 'var(--mono)', fontSize: 14 }}>catat::form::submit</code> tx digest. We&rsquo;ll fetch it from Sui, pull the body straight from Walrus, and tell you whether the on-chain event matches the actual blob. No catat servers in the loop.
           </p>
 
+          {/* Why-this-exists explainer — most users won't intuitively know
+              what "Verify" means in a Web3-form context. Make the
+              differentiator vs Tally/Typeform explicit. */}
+          <div className="seed-form-banner" style={{ background: 'var(--postit-mint)', borderColor: 'var(--marker-blue)' }}>
+            <b>🛡️ what is this surface for?</b>
+            <span>
+              Tally / Typeform / Google Forms can't be independently audited — you trust them to show you the truth.
+              Catat is different: <b>every submission is a Walrus blob + Sui event</b>. Anyone — judge, partner, skeptical user — can paste a tx digest here and re-derive the receipt without trusting catat at all.
+              That's the cryptographic-proof story. Try it: copy the tx digest from any receipt page or Inbox row.
+            </span>
+          </div>
+
           <form onSubmit={onSubmit} className="lookup">
             <label>tx digest</label>
             <input
