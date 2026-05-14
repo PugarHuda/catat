@@ -1,6 +1,6 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
 import { walrus, WalrusFile } from '@mysten/walrus';
 import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
@@ -15,6 +15,7 @@ import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
 import type { Surface } from '@/lib/surfaces';
 import {
+  BUG_REPORT_FORM_ID,
   CATAT_PACKAGE_ID,
   suiscanObject,
   suiscanTx,
@@ -36,7 +37,7 @@ interface Props {
 type PublishState =
   | { kind: 'idle' }
   | { kind: 'publishing'; step: string; subStep?: string }
-  | { kind: 'success'; blobId: string; txHash: string; formId: string }
+  | { kind: 'success'; blobId: string; txHash: string; formId: string; mode: 'create' | 'update' }
   | { kind: 'error'; message: string };
 
 let nextId = 1000;
@@ -97,6 +98,31 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
   const sui = useSuiClient();
   const queryClient = useQueryClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+
+  // Lightweight on-chain ownership check — read Form object's owner field
+  // so we can show the "Update this form" button only when the connected
+  // wallet actually owns the form (the Move policy on update_schema
+  // enforces this; we mirror it in the UI so the user doesn't see a
+  // button that would always fail).
+  const formMetaQuery = useQuery({
+    queryKey: ['form-owner', activeFormId],
+    enabled: activeFormId !== BUG_REPORT_FORM_ID,
+    queryFn: async () => {
+      const obj = await sui.getObject({
+        id: activeFormId,
+        options: { showContent: true },
+      });
+      const content = obj.data?.content;
+      if (!content || content.dataType !== 'moveObject') return { owner: null as string | null };
+      const fields = (content as unknown as { fields: { owner: string } }).fields;
+      return { owner: fields.owner ?? null };
+    },
+    staleTime: 30_000,
+  });
+  const isOwnedByMe =
+    !!account &&
+    activeFormId !== BUG_REPORT_FORM_ID &&
+    formMetaQuery.data?.owner === account.address;
 
   const walrusClient = useMemo(() => {
     return sui.$extend(
@@ -243,11 +269,107 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       console.log('[publish] new Form object id:', newFormId);
       onFormPublished(newFormId);
 
-      setPublishState({ kind: 'success', blobId, txHash: createResult.digest, formId: newFormId });
+      setPublishState({ kind: 'success', blobId, txHash: createResult.digest, formId: newFormId, mode: 'create' });
       queryClient.invalidateQueries({ queryKey: ['form-stats'] });
       queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
     } catch (e) {
       console.error('Publish failed:', e);
+      const msg = (e as Error).message || 'Unknown error';
+      setPublishState({ kind: 'error', message: friendlyError(msg) });
+    }
+  };
+
+  /**
+   * Update the schema_blob_id of the EXISTING activeFormId via the Move
+   * `update_schema(form, new_blob_id, ctx)` function. Owner-only — the
+   * Move policy aborts if caller isn't the form's owner. UI gates this
+   * via isOwnedByMe so the button is only shown when ownership matches.
+   *
+   * After update: same form_id, same submission_blob_ids vector (history
+   * preserved), but schema_blob_id points to the freshly-uploaded Walrus
+   * blob. Existing submissions are still readable; future respondents
+   * see the updated schema.
+   */
+  const handleUpdate = async () => {
+    if (!account) {
+      setPublishState({ kind: 'error', message: 'Connect wallet first.' });
+      return;
+    }
+    if (schema.fields.length === 0) {
+      setPublishState({ kind: 'error', message: 'Add at least one field before updating.' });
+      return;
+    }
+    if (!isOwnedByMe) {
+      setPublishState({ kind: 'error', message: 'Only the form owner can update its schema. Use "Publish as new copy" instead.' });
+      return;
+    }
+
+    try {
+      const schemaJson = JSON.stringify(schema, null, 2);
+      const file = WalrusFile.from({
+        contents: new TextEncoder().encode(schemaJson),
+        identifier: 'schema.json',
+        tags: { 'content-type': 'application/json' },
+      });
+
+      setPublishState({ kind: 'publishing', step: 'Encoding new schema for Walrus…' });
+      const flow = walrusClient.walrus.writeFilesFlow({ files: [file] });
+      const encoded = await flow.encode();
+      const blobId = encoded.blobId;
+      if (!blobId) throw new Error('Walrus encode returned no blobId');
+
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 3' });
+      const reserveTx = flow.register({ epochs: 26, owner: account.address, deletable: false });
+      const reserveResult = await signAndExecute({ transaction: reserveTx });
+
+      setPublishState({ kind: 'publishing', step: 'Uploading via Walrus relay…' });
+      await flow.upload({ digest: reserveResult.digest });
+
+      setPublishState({ kind: 'publishing', step: 'Sign Walrus certify', subStep: '2 of 3' });
+      const certifyTx = flow.certify();
+      await signAndExecute({ transaction: certifyTx });
+      console.log('[update] Walrus certify confirmed');
+
+      setPublishState({ kind: 'publishing', step: 'Sign Sui update_schema', subStep: '3 of 3' });
+      const updateTx = new Transaction();
+      updateTx.moveCall({
+        target: `${CATAT_PACKAGE_ID}::form::update_schema`,
+        arguments: [
+          updateTx.object(activeFormId),
+          updateTx.pure.string(blobId),
+        ],
+      });
+      const updateResult = await signAndExecute({ transaction: updateTx });
+      console.log('[update] Sui update_schema submitted, digest:', updateResult.digest);
+
+      setPublishState({ kind: 'publishing', step: 'Waiting for Sui indexer…', subStep: '~10–20s' });
+      try {
+        const txDetails = await sui.waitForTransaction({
+          digest: updateResult.digest,
+          options: { showEffects: true },
+          timeout: 30_000,
+        });
+        if (txDetails.effects?.status?.status === 'failure') {
+          throw new Error(`On-chain execution failed: ${txDetails.effects.status.error ?? 'unknown'}`);
+        }
+      } catch (waitErr) {
+        console.warn('[update] chain confirmation slow:', waitErr);
+      }
+
+      setPublishState({
+        kind: 'success',
+        blobId,
+        txHash: updateResult.digest,
+        formId: activeFormId, // same form_id — we updated in place
+        mode: 'update',
+      });
+      // Invalidate so MyFormsPicker + useFormSchema + admin all re-read.
+      queryClient.invalidateQueries({ queryKey: ['form-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['form-schema', activeFormId] });
+      queryClient.invalidateQueries({ queryKey: ['form-owner', activeFormId] });
+    } catch (e) {
+      console.error('Update failed:', e);
       const msg = (e as Error).message || 'Unknown error';
       setPublishState({ kind: 'error', message: friendlyError(msg) });
     }
@@ -384,6 +506,11 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
                 <div className="left">
                   <b>{schema.fields.length} fields</b>
                   · {sealedCount} sealed · gate off · 26 epochs
+                  {isOwnedByMe && (
+                    <span style={{ display: 'block', marginTop: 4, fontFamily: 'var(--type)', fontSize: 10, color: 'var(--marker-green)', letterSpacing: '0.08em' }}>
+                      ✓ YOU OWN THIS FORM — UPDATE PRESERVES SUBMISSION HISTORY
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button
@@ -398,14 +525,25 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
                   <button type="button" className="btn btn-sm" onClick={() => onSurfaceChange('runner')} disabled={publishing}>
                     Preview
                   </button>
+                  {isOwnedByMe && (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={handleUpdate}
+                      disabled={publishing || !account || schema.fields.length === 0}
+                      title="Replace the schema_blob_id of THIS on-chain Form — same form_id, history preserved"
+                    >
+                      {publishing ? 'updating…' : '↻ Update this form'}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="btn btn-primary btn-sm"
+                    className={isOwnedByMe ? 'btn btn-sm' : 'btn btn-primary btn-sm'}
                     onClick={handlePublish}
                     disabled={publishing || !account || schema.fields.length === 0}
-                    title={!account ? 'Connect wallet first' : schema.fields.length === 0 ? 'Add a field first' : 'Upload schema to Walrus + create Form on Sui'}
+                    title={!account ? 'Connect wallet first' : schema.fields.length === 0 ? 'Add a field first' : isOwnedByMe ? 'Mint a NEW Form (fork) — gets its own form_id + empty inbox' : 'Upload schema to Walrus + create Form on Sui'}
                   >
-                    {publishing ? 'publishing…' : 'Publish to Walrus →'}
+                    {publishing ? 'publishing…' : isOwnedByMe ? 'Publish as new copy' : 'Publish to Walrus →'}
                   </button>
                 </div>
               </div>
@@ -487,6 +625,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
           txHash={publishState.txHash}
           formId={publishState.formId}
           schemaTitle={schema.title}
+          mode={publishState.mode}
           onClose={() => setPublishState({ kind: 'idle' })}
         />
       )}
@@ -529,10 +668,11 @@ interface ModalProps {
   txHash: string;
   formId: string;
   schemaTitle: string;
+  mode: 'create' | 'update';
   onClose: () => void;
 }
 
-function PublishedModal({ blobId, txHash, formId, schemaTitle, onClose }: ModalProps) {
+function PublishedModal({ blobId, txHash, formId, schemaTitle, mode, onClose }: ModalProps) {
   const blobShort = `${blobId.slice(0, 12)}…${blobId.slice(-6)}`;
   const txShort = `${txHash.slice(0, 12)}…${txHash.slice(-6)}`;
   const formShort = `${formId.slice(0, 12)}…${formId.slice(-6)}`;
@@ -554,14 +694,27 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, onClose }: ModalP
   return (
     <div className="publish-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="publish-modal">
-        <div className="publish-stamp">published!</div>
-        <h3>Your form is on-chain.</h3>
+        <div className="publish-stamp" style={mode === 'update' ? { background: 'var(--marker-green)' } : undefined}>
+          {mode === 'update' ? 'updated!' : 'published!'}
+        </div>
+        <h3>{mode === 'update' ? 'Schema updated on-chain.' : 'Your form is on-chain.'}</h3>
         <p>
-          <b>{schemaTitle}</b> — schema on Walrus, Form minted on Sui owned by your wallet.
-          {' '}
-          <b style={{ color: 'var(--marker-green)' }}>Submit + Inbox now point to this form.</b>
-          {' '}
-          Decrypt sealed fields from Inbox after collecting replies.
+          <b>{schemaTitle}</b> —{' '}
+          {mode === 'update' ? (
+            <>
+              new schema blob on Walrus, <code style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>update_schema</code> recorded on Sui.
+              {' '}
+              <b style={{ color: 'var(--marker-green)' }}>Same form_id, same submission history</b> — only the schema pointer changed.
+            </>
+          ) : (
+            <>
+              schema on Walrus, Form minted on Sui owned by your wallet.
+              {' '}
+              <b style={{ color: 'var(--marker-green)' }}>Submit + Inbox now point to this form.</b>
+              {' '}
+              Decrypt sealed fields from Inbox after collecting replies.
+            </>
+          )}
         </p>
 
         <div className="share-link">

@@ -13,6 +13,19 @@ on:
         description: 'How many submissions to seed (1-10)'
         required: true
         default: '5'
+      template_key:
+        description: 'Payload shape to generate'
+        required: true
+        default: 'bug_report'
+        type: choice
+        options:
+          - bug_report
+          - nps
+          - contact
+          - newsletter
+          - hackathon
+          - feature
+          - job
 
 jobs:
   seed:
@@ -35,6 +48,7 @@ jobs:
           SUI_PRIVATE_KEY: ${{ secrets.SUI_BECH32_PRIVATE_KEY }}
           FORM_ID: ${{ inputs.form_id }}
           COUNT: ${{ inputs.count }}
+          TEMPLATE_KEY: ${{ inputs.template_key }}
         run: |
           set -euo pipefail
           bun src/08-seed-submissions.ts | tee seed-output.txt
