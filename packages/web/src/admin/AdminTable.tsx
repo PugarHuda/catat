@@ -100,14 +100,15 @@ export default function AdminTable({ submissions, totalUnfiltered, shareUrl, ope
               <small>
                 {submitterAlias}
                 {s.source === 'walrus' && ' · live'}
-                {/* Triage badges — only shown when the user has actually
-                    moved the row from "new". Makes their work visible. */}
+                {/* Triage badges — status hidden when 'new' (implied by
+                    the row's existence in default state); priority ALWAYS
+                    visible so the user sees their explicit setting even
+                    when re-set to the 'medium' default. Notes appear
+                    only when present. */}
                 {s.status !== 'new' && (
                   <span className={`lr-status-pill ${s.status}`}>{s.status}</span>
                 )}
-                {s.priority !== 'medium' && (
-                  <span className={`lr-prio-pill ${s.priority}`}>· {s.priority}</span>
-                )}
+                <span className={`lr-prio-pill ${s.priority}`}>· {s.priority}</span>
                 {hasNotes && (
                   <span className="lr-notes-pill" title={s.notes}>📝 {(s.notes ?? '').slice(0, 40)}{(s.notes ?? '').length > 40 ? '…' : ''}</span>
                 )}

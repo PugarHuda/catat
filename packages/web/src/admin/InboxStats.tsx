@@ -57,47 +57,51 @@ export default function InboxStats({ submissions, hasSeverityField }: Props) {
 
   return (
     <div className="inbox-stats">
-      {/* sparkline */}
+      {/* sparkline — readable bigger sizes, day labels below */}
       <div className="ix-block ix-spark">
         <div className="ix-h">
           <b>{submissions.length}</b>
           <span>submissions · last 7 days</span>
         </div>
-        <svg viewBox="0 0 280 56" className="ix-spark-svg" preserveAspectRatio="none">
+        <svg viewBox="0 0 360 100" className="ix-spark-svg" preserveAspectRatio="xMidYMid meet">
           {/* baseline */}
-          <line x1="4" y1="50" x2="276" y2="50" stroke="var(--line)" strokeWidth="1" strokeDasharray="2 3"/>
+          <line x1="4" y1="76" x2="356" y2="76" stroke="var(--line)" strokeWidth="1.2" strokeDasharray="3 4"/>
           {/* bars */}
           {buckets.map((b, i) => {
-            const barW = 32;
-            const gap = 8;
-            const x = 4 + i * (barW + gap);
-            const h = b.count === 0 ? 2 : (b.count / maxCount) * 42;
-            const y = 50 - h;
+            const barW = 38;
+            const gap = 12;
+            const x = 12 + i * (barW + gap);
+            const h = b.count === 0 ? 3 : (b.count / maxCount) * 62;
+            const y = 76 - h;
+            const isToday = i === 6;
             return (
               <g key={i}>
                 <rect
                   x={x} y={y} width={barW} height={h}
-                  fill={i === 6 ? 'var(--marker-blue)' : 'var(--marker-blue)'}
-                  opacity={i === 6 ? 1 : 0.5}
-                  rx="2"
+                  fill="var(--marker-blue)"
+                  opacity={isToday ? 1 : 0.55}
+                  rx="3"
                 />
                 {b.count > 0 && (
                   <text
-                    x={x + barW / 2} y={y - 2}
+                    x={x + barW / 2} y={y - 5}
                     textAnchor="middle"
                     fill="var(--ink)"
-                    fontSize="9"
+                    fontSize="14"
+                    fontWeight="700"
                     fontFamily="var(--mono)"
                   >
                     {b.count}
                   </text>
                 )}
                 <text
-                  x={x + barW / 2} y={54}
+                  x={x + barW / 2} y={92}
                   textAnchor="middle"
-                  fill="var(--pencil)"
-                  fontSize="8"
+                  fill={isToday ? 'var(--marker-blue)' : 'var(--pencil)'}
+                  fontSize="11"
+                  fontWeight={isToday ? '700' : '400'}
                   fontFamily="var(--type)"
+                  letterSpacing="0.05em"
                 >
                   {b.label}
                 </text>
