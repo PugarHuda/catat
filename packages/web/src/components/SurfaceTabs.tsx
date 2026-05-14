@@ -9,18 +9,21 @@ interface Props {
 const ORDS: Record<Surface, string> = {
   builder: '01',
   runner: '02',
-  admin: '03',
-  verify: '04',
+  inbox: '03',
+  admin: '04',
+  verify: '05',
 };
 
 // "Preview" instead of "Submit" makes intent obvious — this tab is for the
-// form author to test what respondents will see. The real submit flow for
-// respondents is the standalone share URL (?f=0x…&go=submit) which renders
-// the same Runner in embed mode (no surface tabs visible).
+// form author to test what respondents will see.
+// "Inbox" vs "Admin" split: Inbox = lightweight cross-form notification
+// feed (click row → jump to Admin scoped to that form). Admin = full
+// triage workbench (form picker, stats charts, filters, table, detail).
 const LABELS: Record<Surface, string> = {
   builder: 'Builder',
   runner: 'Preview',
-  admin: 'Inbox',
+  inbox: 'Inbox',
+  admin: 'Admin',
   verify: 'Verify',
 };
 

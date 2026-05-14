@@ -1,6 +1,6 @@
-import { Edit3, Eye, Inbox, ShieldCheck, type LucideIcon } from 'lucide-react';
+import { Edit3, Eye, Inbox, LayoutDashboard, ShieldCheck, type LucideIcon } from 'lucide-react';
 
-export type Surface = 'builder' | 'runner' | 'admin' | 'verify';
+export type Surface = 'builder' | 'runner' | 'inbox' | 'admin' | 'verify';
 
 export interface SurfaceMeta {
   label: string;
@@ -8,10 +8,11 @@ export interface SurfaceMeta {
 }
 
 export const surfaceMeta: Record<Surface, SurfaceMeta> = {
-  builder: { label: 'Build', icon: Edit3 },
-  runner: { label: 'Preview', icon: Eye },
-  admin: { label: 'Submissions', icon: Inbox },
-  verify: { label: 'Verify', icon: ShieldCheck },
+  builder: { label: 'Build',   icon: Edit3 },
+  runner:  { label: 'Preview', icon: Eye },
+  inbox:   { label: 'Inbox',   icon: Inbox },
+  admin:   { label: 'Admin',   icon: LayoutDashboard },
+  verify:  { label: 'Verify',  icon: ShieldCheck },
 };
 
-export const surfaceOrder: Surface[] = ['builder', 'runner', 'admin', 'verify'];
+export const surfaceOrder: Surface[] = ['builder', 'runner', 'inbox', 'admin', 'verify'];

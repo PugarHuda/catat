@@ -2334,6 +2334,86 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   .inbox-stats .ix-spark { grid-column: span 1; }
 }
 
+/* === Inbox surface: cross-form notification feed === */
+.inbox-feed {
+  display: flex; flex-direction: column;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+.feed-row {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center; gap: 16px;
+  padding: 14px 18px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--paper-edge);
+  border-left: 4px solid var(--marker-blue);
+  border-radius: 6px;
+  transition: transform 120ms, box-shadow 120ms, border-color 120ms;
+}
+.feed-row.has-activity {
+  background: var(--paper-2);
+  box-shadow: 3px 3px 0 var(--paper-edge);
+}
+.feed-row.has-activity:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--ink-soft);
+  border-left-color: var(--marker-blue);
+}
+.feed-row.is-empty {
+  border-left-color: var(--pencil-soft);
+  opacity: 0.78;
+}
+.feed-row.is-empty:hover {
+  opacity: 1;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--paper-edge);
+}
+.fr-icon {
+  font-size: 28px; line-height: 1;
+  text-align: center;
+}
+.fr-body { min-width: 0; }
+.fr-title {
+  font-family: var(--hand); font-weight: 700;
+  font-size: 22px; color: var(--ink); line-height: 1.1;
+  margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fr-meta {
+  font-family: var(--body); font-size: 13px;
+  color: var(--ink-soft); line-height: 1.4;
+}
+.fr-meta b { color: var(--ink); font-weight: 700; }
+.fr-meta code {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--paper-edge); padding: 1px 5px; border-radius: 2px;
+  color: var(--ink-soft);
+}
+.fr-actions {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 6px;
+}
+.fr-suiscan {
+  font-family: var(--type); font-size: 10px;
+  color: var(--pencil); letter-spacing: 0.08em;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--pencil-soft);
+}
+.fr-suiscan:hover { color: var(--marker-blue); border-bottom-color: var(--marker-blue); }
+@media (max-width: 640px) {
+  .feed-row {
+    grid-template-columns: 36px 1fr;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .fr-actions {
+    grid-column: 1 / -1;
+    flex-direction: row; align-items: center;
+    justify-content: space-between;
+  }
+}
+
 /* Empty inbox — shown when activeFormId has zero submissions on chain. */
 .inbox-empty {
   padding: 36px 24px 28px; text-align: center;

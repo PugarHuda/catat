@@ -9,6 +9,7 @@ import { useFormSchema } from './lib/useFormSchema';
 
 const BuilderSurface = lazy(() => import('./builder/BuilderSurface'));
 const RunnerSurface = lazy(() => import('./runner/RunnerSurface'));
+const InboxSurface = lazy(() => import('./inbox/InboxSurface'));
 const AdminSurface = lazy(() => import('./admin/AdminSurface'));
 const VerifySurface = lazy(() => import('./verify/VerifySurface'));
 
@@ -32,7 +33,7 @@ function parseUrlParams(): { formId?: string; surface?: Surface; embed: boolean 
     builder: 'builder',
     submit: 'runner',
     runner: 'runner',
-    inbox: 'admin',
+    inbox: 'inbox',
     admin: 'admin',
     verify: 'verify',
   };
@@ -155,6 +156,16 @@ export default function App() {
           embedMode={embedMode}
           surface={surface}
           onSurfaceChange={setSurface}
+          onHome={onHome}
+        />
+      ) : surface === 'inbox' ? (
+        <InboxSurface
+          surface={surface}
+          onSurfaceChange={setSurface}
+          onOpenInAdmin={(formId) => {
+            handleActiveFormChange(formId);
+            setSurface('admin');
+          }}
           onHome={onHome}
         />
       ) : surface === 'admin' ? (
