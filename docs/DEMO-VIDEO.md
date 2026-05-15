@@ -1,187 +1,190 @@
 # Demo video — catat × Walrus Sessions Session 2
 
-> **Constraint dari brief**: < 3 menit, host on Walrus, showcase product using own tool.
+> **Brief constraints**: < 3 minutes, hosted on Walrus, showcase product using own tool.
 
-## Goal per shot
+## What this video must prove
 
-Tujuan video bukan "ceritakan semua fitur" — itu fail di 3 menit. Tujuan: **bikin judge melihat bukti** bahwa setiap claim landing page = real on-chain.
+Goal isn't "show every feature" — that fails at 3 min. Goal: **make the judge see proof** that catat's claims are real on-chain.
 
-3 momen yang HARUS muncul jelas:
-1. **Landing live counter** updating dari real Sui RPC
-2. **Submit flow** dengan 3 wallet popup → success screen dengan blob_id + tx_hash explorer links
-3. **Admin** menampilkan submission yang baru dibuat dengan pulsing emerald dot (read dari chain)
+**4 must-show moments**:
+1. **Live counter** on landing — pulled from `Form.submission_blob_ids.length` via Sui RPC
+2. **3-sig submit flow** — Walrus reserve → certify → Sui submit — landing on success modal with real blob_id + tx_hash + form_id (each linking to Walruscan/Suiscan)
+3. **Decrypt sealed field** — owner clicks decrypt → wallet popup → ciphertext reveals plaintext (Seal IBE in action)
+4. **Verify surface** — paste blob_id from another tab/wallet → cross-derives the receipt independently. **This is the cryptographic-proof story** in 15 seconds.
 
 ## Pre-recording checklist
 
-- [ ] Wallet (Sui Wallet ext) dengan ≥ 0.05 SUI + 0.1 WAL official testnet
-- [ ] Browser di-maximize, zoom 100%, no extension popup di sudut
-- [ ] Tab lain di-close (clean tab bar)
-- [ ] Suara mic test (kalau pakai voiceover)
-- [ ] Recording tool ready: **OBS** (free, best quality) atau **Loom** (faster, web)
-- [ ] Resolution: 1920×1080 (1080p)
-- [ ] Frame rate: 30fps
-- [ ] Output format: mp4 (H.264 codec, AAC audio)
-- [ ] (Optional) Cursor highlighter — Loom default ada, OBS perlu plugin
+- [ ] Wallet (Slush or Suiet) on **Sui Testnet** with ≥ 0.05 SUI + ≥ 0.1 WAL
+- [ ] **Two browser profiles** open (or one normal + one incognito) — one wallet for owner, one for respondent
+- [ ] Browser maximized, zoom 100%, no sidebar/extension popup visible
+- [ ] All other tabs closed, no notifications mid-recording
+- [ ] Mic test (if voiceover); ambient noise off
+- [ ] Recording tool: **OBS** (best quality) or **Loom** (fastest)
+- [ ] Output: 1920×1080 @ 30fps, mp4 (H.264 + AAC)
+- [ ] Optional: cursor highlighter (helps viewer track clicks)
 
 ## 3-minute script (timestamped)
 
-### 00:00–00:15 — Hook (15s)
+### 00:00–00:12 — Hook (12s)
 
-**Visual**: Open https://catat-walrus.vercel.app — landing page hero
-
-**Voiceover** (atau text overlay kalau silent):
-> "What if every form submission was verifiable on-chain, with private fields encrypted end-to-end? Tally and Typeform can't do this. Web3 form tools today don't either. catat does."
-
-**Action**:
-- Hover slowly over hero text "Forms with proof."
-- Cursor moves down to live counter — pause 1s on the count
-- Click sui testnet link briefly (shows Suiscan opens with form object)
-- Back to catat tab
-
-### 00:15–00:35 — Problem framing (20s)
-
-**Visual**: Scroll to "Why catat" section, briefly show 3 cards
+**Visual**: Landing page hero at https://catat-walrus.vercel.app
 
 **Voiceover**:
-> "Three things existing form tools can't do: own your submissions, encrypt fields granularly, and prove your submission count to anyone. catat solves all three by being native on Walrus and Sui."
+> "Every form tool today asks you to trust them with your data. catat doesn't — every submission is a Walrus blob, every form is a Sui object, every sealed field is encrypted before it leaves the browser. Let me show you."
 
 **Action**:
-- Slow scroll through the 3 differentiator cards
-- Brief pause on each (~3s)
-- Don't read every word — viewer reads themselves
+- Slow pan over hero text "Forms with cryptographic proof"
+- Cursor pauses 2s on the live submission counter (pulled from chain)
+- Quick scroll to the 3 differentiator cards, no narration
 
-### 00:35–00:50 — Setup (15s)
+### 00:12–00:25 — Open the docs (13s)
 
-**Visual**: Click "Try the demo →" CTA
+**Visual**: Click "Docs ↗" nav link → in-app DocsView opens
 
 **Voiceover**:
-> "Let's build a bug report form, submit it, and see it stored on-chain in real time."
+> "Architecture is documented in-app — three Walrus blobs, one Move object, no backend. Hosted on Walrus Sites itself, so the dashboard you're reading IS what we're describing."
 
 **Action**:
-- Click CTA → Builder loads (lazy load delay ~300ms is fine, looks like loading state)
-- Pan over Builder UI: sticky top bar, form title, fields list
+- Click Docs in the top nav
+- Show the sidebar with 11 pages
+- Click "Architecture" → 1s pan over the article
+- Quick scroll to show keyList rows
+- Click "catat" wordmark to return to landing
 
-### 00:50–01:10 — Builder showcase (20s)
+### 00:25–00:55 — Build & publish (30s)
 
-**Visual**: Builder, demonstrate slash menu
+**Visual**: "Try the demo" → Builder
 
 **Voiceover**:
-> "Slash command for fields. Notice the Web3 group — wallet address and encrypted email — first-class, not hidden in advanced settings."
+> "I'll publish a Bug Report form. Pick the template — eight fields ready, one of them sealed for the contact email. Three wallet signatures: Walrus reserve, Walrus certify, Sui create_form."
 
 **Action**:
-- Press `/` key → slash menu opens
-- Slowly hover through field types
-- Linger 2s on "Wallet address" (Web3 group, emerald `catat` badge)
-- Linger 2s on "🔒 Encrypted" toggle (in field row)
-- Press Esc, close menu
+- Click "Try the demo →" → Builder loads with Templates gallery auto-open
+- Click **Bug Report** card → canvas populates
+- Quick pan: title, fields list, the 🔒 badge on contact email
+- Click **Publish form** button (bottom)
+- 3 wallet popups: approve all (~12s total)
+- Land on success modal: green stamp "published!", share URL displayed
+- Click **Copy link** → "✓ copied" feedback
 
-### 01:10–02:10 — Submit flow (60s) ★ THE MONEY SHOT
+### 00:55–01:35 — Submit as respondent (40s) ★ MONEY SHOT 1
 
-**Visual**: Click Preview tab → Runner
+**Visual**: Open new incognito window, paste share URL
 
 **Voiceover**:
-> "As a respondent, I fill the form. Connect wallet. Submit goes through three signatures: Walrus reserve, Walrus certify, Sui registry."
+> "Now I'm a respondent — different wallet, no admin access. Fill the form, submit. Three more signatures: my submission becomes a Quilt blob bundling JSON plus any attachments."
 
 **Action**:
-1. Click **Preview** tab (~3s)
-2. Click "Connect wallet" top-right → wallet popup → approve (~5s)
-3. Address appears in button (mono, pulse dot) (~2s)
-4. Fill in form fields:
-   - Title: "Demo: catat real submission" (~3s)
-   - Severity: select "High" from dropdown (~2s)
-   - Description: type "This is a real on-chain submission via catat for the Walrus Sessions hackathon demo" (~8s)
-5. Optional: skip rich fields, just hit minimum required
-6. Click "Submit to Walrus" button (~1s)
-7. Wallet popup #1 → approve "Walrus storage reservation" (~3s)
-8. Wait, button shows "Sign Walrus reserve (1 of 2)" then "Uploading..." (~5s)
-9. Wallet popup #2 → approve "Walrus certify" (~3s)
-10. Wallet popup #3 → approve "Sui registry record" (~3s)
-11. Land on success screen (~5s linger):
-    - Green badge "Stored on Walrus testnet ✓"
-    - Headline "Your submission is now on-chain."
-    - Green box with 4 explorer links: blob_id, registry tx, form object, walrus certify tx
+- Switch to second browser profile / incognito
+- Paste the share URL → catat loads in embed mode (just the form)
+- Connect respondent wallet → wallet popup → approve
+- Fill required fields:
+  - Title: "Demo: hackathon submission"
+  - Severity: High
+  - Steps: "1. Open catat 2. Click Publish 3. ✨ done"
+  - Contact email (sealed): "respondent@example.com"
+- Click **Submit**
+- 3 wallet popups (Walrus reserve → certify → Sui submit) (~10s)
+- Success screen: blob_id displayed
+- Click **🔍 Verify your submission** link
 
-### 02:10–02:35 — Verify on-chain (25s)
+### 01:35–01:55 — Verify independently (20s) ★ MONEY SHOT 2
 
-**Visual**: Click blob_id link → Walruscan opens in new tab
+**Visual**: Verify surface opens with blob_id pre-filled
 
 **Voiceover**:
-> "Anyone can verify. Click the blob_id, see it on Walruscan. Click the Form object, see submission_blob_ids vector grew by one. Permissionless audit."
+> "Verify is no-auth — anyone can re-derive the receipt. Walrus blob exists, Sui event indexed, form schema linked. No catat servers needed."
 
 **Action**:
-- Click blob_id link → Walruscan opens, shows blob exists with content (~5s)
-- Switch back to catat tab
-- Click "form object" link → Suiscan opens, scroll to fields, show `submission_blob_ids` array with newest entry highlighted (~10s)
+- Verify surface auto-runs the lookup
+- Show: ✓ Blob found, ✓ SubmissionAdded event indexed, ✓ Schema linked
+- Pause 3s on the receipt
+- Click the Walruscan link → external blob view briefly (~3s)
 - Switch back to catat tab
 
-### 02:35–02:55 — Admin closes the loop (20s)
+### 01:55–02:25 — Owner triages (30s) ★ MONEY SHOT 3
 
-**Visual**: Click Submissions tab
-
-**Voiceover**:
-> "Switch to admin. Your submission appears at top with the live emerald dot — read straight from chain. Mock entries below show the triage UX. Filter, status workflow, CSV export, all there."
-
-**Action**:
-- Click **Submissions** tab (~2s)
-- Submission appears at top with pulsing emerald dot (~5s linger)
-- Quick demo: click a status pill, change to "Triaging" (~3s)
-- Click "Export CSV" — file downloads (~2s)
-- Briefly show the 12 demo entries scrolling (~5s)
-
-### 02:55–03:00 — Outro (5s)
-
-**Visual**: Cursor goes to top-left "catat" wordmark, click → back to landing
+**Visual**: Switch back to first browser → Inbox tab
 
 **Voiceover**:
-> "Open source. MIT licensed. Live on github.com/PugarHuda/catat."
+> "Back as the owner. Inbox lights up within seconds. Click into Admin — the new submission. Update status, set priority, then decrypt the sealed email — Seal threshold key servers verify ownership on-chain before releasing the key share."
 
 **Action**:
-- Cursor on wordmark → click → landing returns
-- Brief view of landing counter (now 1 higher than at start)
-- Fade or hard cut
+- Switch to owner browser → Inbox tab
+- Recent feed shows the new submission with headline "Demo: hackathon submission"
+- Click row → Admin opens with the new submission focused
+- Update Status pill: "Triaging" (~3s)
+- Set Priority: "High" (~2s)
+- Click **🔒 Decrypt** on contact email field
+- Wallet popup (Seal session key sig) → approve
+- Plaintext reveals: "respondent@example.com" (~5s linger)
+
+### 02:25–02:45 — Multi-format export (20s)
+
+**Visual**: Click ⬇ export dropdown
+
+**Voiceover**:
+> "Export the data — three formats, always. Markdown for reports, JSON for data scientists, CSV for spreadsheets with proper UTF-8 and CSV-injection mitigation."
+
+**Action**:
+- Click **⬇ export ▾** button → dropdown opens
+- Hover over each format showing hint text (~5s)
+- Click **Markdown** → file downloads
+- Quick switch to file system / OS → open the .md
+- Pan over the formatted report (triage table at top, per-submission sections)
+
+### 02:45–03:00 — Outro (15s)
+
+**Visual**: Cursor returns to catat brand mark, click → landing
+
+**Voiceover**:
+> "Open source. MIT licensed. Built on Walrus, Sui, and Seal — the stack that makes 'forms with proof' actually mean something. github.com/PugarHuda/catat."
+
+**Action**:
+- Cursor on catat wordmark → click → landing returns
+- Live counter is now +1 (~2s linger)
+- Cut
 
 ---
 
 ## Recording tips
 
-- **Don't pre-record voiceover separately** unless you're polished — recording with live narration captures natural pacing
+- **Don't pre-record voiceover separately** unless you're polished — live narration captures natural pacing
 - **Practice the click sequence 2-3× without recording** to memorize, then record clean take
-- **Wallet popups are unpredictable timing** — be patient, don't try to rush them
-- **Cursor movement matters**: smooth, not jittery. Pause ~0.5s before clicks so viewer's eye catches up
-- **Audio**: mic close, ambient noise off (close window/AC). No background music — let action speak
-- **If you fluff a line, don't restart** — keep going, edit later. Single-take usually feels more authentic
-- **Screen capture region**: just the browser viewport, not the whole desktop. Cleaner output, smaller file
+- **Wallet popups are unpredictable** — be patient, don't rush them
+- **Cursor smoothness matters**: pause ~0.5s before clicks so viewer's eye catches up
+- **Audio**: mic close, no AC/window noise. Skip background music — let the action speak
+- **If you fluff a line, keep going** — single-take usually feels more authentic
+- **Capture browser viewport only**, not the whole desktop — cleaner output, smaller file
 
 ## Upload to Walrus
 
-After recording + editing, you have `demo.mp4` (~30-50 MB target).
+After editing, target ~30–50 MB demo.mp4.
 
-### Option 1: Walrus CLI (if installed)
+### Option 1: Walrus CLI
 
 ```bash
 walrus --context=testnet store demo.mp4 --epochs 26
-# returns blob_id like: 5o0wfhld... 
+# Returns blob_id like 5o0wfhld...
 ```
 
-Output blob_id → use in submission.
+Use that blob_id in the submission form.
 
-### Option 2: Upload via catat itself (meta-dogfood) ⭐
+### Option 2: Upload via catat itself ⭐ (Best Feedback prize move)
 
-This is THE move for "Best Feedback" prize narrative — upload your demo via your own tool.
+This is THE narrative move — upload your demo via your own tool to dogfood publicly:
 
-1. Open catat builder, add a `video_upload` field via slash menu (or modify Bug Report template to include it)
-2. Open Preview tab, fill form with video attached (also fill required fields)
-3. Click Submit → 3 wallet sigs → real Walrus blob
-4. Capture the blob_id from success screen
-5. Cite this blob_id in your submission as proof
+1. Open catat Builder, add a `video_upload` field (or use Bug Report's attachment field)
+2. Switch to Preview, fill the form with the .mp4 attached
+3. Submit → 3 wallet sigs → real Walrus blob
+4. Capture the blob_id from success modal
+5. Cite this blob_id in the Airtable submission
 
 The Walruscan link from this submission **is** your demo video link.
 
-### Option 3: Use Walrus testnet web upload
+### Option 3: walruscan.com web upload
 
-If neither above works:
-- https://walruscan.com/testnet/blob/upload (if available)
-- Or any third-party Walrus upload UI
+Last-resort fallback if CLI/catat aren't an option.
 
 ## Compression hint (if file too big)
 
@@ -189,36 +192,35 @@ If neither above works:
 ffmpeg -i raw.mp4 -vcodec h264 -crf 28 -preset medium -acodec aac -b:a 96k demo.mp4
 ```
 
-`-crf 28` = balanced quality (lower = better quality, bigger file). For screen recording with mostly-static UI, even `-crf 30` looks fine.
+`-crf 28` = balanced. For screen recording with mostly-static UI, `-crf 30` looks fine and shrinks more.
 
 ## Submission checklist
 
-After demo video uploaded to Walrus:
-
 - [ ] App live URL: https://catat-walrus.vercel.app
 - [ ] Repo: https://github.com/PugarHuda/catat
-- [ ] Demo video Walrus blob_id (from upload above)
+- [ ] Demo video Walrus blob_id
 - [ ] Walruscan link to video blob: `https://walruscan.com/testnet/blob/<blob_id>`
 - [ ] Short description (≤ 200 words):
 
-> *catat is a Walrus-native feedback platform. Build forms with a slash command, submit with wallet sig — submission JSON stored on Walrus, blob_id recorded on Sui via the catat::form Move package. Per-field encryption via Seal coming next iteration. Admin dashboard reads real submissions back from chain. Landing counter is live from `Form.submission_blob_ids.length`. Stack: Vite + React 19 + dapp-kit + @mysten/walrus + Move 2024. Deployed on both Vercel (devx) and Walrus Sites testnet (full decentralization story).*
+> *catat is a Walrus-native form & feedback platform. Submissions are Walrus Quilt blobs; the form schema, ownership, and access policy live in the catat::form Move package on Sui; sealed fields are encrypted via Seal IBE 2-of-3 threshold with on-chain seal_approve_owner verification. The Builder publishes forms in 3 wallet sigs (Walrus reserve → certify → Sui create_form), the Runner submits in 3 more, and the Inbox + Admin surfaces query Sui events to surface activity in real time. Multi-format export (CSV / JSON / Markdown), in-app gitbook docs (11 pages), and a public Verify surface that re-derives the receipt without trusting catat itself. Stack: Vite 6 + React 19 + TS strict + Tailwind v4 + dapp-kit + @mysten/walrus + @mysten/seal + Move 2024. Deployed on Vercel (devx, auto-deploy via GitHub Actions) and Walrus Sites testnet (full decentralization story). Open source, MIT licensed, fork-friendly.*
 
 - [ ] At least 1 real submission via own tool ✅ (the demo recording produces this)
 - [ ] Register via [Airtable](https://airtable.com/appoDAKpC74UOqoDa/shrN8UbJRdbkd5Lso)
-- [ ] (Best Feedback prize) Submit feedback about Walrus dev experience via catat itself, link in submission
+- [ ] (Best Feedback prize) Submit feedback about Walrus dev experience via catat itself, cite the blob_id in submission
 
-## Bonus: scoring framework for self-review before submit
+## Self-review scorecard
 
-Watch your own video, score 1-5 on:
+Watch your own video, score 1–5 on each:
 
 | Criterion | What to check |
 |---|---|
 | First 5s hook | Did viewer want to keep watching? |
-| Pace | Any dead air > 2s? Any rushed sections? |
-| On-chain proof | Did you SHOW Walruscan/Suiscan, or just claim? |
-| Tool actually works | Did submit succeed end-to-end without retake? |
-| Open-source signal | Mention MIT + GitHub in outro? |
+| Pace | Any dead air > 2s? Any rushed section? |
+| On-chain proof shown | Did you SHOW Walruscan/Suiscan/Verify, or just claim? |
+| Tool actually works | Did all 6 sigs land cleanly? Decrypt revealed? |
+| Multi-format export visible | Markdown report shown clearly? |
+| Open-source signal | MIT + GitHub mentioned in outro? |
 | Audio quality | Voiceover clear? No background noise? |
 | Cuts feel natural | Or jarring? |
 
-Re-record if any score is 1-2.
+Re-record any section scoring 1–2.
