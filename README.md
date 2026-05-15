@@ -5,30 +5,30 @@
 Submission for **Walrus Sessions Session 2 — Form Tooling** (May 5–18, 2026).
 
 🌐 **Live**: https://catat-walrus.vercel.app
+📚 **In-app docs**: https://catat-walrus.vercel.app/?go=docs
 📦 **Repo**: https://github.com/PugarHuda/catat
 
 ---
 
-## Apa ini
+## What it is
 
-catat adalah platform form & feedback yang dibangun native di atas **Walrus**, **Sui**, dan (segera) **Seal**. Mirip Typeform/Tally, dengan tiga perbedaan fundamental:
+catat is a form & feedback platform built native on **Walrus** (storage), **Sui** (registry + ownership), and **Seal** (per-field encryption). Like Typeform/Tally, with three fundamental differences:
 
-1. **Submission tersimpan di Walrus** (decentralized blob storage). Bukan klaim, bukan abstraksi — content-addressable bytes yang siapa saja bisa fetch via blob_id.
-2. **On-chain registry di Sui** via Move package `catat::form`. Tiap submit append blob_id ke `Form.submission_blob_ids`. Verifiable count = `vector::length(form.submission_blob_ids)`, queryable oleh siapa pun tanpa permission.
-3. **Per-field encryption via Seal** *(coming soon)*. Toggle 🔒 per field di Builder, ciphertext di blob hanya bisa di-decrypt oleh form owner via Seal threshold key servers.
+1. **Submissions stored in Walrus** as Quilt batches — content-addressed bytes anyone can re-fetch via blob_id. The schema itself is a Walrus blob too.
+2. **On-chain registry on Sui** via Move package `catat::form`. Every submit appends a blob_id to `Form.submission_blob_ids` — verifiable count = `vector::length(form.submission_blob_ids)`, queryable by anyone without permission.
+3. **Per-field encryption via Seal IBE 2-of-3 threshold**. Toggle 🔒 on any field in the Builder; ciphertext lives in the public blob but only the form owner can decrypt via on-chain `seal_approve_owner` policy.
 
-## Status
+## What you can do today
 
-✅ **Real on-chain MVP**:
-- Form Builder dengan slash command + 12 field types
-- Form Runner: real submit ke Walrus (Quilt) + Sui registry (3 wallet sigs)
-- Admin Dashboard: reads dari on-chain Form + Walrus blobs (real submissions appear next to demo data)
-- Landing page dengan live counter dari `Form.submission_blob_ids.length`
-
-⏳ **Pending**:
-- Seal encryption (butuh `seal_approve_*` Move addition)
-- Schema upload via Builder's "Publish" button (currently no-op)
-- Code-split untuk landing-first paint
+- ✅ **Form Builder** with 12 field types + 12 templates + custom-template save (localStorage)
+- ✅ **Update vs new copy** — re-publish a form you own preserves submission history; publish-as-new mints a fresh Form object
+- ✅ **Form Runner** — real submit via 3-sig flow (Walrus reserve → certify → Sui submit), Quilt-batched JSON + attachments
+- ✅ **Inbox** — notification feed across all your forms (per-form aggregate + recent-12 with headlines)
+- ✅ **Admin** — triage workbench: status / priority / notes (localStorage + optional Walrus backup), filter, sort, decrypt sealed fields, sparkline + status/severity charts
+- ✅ **Multi-format export** — CSV (Excel-friendly UTF-8 BOM + injection-safe), JSON (full structured payload), Markdown (presentation-ready report)
+- ✅ **Verify** — paste any blob_id, anyone can re-derive the receipt without trusting catat
+- ✅ **In-app gitbook docs** — 11 pages covering architecture, Walrus, Seal, Builder, Templates, Submitting, Inbox/Admin, Verify, FAQ
+- ✅ **Public seed Bug Report form** — pre-seeded with real on-chain submissions across 7 templates
 
 ## Live on-chain artifacts
 
@@ -38,92 +38,108 @@ catat adalah platform form & feedback yang dibangun native di atas **Walrus**, *
 | Bug Report Form (shared object) | `0xe88fda404f...e34e` | [Suiscan](https://suiscan.xyz/testnet/object/0xe88fda404fe15a122c57ed220e668ec21a3f4119f2c38c65e490fbccd1e3a34e) |
 | Walrus Site (frontend, testnet) | `0xe362ed40...8db7` | [Suiscan](https://suiscan.xyz/testnet/object/0xe362ed40995b7eca96dbbfc856b1115fc5c10b6938803df648e1fdb9bc5e8db7) |
 
-## Coba di browser (~3 menit)
+## 3-minute browser demo
 
-Prereq: Sui Wallet ([Chrome](https://chromewebstore.google.com/detail/sui-wallet/opcgpfmipidbgpenhmajoajpbobppdil)) installed + funded testnet wallet.
+Prereq: Sui Wallet ([Slush](https://chromewebstore.google.com/detail/sui-wallet/opcgpfmipidbgpenhmajoajpbobppdil) or Suiet) + funded testnet wallet.
 
-1. Buka https://catat-walrus.vercel.app
-2. Klik **"Try the demo →"** di hero
-3. Builder muncul dengan template Bug Report. Tekan `/` untuk slash menu, lihat 12 field types incl. **Web3-only group** (Wallet address) dan toggle **🔒 Encrypted**
-4. Klik tab **Preview** → form runner muncul
-5. Klik **"Connect wallet"** top-right
-6. Isi field required (title, severity, description) → klik **"Submit to Walrus"**
-7. Approve 3 wallet popups: Walrus reserve → Walrus certify → Sui registry
-8. Review screen: real `blob_id` + `tx_hash` + `form_id` dengan link ke Walruscan/Suiscan
-9. Klik tab **Submissions** → submission kamu muncul di top dengan pulsing emerald dot (real on-chain) di samping 12 demo entries
+1. Open https://catat-walrus.vercel.app
+2. Click **"Try the demo →"**
+3. Builder opens with the Templates gallery — pick **Bug Report**
+4. Tweak any field; toggle 🔒 on the contact-email field for Seal encryption
+5. Click **Publish form** → 3 wallet popups (Walrus reserve → certify → Sui create_form)
+6. Success modal shows your share URL + Form ID. Copy the share URL
+7. Open the share URL in another tab/wallet → fill the form → 3 more sigs
+8. Back on owner wallet → **Inbox** lights up within ~10s with the new submission
+9. Click into **Admin** → set Status to "triaging" → click **Decrypt** on the sealed email field → wallet popup → plaintext reveals
+10. Click **⬇ export** → pick Markdown → presentation-ready report downloaded
+11. Copy any submission's blob_id, paste into **Verify** → re-fetched independently from Walrus + Sui events
 
-Wallet butuh:
-- ≥ 0.05 SUI testnet (gas untuk 3 tx) — get di https://faucet.sui.io
-- ≥ 0.1 WAL testnet (storage 10 epochs) — get di https://stakely.io/faucet/walrus-testnet-wal atau swap SUI→WAL via Walrus exchange (lihat `spike/src/06-swap-sui-wal.ts`)
+Wallet needs:
+- ≥ 0.05 SUI testnet (gas for ~3 tx) — get at https://faucet.sui.io
+- ≥ 0.1 WAL testnet (storage tip for ~10 epochs) — get via wallet's "Get WAL" swap or `spike/src/06-swap-sui-wal.ts`
 
-## Struktur
+## Project structure
 
 ```
 .
-├── docs/
-│   ├── PRD.md                        # product requirements
-│   ├── ARCHITECTURE.md               # data model, flows, stack
-│   └── COMPETITIVE-LANDSCAPE.md      # vs Tally/Formo/BlockSurvey
+├── docs/                              # external markdown docs
+│   ├── PRD.md
+│   ├── ARCHITECTURE.md
+│   ├── COMPETITIVE-LANDSCAPE.md
+│   └── DEMO-VIDEO.md                  # script for hackathon submission video
 ├── packages/
-│   ├── web/                          # Vite + React 19 + TS + Tailwind v4 + dapp-kit
+│   ├── web/                           # Vite 6 + React 19 + TS strict + Tailwind v4
 │   │   └── src/
-│   │       ├── landing/              # Hero with live on-chain counter
-│   │       ├── builder/              # Form Builder (slash command)
-│   │       ├── runner/               # Form Runner (Walrus + Sui submit)
-│   │       ├── admin/                # Linear-style triage + chain reads
-│   │       ├── components/           # WalletButton, SurfaceTabs
-│   │       └── lib/                  # contract.ts, providers.tsx
-│   └── contracts/                    # Move package catat::form
+│   │       ├── landing/               # Hero with live on-chain counter
+│   │       ├── builder/               # Form Builder + 12 templates + custom save
+│   │       ├── runner/                # Form Runner — 3-sig submit flow
+│   │       ├── inbox/                 # Pure notification feed across owned forms
+│   │       ├── admin/                 # Triage workbench + multi-format export
+│   │       ├── verify/                # Public proof viewer
+│   │       ├── docs/                  # In-app gitbook (11 pages + sidebar nav)
+│   │       ├── components/            # WalletButton, SurfaceTabs, MyFormsPicker
+│   │       └── lib/                   # contract.ts, providers.tsx, useWalrusClient (singleton)
+│   └── contracts/                     # Move package catat::form
 │       ├── Move.toml
 │       └── sources/form.move
-└── spike/                            # SDK validation scripts
+└── spike/                             # SDK validation scripts (E2E test fixtures)
     └── src/
-        ├── 02-walrus-blob.ts         # writeBlob/readBlob
-        ├── 03-walrus-quilt-single.ts # Quilt 1-file
-        ├── 04-walrus-quilt-multi.ts  # Quilt + attachments
-        ├── 05-seal-spike.ts          # Seal encrypt smoke
-        ├── 06-swap-sui-wal.ts        # SUI → WAL via official exchange
-        └── 07-test-runner-submit.ts  # Full E2E mirror of Runner.handleSubmit
+        ├── 02-walrus-blob.ts          # writeBlob/readBlob smoke
+        ├── 03-walrus-quilt-single.ts  # Quilt 1-file
+        ├── 04-walrus-quilt-multi.ts   # Quilt + attachments
+        ├── 05-seal-spike.ts           # Seal encrypt/decrypt smoke
+        ├── 06-swap-sui-wal.ts         # SUI → WAL via official exchange
+        ├── 07-test-runner-submit.ts   # Full E2E mirror of Runner.handleSubmit
+        └── 08-seed-submissions.ts     # CI seed dispatcher (per-template payloads)
 ```
 
 ## Stack
 
-| Lapisan | Pilihan | Status |
+| Layer | Choice | Status |
 |---|---|---|
 | Frontend | Vite 6 + React 19 + TS strict | ✅ |
-| UI | Tailwind v4 + shadcn-ready (zinc) | ✅ |
+| UI | Tailwind v4 + paper-aesthetic CSS + shadcn-ready (zinc) | ✅ |
 | Wallet | `@mysten/dapp-kit` ^1.0 | ✅ |
-| Storage | `@mysten/walrus` + Upload Relay | ✅ |
-| Smart contract | Move `catat::form` (testnet) | ✅ |
-| Encryption | `@mysten/seal` per-field | ⏳ pending |
-| Hosting | Vercel + Walrus Sites (testnet) | ✅ |
+| Storage | `@mysten/walrus` + Quilt + Upload Relay (singleton via `useWalrusClient`) | ✅ |
+| Encryption | `@mysten/seal` 2-of-3 IBE per-field with on-chain `seal_approve_owner` policy | ✅ |
+| Smart contract | Move `catat::form` (testnet, 5 entry points) | ✅ |
+| Lint | ESLint flat config + typescript-eslint + react-hooks | ✅ |
+| Hosting | Vercel (auto-deploy via GH Actions) + Walrus Sites (manual) | ✅ |
 
 ## CI/CD
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| `.github/workflows/deploy-walrus.yml` | push to `main` (web/**) | Deploy frontend to Walrus Sites testnet via [`MystenLabs/walrus-sites-github-actions/deploy@v3`](https://github.com/MystenLabs/walrus-sites-github-actions) |
-| `.github/workflows/publish-move.yml` | manual dispatch | Compile + publish `catat::form` Move package, create initial Form |
+| `.github/workflows/deploy-vercel.yml` | push to `main` (web/**) | Auto-deploy production to Vercel via vercel CLI |
+| `.github/workflows/deploy-walrus.yml` | manual `workflow_dispatch` | Deploy frontend to Walrus Sites testnet (manual: deploy wallet needs SUI + WAL top-up first) |
+| `.github/workflows/publish-move.yml` | manual `workflow_dispatch` | Compile + publish `catat::form` Move package |
+| `.github/workflows/seed-submissions.yml` | manual `workflow_dispatch` | Dispatch sample submissions per template (bug_report, nps, contact, etc.) |
 
-Vercel deploy: `npx vercel --prod` (auto-aliases via `vercel.json`).
-
-## Run lokal
+## Run locally
 
 ```bash
 npm install
-npm run web:dev   # http://localhost:5173
+npm run web:dev          # http://localhost:5173
+npm run web:typecheck    # tsc --noEmit
+cd packages/web && npm run lint  # ESLint flat config
+```
+
+Optional `.env` (in `packages/web/.env`):
+
+```bash
+VITE_WALRUS_UPLOAD_RELAY=https://upload-relay.testnet.walrus.space  # or mainnet
 ```
 
 ## Hackathon submission
 
 - **Track**: Builder Tools
-- **Prize**: $1,500 + $200 special + 6× $50 WAL "Best Feedback"
+- **Prize pool**: $1,500 (1st $500, 2nd $300, 3rd $200) + $200 WAL special + 6× $50 WAL "Best Feedback"
 - **Submission form**: [Airtable](https://airtable.com/appoDAKpC74UOqoDa/shrN8UbJRdbkd5Lso)
-- **Strategi multi-win**:
-  - Juara — full real on-chain integration via Walrus + Sui Move
-  - Special prize — open-source quality + reusable patterns (CI/CD for Move publish, Walrus Upload Relay handling, dapp-kit + walrus integration recipe)
-  - Best Feedback — dogfood: submit feedback ke tim Walrus pakai catat sendiri (track: WAL coin type drift between stakely.io faucet vs official package, Upload Relay necessity for browser, etc.)
+- **Multi-win strategy**:
+  - **Juara** — full real on-chain integration: schema + submissions + access policy + per-field encryption all on-chain
+  - **Special prize** — reusable patterns: paginated event scan, ownership cross-check, gas-coin race waits, Walrus singleton, multi-format export, hardenSchema validator, share-URL phishing lockdown
+  - **Best Feedback** — dogfood: catat's own bug report form is published on testnet; we triage real catat issues via catat itself
 
-## Lisensi
+## License
 
-MIT — silakan fork, self-host sebagai Walrus Site sendiri. Itu intinya.
+MIT — fork, self-host as your own Walrus Site. That's the whole point.
