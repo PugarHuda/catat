@@ -40,10 +40,22 @@ export default function InboxStats({ submissions: rawSubmissions, hasSeverityFie
 
   // ─── Status breakdown ───────────────────────────────────────────────
   const statusCounts = useMemo(() => {
-    const counts: Record<Status, number> = {
+    const counts: Record<Status | 'other', number> = {
       new: 0, triaging: 0, in_progress: 0, resolved: 0, archived: 0,
+      // Catch-all for future Status enum additions or tampered overlay
+      // values — without this, % bars wouldn't sum to 100 and unknown
+      // values would invisibly disappear.
+      other: 0,
     };
-    for (const s of submissions) counts[s.status] = (counts[s.status] ?? 0) + 1;
+    const knownStatuses = new Set<string>(['new', 'triaging', 'in_progress', 'resolved', 'archived']);
+    for (const s of submissions) {
+      if (knownStatuses.has(s.status)) {
+        counts[s.status] = (counts[s.status] ?? 0) + 1;
+      } else {
+        counts.other += 1;
+        if (counts.other === 1) console.warn(`[stats] unknown status "${s.status}" — bucketing as 'other'`);
+      }
+    }
     return counts;
   }, [submissions]);
 

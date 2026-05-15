@@ -116,8 +116,7 @@ export default function App() {
       setView('app');
       setEmbedMode(embed);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // run-once on mount; deps intentionally omitted
 
   // Prefetch lazy surface chunks once the app is idle — kills the
   // "first click on a tab takes 800ms" perf footgun. Browser will

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
@@ -149,6 +149,11 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
 
   const walrusClient = useWalrusClient();
 
+  // Mirror current account in a ref so the multi-sig submit flow can
+  // detect wallet swaps mid-flow. Updated by useEffect on every render.
+  const accountRef = useRef(account);
+  useEffect(() => { accountRef.current = account; }, [account]);
+
   const sealClient = useMemo(() => {
     return new SealClient({
       suiClient: sui as unknown as ConstructorParameters<typeof SealClient>[0]['suiClient'],
@@ -193,6 +198,19 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       });
       return;
     }
+
+    // Lock to the wallet that initiated the submit. If user switches wallets
+    // mid-flow, the submitter address recorded on-chain (via reserve sig 1)
+    // would differ from the wallet that signed the final submit Move call —
+    // confusing the audit trail and breaking dogfooding (the recorded
+    // submitter wouldn't match the wallet a user can decrypt with).
+    const capturedAddress = account.address;
+    const assertSameWallet = () => {
+      const current = accountRef.current?.address;
+      if (current !== capturedAddress) {
+        throw new Error(`Wallet changed mid-submit (${capturedAddress.slice(0, 8)}… → ${current?.slice(0, 8) ?? 'disconnected'}…). Reconnect the original wallet and retry.`);
+      }
+    };
 
     const submissionValues: Record<string, unknown> = {};
     const encryptedFieldIds: string[] = [];
@@ -306,6 +324,7 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
         throw new Error('Walrus encode returned no blobId — refusing to start submit flow');
       }
 
+      assertSameWallet();
       setSubmitState({ kind: 'submitting', step: 'Sign Walrus reserve', subStep: '1 of 3' });
       const registerTx = flow.register({
         epochs: 10,
@@ -320,11 +339,13 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
       // Sequential 3-sig flow (rolled back from combined-PTB approach —
       // see same comment in BuilderSurface). Three smaller txs index
       // independently and each digest is debuggable on its own.
+      assertSameWallet();
       setSubmitState({ kind: 'submitting', step: 'Sign Walrus certify', subStep: '2 of 3' });
       const certifyTx = flow.certify();
       const certifyResult = await signAndExecute({ transaction: certifyTx });
       console.log('[submit] Walrus certify confirmed, digest:', certifyResult.digest);
 
+      assertSameWallet();
       setSubmitState({ kind: 'submitting', step: 'Sign Sui form::submit', subStep: '3 of 3' });
       const recordTx = new Transaction();
       recordTx.moveCall({

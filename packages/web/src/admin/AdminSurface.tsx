@@ -78,7 +78,10 @@ export default function AdminSurface({ schema, activeFormId, onActiveFormChange,
   } = useAdminOverlay(activeFormId);
   const [restoreInput, setRestoreInput] = useState('');
   const [overlayMessage, setOverlayMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
-  const realSubmissions = realQuery.data ?? [];
+  // Memoize the empty-array fallback so allSubmissions' useMemo deps
+  // stay stable across renders (otherwise [] is a fresh array each time
+  // and downstream memos re-compute uselessly).
+  const realSubmissions = useMemo(() => realQuery.data ?? [], [realQuery.data]);
 
   // Inbox now shows ONLY real on-chain submissions. The mock data path
   // is preserved (submissions prop) for legacy callers but is empty by

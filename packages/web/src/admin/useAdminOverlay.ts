@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { WalrusFile } from '@mysten/walrus';
 import { useWalrusClient } from '@/lib/useWalrusClient';
 import type { Submission } from './types';
@@ -79,7 +79,6 @@ function saveToLocal(formId: string, overlay: OverlayMap, lastBackup?: BackupEnt
  * with that blob_id can hydrate the overlay via `restoreFromWalrus`.
  */
 export function useAdminOverlay(activeFormId: string) {
-  const sui = useSuiClient();
   const account = useCurrentAccount();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const [overlay, setOverlayState] = useState<OverlayMap>(new Map());

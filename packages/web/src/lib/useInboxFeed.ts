@@ -73,9 +73,16 @@ export function useInboxFeed() {
         latestSubmitter: string;
         latestBlobId: string;
       }>();
+      // Track parse failures so a future Move event shape change (package
+      // upgrade renaming a field) surfaces as a console warning instead
+      // of silently emptying the inbox.
+      let unparseable = 0;
       for (const e of result.data) {
         const parsed = e.parsedJson as SubmissionAddedEvent | undefined;
-        if (!parsed) continue;
+        if (!parsed || typeof parsed.form_id !== 'string' || typeof parsed.blob_id !== 'string') {
+          unparseable += 1;
+          continue;
+        }
         if (!titleByFormId.has(parsed.form_id)) continue; // skip forms not owned
         const ts = Number(parsed.timestamp_ms ?? e.timestampMs ?? 0);
         const existing = aggregates.get(parsed.form_id);
@@ -94,6 +101,10 @@ export function useInboxFeed() {
             existing.latestBlobId = parsed.blob_id;
           }
         }
+      }
+
+      if (unparseable > 0) {
+        console.warn(`[inbox-feed] ${unparseable} of ${result.data.length} SubmissionAdded events were unparseable — Move event shape may have changed.`);
       }
 
       const entries: InboxFeedEntry[] = [];

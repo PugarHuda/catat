@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
@@ -805,16 +805,42 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, mode, indexerConf
   const shareUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/?f=${formId}&go=submit`
     : `https://catat-walrus.vercel.app/?f=${formId}&go=submit`;
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'ok' | 'manual' | null>(null);
+  const manualSelectRef = useRef<HTMLInputElement>(null);
   const copyShare = async () => {
+    // Try modern Clipboard API first.
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      setCopied('ok');
+      setTimeout(() => setCopied(null), 1800);
+      return;
     } catch (err) {
-      console.warn('clipboard write blocked:', err);
-      alert(`Copy this URL manually:\n\n${shareUrl}`);
+      console.warn('clipboard API blocked, falling back to execCommand:', err);
     }
+    // Fallback: deprecated but universally-supported execCommand. Need
+    // a focused, selected input element. We render a hidden input below
+    // and select its value here.
+    const input = manualSelectRef.current;
+    if (input) {
+      input.removeAttribute('readonly');
+      input.focus();
+      input.select();
+      input.setSelectionRange(0, input.value.length);
+      try {
+        const ok = document.execCommand('copy');
+        input.setAttribute('readonly', '');
+        if (ok) {
+          setCopied('ok');
+          setTimeout(() => setCopied(null), 1800);
+          return;
+        }
+      } catch (err) {
+        console.warn('execCommand copy failed:', err);
+      }
+    }
+    // Last-resort: surface the input as a manual-select fallback (no alert
+    // popup — alerts feel broken on mobile + can be dismissed by accident).
+    setCopied('manual');
   };
 
   // When the indexer never confirmed within the wait window, soften every
@@ -872,7 +898,7 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, mode, indexerConf
           <div className="sl-row">
             <code>{shareUrl}</code>
             <button type="button" onClick={copyShare} className="btn btn-sm btn-primary">
-              {copied ? '✓ copied' : 'Copy link'}
+              {copied === 'ok' ? '✓ copied' : 'Copy link'}
             </button>
             <a
               href={shareUrl}
@@ -884,6 +910,34 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, mode, indexerConf
               Open ↗
             </a>
           </div>
+          {copied === 'manual' && (
+            <div style={{ marginTop: 8, fontSize: 13, color: 'var(--marker-yellow, #d4a44d)' }}>
+              ⚠ Browser blocked clipboard access. Select &amp; copy manually:
+              <input
+                ref={manualSelectRef}
+                type="text"
+                value={shareUrl}
+                readOnly
+                onFocus={e => e.currentTarget.select()}
+                style={{ display: 'block', width: '100%', marginTop: 6, padding: 6, fontFamily: 'var(--mono)', fontSize: 12 }}
+              />
+            </div>
+          )}
+          {copied !== 'manual' && (
+            // Always-mounted but hidden input target for the execCommand
+            // fallback path. We can't conditionally mount only when needed
+            // because copyShare is async + the input must exist when
+            // .focus() fires.
+            <input
+              ref={manualSelectRef}
+              type="text"
+              defaultValue={shareUrl}
+              readOnly
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ position: 'absolute', left: -9999, top: -9999, opacity: 0, pointerEvents: 'none' }}
+            />
+          )}
           <small>opens this form directly in Submit mode for anyone with the URL</small>
         </div>
 

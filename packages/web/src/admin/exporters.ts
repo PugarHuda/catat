@@ -316,7 +316,9 @@ function guessHeadline(s: Submission, schema: FormSchema): string {
 
 /** Markdown-safe inline text. Escapes the few chars that can break tables / formatting. */
 function escapeMd(s: string): string {
-  return s.replace(/([\\`*_{}\[\]()#+\-!|])/g, '\\$1');
+  // Inside a character class, `[` `]` `(` `)` `+` `-` etc. don't need
+  // escaping — keep them literal to satisfy no-useless-escape.
+  return s.replace(/([\\`*_{}[\]()#+\-!|])/g, '\\$1');
 }
 
 /** Markdown table cell: escape pipes + collapse newlines so rows stay one-line. */
