@@ -3,9 +3,9 @@ import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@
 import { useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
 import { toBase64 } from '@mysten/sui/utils';
-import { walrus, WalrusFile } from '@mysten/walrus';
+import { WalrusFile } from '@mysten/walrus';
 import { SealClient } from '@mysten/seal';
-import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
+import { useWalrusClient } from '@/lib/useWalrusClient';
 import type { FormSchema } from '../builder/types';
 import RunnerField, { type Values } from './RunnerField';
 import RunnerReview, { type SubmittedView } from './RunnerReview';
@@ -33,6 +33,10 @@ interface Props {
   /** Respondent mode — hides surface tabs and home link so people who
    *  arrive via a share URL only see the form to fill, not the CMS. */
   embedMode?: boolean;
+  /** Optional escape hatch from embed mode — exposed in RunnerReview after
+   *  successful submit so a respondent who wants to make their own form
+   *  can do so in the same tab. */
+  onExitEmbed?: () => void;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
   onHome?: () => void;
@@ -133,7 +137,7 @@ function friendlyError(msg: string): string {
   return msg.length > 220 ? msg.slice(0, 220) + '…' : msg;
 }
 
-export default function RunnerSurface({ schema, activeFormId, embedMode = false, surface, onSurfaceChange, onHome }: Props) {
+export default function RunnerSurface({ schema, activeFormId, embedMode = false, onExitEmbed, surface, onSurfaceChange, onHome }: Props) {
   const [values, setValues] = useState<Values>({});
   const [submitted, setSubmitted] = useState<SubmittedView | null>(null);
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
@@ -143,17 +147,7 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
   const queryClient = useQueryClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
 
-  const walrusClient = useMemo(() => {
-    return sui.$extend(
-      walrus({
-        wasmUrl: walrusWasmUrl,
-        uploadRelay: {
-          host: 'https://upload-relay.testnet.walrus.space',
-          sendTip: { max: 1_000 },
-        },
-      }),
-    );
-  }, [sui]);
+  const walrusClient = useWalrusClient();
 
   const sealClient = useMemo(() => {
     return new SealClient({
@@ -377,6 +371,7 @@ export default function RunnerSurface({ schema, activeFormId, embedMode = false,
         schema={schema}
         submission={submitted}
         embedMode={embedMode}
+        onExitEmbed={onExitEmbed}
         onReset={() => {
           setValues({});
           setSubmitted(null);

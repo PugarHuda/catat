@@ -51,12 +51,17 @@ interface Props {
   submission: SubmittedView;
   embedMode?: boolean;
   onReset: () => void;
+  /** Called when the respondent wants to leave embed mode and explore the
+   *  full app (Builder etc.) in the same tab. Optional — only meaningful
+   *  in embed mode. Without this, share-URL visitors had to close the
+   *  tab and re-visit the root URL. */
+  onExitEmbed?: () => void;
   surface: Surface;
   onSurfaceChange: (s: Surface) => void;
   onHome?: () => void;
 }
 
-export default function RunnerReview({ schema, submission, embedMode = false, onReset, surface, onSurfaceChange, onHome }: Props) {
+export default function RunnerReview({ schema, submission, embedMode = false, onReset, onExitEmbed, surface, onSurfaceChange, onHome }: Props) {
   const { persisted, receipt } = submission;
   const isReal = receipt !== null;
   const submittedAt = new Date(persisted.submitted_at_ms);
@@ -141,6 +146,16 @@ export default function RunnerReview({ schema, submission, embedMode = false, on
             </a>
           )}
           <button type="button" onClick={onReset}>Submit another</button>
+          {embedMode && onExitEmbed && (
+            <button
+              type="button"
+              onClick={onExitEmbed}
+              className="primary"
+              title="Leave the embedded form view and explore the full catat app — Builder, Inbox, Verify"
+            >
+              ✨ Make your own form →
+            </button>
+          )}
         </div>
 
         <div className="what-next">

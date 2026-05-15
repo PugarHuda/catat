@@ -1,9 +1,80 @@
-import { useMemo } from 'react';
 import { useSuiClient } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
-import { walrus } from '@mysten/walrus';
-import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
-import type { FormSchema } from '../builder/types';
+import type { FormSchema, Field, FieldType } from '../builder/types';
+import { useWalrusClient } from './useWalrusClient';
+
+// Defensive limits applied to schemas we read from chain. The schema blob
+// is content-addressed but anyone can publish a Form pointing to a hostile
+// blob; without these caps a malicious schema with 50,000 fields would
+// freeze the Builder/Runner.
+const MAX_FIELDS = 200;
+const MAX_STRING = 2_000;
+const MAX_OPTIONS = 100;
+const MAX_OPTION_STRING = 200;
+
+const ALLOWED_FIELD_TYPES: ReadonlySet<FieldType> = new Set([
+  'short_text', 'rich_text', 'dropdown', 'checkboxes', 'star_rating',
+  'image_upload', 'video_upload', 'url', 'email', 'wallet_address',
+  'number', 'date',
+]);
+
+function clampString(v: unknown, max: number): string {
+  if (typeof v !== 'string') return '';
+  return v.length > max ? v.slice(0, max) : v;
+}
+
+/**
+ * Validate + normalize a schema parsed from a Walrus blob. Anything that
+ * doesn't conform to the FormSchema shape gets repaired or dropped — never
+ * allowed to crash the UI or balloon memory. Returns null if the blob is
+ * structurally invalid.
+ */
+function hardenSchema(raw: unknown): FormSchema | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const fieldsRaw = r.fields;
+  if (!Array.isArray(fieldsRaw)) return null;
+  if (fieldsRaw.length > MAX_FIELDS) {
+    console.warn(`[hardenSchema] field count ${fieldsRaw.length} > ${MAX_FIELDS}, truncating`);
+  }
+  const fields: Field[] = [];
+  const seenIds = new Set<string>();
+  for (const fieldRaw of fieldsRaw.slice(0, MAX_FIELDS)) {
+    if (!fieldRaw || typeof fieldRaw !== 'object') continue;
+    const f = fieldRaw as Record<string, unknown>;
+    const id = clampString(f.id, 80);
+    const type = f.type as FieldType;
+    if (!id || !ALLOWED_FIELD_TYPES.has(type)) continue;
+    if (seenIds.has(id)) continue; // dedupe
+    seenIds.add(id);
+    const field: Field = {
+      id,
+      type,
+      label: clampString(f.label, MAX_STRING) || '(untitled)',
+      required: !!f.required,
+      encrypted: !!f.encrypted,
+      help: clampString(f.help, MAX_STRING),
+      placeholder: clampString(f.placeholder, MAX_STRING),
+    };
+    if (Array.isArray(f.options)) {
+      field.options = f.options
+        .slice(0, MAX_OPTIONS)
+        .filter((o: unknown): o is string => typeof o === 'string')
+        .map((o: string) => clampString(o, MAX_OPTION_STRING));
+    }
+    if (typeof f.scale === 'number' && Number.isFinite(f.scale) && f.scale > 0 && f.scale <= 20) {
+      field.scale = f.scale;
+    }
+    fields.push(field);
+  }
+  if (fields.length === 0) return null;
+  return {
+    id: clampString(r.id, 80) || `remote_${Date.now()}`,
+    title: clampString(r.title, MAX_STRING) || 'Untitled form',
+    description: clampString(r.description, MAX_STRING),
+    fields,
+  };
+}
 
 interface FormFields {
   owner: string;
@@ -37,14 +108,7 @@ interface OnChainFormMeta {
  */
 export function useFormSchema(formId: string | null) {
   const sui = useSuiClient();
-
-  const walrusClient = useMemo(() => sui.$extend(walrus({
-    wasmUrl: walrusWasmUrl,
-    uploadRelay: {
-      host: 'https://upload-relay.testnet.walrus.space',
-      sendTip: { max: 1_000 },
-    },
-  })), [sui]);
+  const walrusClient = useWalrusClient();
 
   return useQuery<{ meta: OnChainFormMeta; schema: FormSchema | null }>({
     queryKey: ['form-schema', formId],
@@ -80,18 +144,19 @@ export function useFormSchema(formId: string | null) {
         const blob = await walrusClient.walrus.getBlob({ blobId: fields.schema_blob_id });
         const files = await blob.files({ identifiers: ['schema.json'] });
         const schemaFile = files[0];
-        let schema: FormSchema;
+        let raw: unknown;
         if (schemaFile) {
-          schema = (await schemaFile.json()) as FormSchema;
+          raw = await schemaFile.json();
         } else {
           // Backward compat: older single-blob publishes (or test data) might
           // store the schema as the whole blob without a Quilt identifier.
           // Fall back to treating the entire blob as raw JSON.
           const fallbackFile = blob.asFile();
-          schema = (await fallbackFile.json()) as FormSchema;
+          raw = await fallbackFile.json();
         }
-        if (!Array.isArray(schema.fields)) {
-          throw new Error('Schema blob is not a valid FormSchema (missing fields array)');
+        const schema = hardenSchema(raw);
+        if (!schema) {
+          throw new Error('Schema blob is malformed (missing fields, wrong types, or empty after sanitization)');
         }
         return { meta, schema };
       } catch (err) {

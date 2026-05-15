@@ -1,12 +1,22 @@
 name: Deploy to Walrus Sites
 
+# Manual-only — auto-trigger on push spammed CI failures whenever the deploy
+# wallet ran out of testnet SUI. Walrus Sites needs ~0.5 SUI per deploy
+# (escrow for storage epochs), and the faucet caps at 1 SUI/hour, so frequent
+# deploys outpace the funding rate. Workflow is now invoked on demand:
+#
+#   gh workflow run "Deploy to Walrus Sites"
+#
+# Before triggering: ensure deploy wallet 0x57fd58a5...e27b has ≥0.5 SUI +
+# ≥0.05 WAL on testnet. Top up at faucet.sui.io and walrus.site/faucet.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/web/**'
-      - '.github/workflows/deploy-walrus.yml'
   workflow_dispatch:
+    inputs:
+      epochs:
+        description: 'Storage epochs (1 epoch ≈ 24h on testnet)'
+        required: false
+        default: '5'
+        type: string
 
 jobs:
   deploy:
@@ -35,5 +45,5 @@ jobs:
           SUI_BECH32_PRIVATE_KEY: ${{ secrets.SUI_BECH32_PRIVATE_KEY }}
           SUI_NETWORK: testnet
           DIST: ./packages/web/dist
-          EPOCHS: '10'
+          EPOCHS: ${{ inputs.epochs || '5' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSuiClient } from '@mysten/dapp-kit';
-import { walrus } from '@mysten/walrus';
-import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
+import { useWalrusClient } from '@/lib/useWalrusClient';
 import SurfaceTabs from '@/components/SurfaceTabs';
 import WalletButton from '@/components/WalletButton';
 import BrandGlyph from '@/components/BrandGlyph';
@@ -54,17 +53,7 @@ export default function VerifySurface({ surface, onSurfaceChange, onHome }: Prop
   const [input, setInput] = useState('');
   const [state, setState] = useState<VerifyState>({ kind: 'idle' });
 
-  const walrusClient = useMemo(() => {
-    return sui.$extend(
-      walrus({
-        wasmUrl: walrusWasmUrl,
-        uploadRelay: {
-          host: 'https://upload-relay.testnet.walrus.space',
-          sendTip: { max: 1_000 },
-        },
-      }),
-    );
-  }, [sui]);
+  const walrusClient = useWalrusClient();
 
   const handleVerify = async () => {
     const txInput = input.trim();

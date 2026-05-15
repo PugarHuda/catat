@@ -1,9 +1,7 @@
-import { useMemo } from 'react';
 import { useSuiClient } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
-import { walrus } from '@mysten/walrus';
-import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
 import { BUG_REPORT_FORM_ID } from '@/lib/contract';
+import { useWalrusClient } from '@/lib/useWalrusClient';
 import type { Submission } from './types';
 
 interface FormFields {
@@ -32,18 +30,7 @@ interface OnChainSubmission {
  */
 export function useRealSubmissions(formId: string = BUG_REPORT_FORM_ID) {
   const sui = useSuiClient();
-
-  const walrusClient = useMemo(() => {
-    return sui.$extend(
-      walrus({
-        wasmUrl: walrusWasmUrl,
-        uploadRelay: {
-          host: 'https://upload-relay.testnet.walrus.space',
-          sendTip: { max: 1_000 },
-        },
-      }),
-    );
-  }, [sui]);
+  const walrusClient = useWalrusClient();
 
   return useQuery<Submission[]>({
     queryKey: ['form-real-submissions', formId],
@@ -103,13 +90,18 @@ export function useRealSubmissions(formId: string = BUG_REPORT_FORM_ID) {
           blob_id: blobId,
           tx_hash: '',
           form_id: formId,
-          submitted_at_ms: Date.now(),
+          // Use 0 as the timestamp so any date-based sort treats placeholder
+          // rows as the oldest — they don't crowd to the top of "latest"
+          // simply because we just created the row. The 'archived' status +
+          // _isPlaceholder flag exclude them from default counters too.
+          submitted_at_ms: 0,
           submitter: '',
           values: { _loadError: reason },
-          status: 'new',
+          status: 'archived',
           priority: 'low',
           tags: [],
           source: 'walrus',
+          _isPlaceholder: true,
         };
       });
     },

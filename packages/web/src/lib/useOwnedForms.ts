@@ -40,24 +40,61 @@ export function useOwnedForms() {
     queryFn: async () => {
       if (!owner) return [];
       const eventType = `${CATAT_PACKAGE_ID}::form::FormCreated`;
-      // Pull recent events (paginate if needed; 200 is plenty for v1).
-      const result = await sui.queryEvents({
-        query: { MoveEventType: eventType },
-        limit: 200,
-        order: 'descending',
-      });
-      const mine: OwnedForm[] = [];
-      for (const e of result.data) {
-        const parsed = e.parsedJson as FormCreatedEvent | undefined;
-        if (!parsed || parsed.owner !== owner) continue;
-        mine.push({
-          formId: parsed.form_id,
-          title: parsed.title || 'Untitled form',
-          owner: parsed.owner,
-          createdAtMs: Number(e.timestampMs ?? 0),
+      // Cursor-paginated event scan. Without pagination, an owner whose
+      // forms fall outside the latest 200 globally-published events sees
+      // an empty MyFormsPicker — looks like the chain "lost" their data.
+      // We cap at MAX_PAGES so a particularly active package doesn't
+      // eat tens of seconds on cold start.
+      const MAX_PAGES = 5; // 5 × 200 = 1000 events scanned worst case
+      const PAGE_SIZE = 200;
+      const candidates: OwnedForm[] = [];
+      let cursor: Parameters<typeof sui.queryEvents>[0]['cursor'] = null;
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const result = await sui.queryEvents({
+          query: { MoveEventType: eventType },
+          limit: PAGE_SIZE,
+          order: 'descending',
+          cursor,
+        });
+        for (const e of result.data) {
+          const parsed = e.parsedJson as FormCreatedEvent | undefined;
+          if (!parsed || parsed.owner !== owner) continue;
+          candidates.push({
+            formId: parsed.form_id,
+            title: parsed.title || 'Untitled form',
+            owner: parsed.owner,
+            createdAtMs: Number(e.timestampMs ?? 0),
+          });
+        }
+        if (!result.hasNextPage || !result.nextCursor) break;
+        cursor = result.nextCursor;
+      }
+
+      // Cross-check: re-read each Form's CURRENT owner field via the chain.
+      // The event was emitted at create-time and never updates (Form.owner
+      // is mutable in principle if a future version adds transferOwnership);
+      // showing a form in MyForms based purely on the historical event
+      // would mislead the user into thinking they still own it. Batched
+      // multiGetObjects keeps this cheap (one RPC, max 50 IDs per batch).
+      if (candidates.length === 0) return [];
+      const verified: OwnedForm[] = [];
+      const BATCH = 50;
+      for (let i = 0; i < candidates.length; i += BATCH) {
+        const batch = candidates.slice(i, i + BATCH);
+        const objects = await sui.multiGetObjects({
+          ids: batch.map(c => c.formId),
+          options: { showContent: true },
+        });
+        objects.forEach((obj, idx) => {
+          const candidate = batch[idx];
+          if (!candidate) return;
+          const content = obj.data?.content;
+          if (!content || content.dataType !== 'moveObject') return;
+          const fields = (content as unknown as { fields?: { owner?: string } }).fields;
+          if (fields?.owner === owner) verified.push(candidate);
         });
       }
-      return mine;
+      return verified;
     },
     staleTime: 30_000,
     refetchOnWindowFocus: false,

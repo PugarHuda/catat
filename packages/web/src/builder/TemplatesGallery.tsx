@@ -77,7 +77,11 @@ export default function TemplatesGallery({
                     }}
                     onDelete={() => {
                       if (confirm(`Delete template "${t.name}"?`)) {
-                        deleteCustomTemplate(t.id);
+                        const result = deleteCustomTemplate(t.id);
+                        if (!result.ok) {
+                          alert(`Couldn't delete template: ${result.message}`);
+                          return;
+                        }
                         onCustomTplDeleted?.();
                       }
                     }}

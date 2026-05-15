@@ -1,6 +1,6 @@
-import { useSuiClient } from '@mysten/dapp-kit';
+import { useSuiClient, useCurrentAccount } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
-import { CATAT_PACKAGE_ID } from './contract';
+import { BUG_REPORT_FORM_ID, CATAT_PACKAGE_ID } from './contract';
 import { useOwnedForms, type OwnedForm } from './useOwnedForms';
 
 export interface InboxFeedEntry {
@@ -33,12 +33,17 @@ interface SubmissionAddedEvent {
  */
 export function useInboxFeed() {
   const sui = useSuiClient();
+  const account = useCurrentAccount();
   const ownedQuery = useOwnedForms();
   const owned = ownedQuery.data;
 
   return useQuery<InboxFeedEntry[]>({
-    queryKey: ['inbox-feed', owned?.map(f => f.formId).join(',')],
-    enabled: !!owned && owned.length >= 0,
+    // Include the wallet address in the cache key — without it, switching
+    // wallets (or going from disconnected → connected) silently reuses the
+    // previous wallet's empty/partial result. ownedFormCount alone isn't
+    // enough because two different wallets can both have 0 forms.
+    queryKey: ['inbox-feed', account?.address ?? 'no-wallet', owned?.length ?? 0, owned?.map(f => f.formId).join(',') ?? ''],
+    enabled: !!account && !!owned && !ownedQuery.isLoading,
     queryFn: async () => {
       if (!owned) return [];
       const eventType = `${CATAT_PACKAGE_ID}::form::SubmissionAdded`;
@@ -48,10 +53,18 @@ export function useInboxFeed() {
         order: 'descending',
       });
 
-      // Build a quick formId → title map from owned forms (also include
-      // the public seed Walrus Bug Report so it shows in the feed too).
+      // Build a quick formId → title map from owned forms.
+      // POLICY: the public seed "Walrus Bug Report" is intentionally
+      // excluded from the Inbox feed — it's a demo form everyone can see
+      // via MyFormsPicker but it shouldn't pollute "what's new in MY
+      // forms" with submissions from random demo testers. (This guard
+      // also ensures consistent behavior even if the connected wallet
+      // happens to be the deploy wallet that owns the seed form.)
       const titleByFormId = new Map<string, string>();
-      for (const f of owned as OwnedForm[]) titleByFormId.set(f.formId, f.title);
+      for (const f of owned as OwnedForm[]) {
+        if (f.formId === BUG_REPORT_FORM_ID) continue;
+        titleByFormId.set(f.formId, f.title);
+      }
 
       // Aggregate events per form_id.
       const aggregates = new Map<string, {
@@ -96,8 +109,10 @@ export function useInboxFeed() {
       }
 
       // Also include owned forms that have ZERO events — show as "no
-      // activity yet" so the user sees the full picture.
+      // activity yet" so the user sees the full picture. Same seed-form
+      // exclusion as above keeps these two paths consistent.
       for (const form of owned as OwnedForm[]) {
+        if (form.formId === BUG_REPORT_FORM_ID) continue;
         if (!aggregates.has(form.formId)) {
           entries.push({
             formId: form.formId,

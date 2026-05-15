@@ -1,9 +1,9 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Transaction } from '@mysten/sui/transactions';
-import { walrus, WalrusFile } from '@mysten/walrus';
-import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
+import { WalrusFile } from '@mysten/walrus';
+import { useWalrusClient } from '@/lib/useWalrusClient';
 import type { Field, FieldType, FormSchema } from './types';
 import { fieldMeta, groupOrder, groupLabels } from './fieldMeta';
 import FieldRow from './FieldRow';
@@ -37,12 +37,25 @@ interface Props {
 type PublishState =
   | { kind: 'idle' }
   | { kind: 'publishing'; step: string; subStep?: string }
-  | { kind: 'success'; blobId: string; txHash: string; formId: string; mode: 'create' | 'update' }
+  /**
+   * `indexerConfirmed`: true if `effects.status === 'success'` came back
+   *   within the wait window — we know for certain the tx landed.
+   * `indexerConfirmed`: false if `waitForTransaction` timed out — the tx
+   *   was *submitted* but we never saw confirmation. The Modal renders a
+   *   different copy in that case ("Submitted — verify on Suiscan").
+   */
+  | { kind: 'success'; blobId: string; txHash: string; formId: string; mode: 'create' | 'update'; indexerConfirmed: boolean }
   | { kind: 'error'; message: string };
 
 let nextId = 1000;
 const newId = () => `f${nextId++}`;
 
+/**
+ * Default field shape for a newly-added field of `type`. The TS exhaustive
+ * check on FieldType means TS will flag a missing case at compile-time, but
+ * we add a runtime throw too — saved templates from a future schema version
+ * would otherwise silently inject undefined defaults.
+ */
 function defaultsForType(type: FieldType): Partial<Field> {
   switch (type) {
     case 'dropdown':       return { label: 'Dropdown', options: ['Option A', 'Option B', 'Option C'] };
@@ -57,18 +70,67 @@ function defaultsForType(type: FieldType): Partial<Field> {
     case 'short_text':     return { label: 'Question' };
     case 'number':         return { label: 'Number' };
     case 'date':           return { label: 'Date' };
+    default: {
+      // Unreachable for valid FieldType values; throws if a tampered or
+      // future-version template injects an unknown type so the bug
+      // surfaces immediately rather than silently writing blank fields.
+      const exhaustive: never = type;
+      throw new Error(`unknown field type: ${String(exhaustive)}`);
+    }
   }
 }
 
+/**
+ * Map raw wallet/RPC error strings to user-actionable messages. Best-effort
+ * pattern-matching on substrings — the underlying SDKs don't expose stable
+ * error codes for most of these, so we go by what the strings look like in
+ * practice. Order matters: more-specific matches first.
+ */
 function friendlyError(msg: string): string {
   const lower = msg.toLowerCase();
-  if (lower.includes('user reject') || lower.includes('rejected')) return 'You rejected a wallet signature. Try Publish again.';
+
+  // User rejected at the wallet — most common, check first.
+  if (lower.includes('user reject') || lower.includes('rejected') || lower.includes('user denied')) {
+    return 'You rejected a wallet signature. Try Publish again.';
+  }
+
+  // Wrong network — wallet on Mainnet while app on Testnet (or vice versa).
+  if (lower.includes('wrongnetwork') || lower.includes('wrong network') || lower.includes('chain mismatch')) {
+    return 'Wallet is on the wrong network. Switch to Sui Testnet in your wallet, then retry.';
+  }
+
+  // Move abort codes from catat::form (see packages/contracts/sources/form.move:19-21):
+  //   ENotAcceptingSubmissions = 1
+  //   ENotOwner                = 2
+  //   ENoAccess                = 3
+  // If we ever bump the package, mirror the new constants here.
+  if (lower.includes('movabort') || lower.includes('moveabort') || lower.includes('abort_code')) {
+    if (lower.includes('::form::1') || lower.includes(', 1)')) return 'Form is paused — owner has disabled new submissions.';
+    if (lower.includes('::form::2') || lower.includes(', 2)')) return 'Only the form owner can perform this action.';
+    if (lower.includes('::form::3') || lower.includes(', 3)')) return 'Seal access denied — your wallet is not authorized to decrypt this form.';
+    return 'On-chain Move call aborted. The Form object may have been transferred or the package upgraded.';
+  }
+
+  // WAL balance — needed to pay Walrus storage tip.
   if (lower.includes('wal') && (lower.includes('insufficient') || lower.includes('balance'))) {
     return 'No spendable WAL token. Click your wallet (top-right) → "Get WAL (swap 0.5 SUI)". Stakely-faucet WAL is the wrong package and won\'t work.';
   }
+
+  // SUI gas — needed to pay tx gas.
   if (lower.includes('sui') && (lower.includes('insufficient') || lower.includes('balance'))) {
     return 'Wallet has no SUI for gas. Get testnet SUI from faucet.sui.io, then come back and click "Get WAL" in your wallet popup.';
   }
+
+  // Gas-coin version race — infrequent now that we wait between sigs.
+  if (lower.includes('object version') && lower.includes('unavailable')) {
+    return 'Sui gas coin is being reused by another in-flight tx. Refresh the page and retry.';
+  }
+
+  // Network/connectivity.
+  if (lower.includes('failed to fetch') || lower.includes('network request failed') || lower.includes('econnrefused')) {
+    return 'Network request failed. Check your internet, then retry. If persistent, an RPC node may be down.';
+  }
+
   return msg.length > 200 ? msg.slice(0, 200) + '…' : msg;
 }
 
@@ -77,11 +139,15 @@ const GALLERY_SEEN_KEY = 'catat:templates-seen';
 export default function BuilderSurface({ schema, onSchemaChange: setSchema, activeFormId, onFormPublished, surface, onSurfaceChange, onHome }: Props) {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(schema.fields[0]?.id ?? null);
   const [publishState, setPublishState] = useState<PublishState>({ kind: 'idle' });
-  // Templates gallery auto-opens the first time a user lands on Builder
-  // per browser session. After they close or pick once, they have to
-  // click "Browse templates" to re-open — no nag-loop on every reload.
+  // Templates gallery auto-opens when:
+  //   1. First time the user lands on Builder this browser session, OR
+  //   2. The canvas is empty (zero fields) — likely after a publish where
+  //      they want to start a new form. Without this, returning to Builder
+  //      with the default blank canvas leaves them staring at an empty page
+  //      with no obvious way to find templates again.
   const [galleryOpen, setGalleryOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
+    if (schema.fields.length === 0) return true;
     return sessionStorage.getItem(GALLERY_SEEN_KEY) !== '1';
   });
   const [saveTplOpen, setSaveTplOpen] = useState(false);
@@ -98,6 +164,13 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
   const sui = useSuiClient();
   const queryClient = useQueryClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+
+  // Mirror current account in a ref for use inside async multi-sig flows.
+  // The flow's closure captures `account` at call-time but the wallet may
+  // switch between sign #1 and sign #3 — `accountRef.current` always sees
+  // the latest account so we can detect mid-flow swaps and abort cleanly.
+  const accountRef = useRef(account);
+  useEffect(() => { accountRef.current = account; }, [account]);
 
   // Lightweight on-chain ownership check — read Form object's owner field
   // so we can show the "Update this form" button only when the connected
@@ -124,17 +197,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
     activeFormId !== BUG_REPORT_FORM_ID &&
     formMetaQuery.data?.owner === account.address;
 
-  const walrusClient = useMemo(() => {
-    return sui.$extend(
-      walrus({
-        wasmUrl: walrusWasmUrl,
-        uploadRelay: {
-          host: 'https://upload-relay.testnet.walrus.space',
-          sendTip: { max: 1_000 },
-        },
-      }),
-    );
-  }, [sui]);
+  const walrusClient = useWalrusClient();
 
   const addField = (type: FieldType) => {
     const id = newId();
@@ -179,6 +242,19 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       return;
     }
 
+    // Lock onto the wallet that initiated this publish. If the user switches
+    // accounts between sigs (Slush/Suiet allow this without page reload), we
+    // abort — otherwise we'd reserve a Walrus blob with wallet A but mint
+    // the Form on Sui under wallet B, leaving the user thinking they own
+    // the form when they don't.
+    const capturedAddress = account.address;
+    const assertSameWallet = () => {
+      const current = accountRef.current?.address;
+      if (current !== capturedAddress) {
+        throw new Error(`Wallet changed mid-publish (${capturedAddress.slice(0, 8)}… → ${current?.slice(0, 8) ?? 'disconnected'}…). Reconnect the original wallet and retry.`);
+      }
+    };
+
     try {
       // 1. Upload schema as Walrus blob
       const schemaJson = JSON.stringify(schema, null, 2);
@@ -200,6 +276,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
         throw new Error('Walrus encode returned no blobId — refusing to start publish flow');
       }
 
+      assertSameWallet();
       setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 3' });
       const reserveTx = flow.register({ epochs: 26, owner: account.address, deletable: false });
       const reserveResult = await signAndExecute({ transaction: reserveTx });
@@ -212,11 +289,13 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       // didn't reliably surface the new Form object via the public RPC,
       // leaving the publish flow stuck post-sign-2). Three smaller txs
       // index independently and each digest is debuggable on its own.
+      assertSameWallet();
       setPublishState({ kind: 'publishing', step: 'Sign Walrus certify', subStep: '2 of 3' });
       const certifyTx = flow.certify();
       const certifyResult = await signAndExecute({ transaction: certifyTx });
       console.log('[publish] Walrus certify confirmed, digest:', certifyResult.digest);
 
+      assertSameWallet();
       setPublishState({ kind: 'publishing', step: 'Sign Sui create_form', subStep: '3 of 3' });
       const createTx = new Transaction();
       createTx.moveCall({
@@ -269,7 +348,9 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       console.log('[publish] new Form object id:', newFormId);
       onFormPublished(newFormId);
 
-      setPublishState({ kind: 'success', blobId, txHash: createResult.digest, formId: newFormId, mode: 'create' });
+      // Reaching this point means objectChanges returned a Form object id —
+      // the tx was definitively confirmed by the indexer.
+      setPublishState({ kind: 'success', blobId, txHash: createResult.digest, formId: newFormId, mode: 'create', indexerConfirmed: true });
       queryClient.invalidateQueries({ queryKey: ['form-stats'] });
       queryClient.invalidateQueries({ queryKey: ['form-real-submissions'] });
     } catch (e) {
@@ -304,6 +385,17 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       return;
     }
 
+    // Same wallet-swap guard as handlePublish — the consequences here are
+    // worse: an update from wallet B against a Form owned by wallet A
+    // will revert with ENotOwner after wasting one Walrus reserve+certify.
+    const capturedAddress = account.address;
+    const assertSameWallet = () => {
+      const current = accountRef.current?.address;
+      if (current !== capturedAddress) {
+        throw new Error(`Wallet changed mid-update (${capturedAddress.slice(0, 8)}… → ${current?.slice(0, 8) ?? 'disconnected'}…). Reconnect the original wallet and retry.`);
+      }
+    };
+
     try {
       const schemaJson = JSON.stringify(schema, null, 2);
       const file = WalrusFile.from({
@@ -318,6 +410,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       const blobId = encoded.blobId;
       if (!blobId) throw new Error('Walrus encode returned no blobId');
 
+      assertSameWallet();
       setPublishState({ kind: 'publishing', step: 'Sign Walrus reserve', subStep: '1 of 3' });
       const reserveTx = flow.register({ epochs: 26, owner: account.address, deletable: false });
       const reserveResult = await signAndExecute({ transaction: reserveTx });
@@ -325,11 +418,13 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       setPublishState({ kind: 'publishing', step: 'Uploading via Walrus relay…' });
       await flow.upload({ digest: reserveResult.digest });
 
+      assertSameWallet();
       setPublishState({ kind: 'publishing', step: 'Sign Walrus certify', subStep: '2 of 3' });
       const certifyTx = flow.certify();
       await signAndExecute({ transaction: certifyTx });
       console.log('[update] Walrus certify confirmed');
 
+      assertSameWallet();
       setPublishState({ kind: 'publishing', step: 'Sign Sui update_schema', subStep: '3 of 3' });
       const updateTx = new Transaction();
       updateTx.moveCall({
@@ -343,6 +438,15 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
       console.log('[update] Sui update_schema submitted, digest:', updateResult.digest);
 
       setPublishState({ kind: 'publishing', step: 'Waiting for Sui indexer…', subStep: '~10–20s' });
+      // Two distinct failure modes here, treated differently:
+      //   (a) `waitForTransaction` itself throws (timeout, RPC outage, network)
+      //       → tolerable — the tx may still have landed, indexer just slow.
+      //         Log and continue to success state.
+      //   (b) `effects.status === 'failure'` → tx was finalized but the Move
+      //       call aborted on-chain. Schema was NOT updated. MUST surface to
+      //       user, otherwise we lie about success and trash demo trust.
+      let chainFailureMessage: string | null = null;
+      let indexerConfirmed = false;
       try {
         const txDetails = await sui.waitForTransaction({
           digest: updateResult.digest,
@@ -350,10 +454,15 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
           timeout: 30_000,
         });
         if (txDetails.effects?.status?.status === 'failure') {
-          throw new Error(`On-chain execution failed: ${txDetails.effects.status.error ?? 'unknown'}`);
+          chainFailureMessage = txDetails.effects.status.error ?? 'unknown abort';
+        } else if (txDetails.effects?.status?.status === 'success') {
+          indexerConfirmed = true;
         }
       } catch (waitErr) {
-        console.warn('[update] chain confirmation slow:', waitErr);
+        console.warn('[update] indexer wait timed out (tx may still have landed):', waitErr);
+      }
+      if (chainFailureMessage) {
+        throw new Error(`On-chain update_schema reverted: ${chainFailureMessage}`);
       }
 
       setPublishState({
@@ -362,6 +471,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
         txHash: updateResult.digest,
         formId: activeFormId, // same form_id — we updated in place
         mode: 'update',
+        indexerConfirmed,
       });
       // Invalidate so MyFormsPicker + useFormSchema + admin all re-read.
       queryClient.invalidateQueries({ queryKey: ['form-stats'] });
@@ -626,6 +736,7 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
           formId={publishState.formId}
           schemaTitle={schema.title}
           mode={publishState.mode}
+          indexerConfirmed={publishState.indexerConfirmed}
           onClose={() => setPublishState({ kind: 'idle' })}
         />
       )}
@@ -652,7 +763,20 @@ export default function BuilderSurface({ schema, onSchemaChange: setSchema, acti
         <SaveTemplateModal
           schema={schema}
           onSave={({ name, emoji, description }) => {
-            saveCustomTemplate({ name, emoji, description, schema });
+            const result = saveCustomTemplate({ name, emoji, description, schema });
+            if (!result.persist.ok) {
+              // Surface the failure instead of pretending the save worked.
+              // The template would otherwise vanish on the next refresh and
+              // the user wouldn't know why.
+              const reasonText =
+                result.persist.reason === 'quota'
+                  ? 'localStorage is full — clear old templates or browser data and retry.'
+                  : result.persist.reason === 'private-mode'
+                  ? "Browser is in private mode — localStorage isn't persisted. Switch to a normal window."
+                  : `Couldn't save: ${result.persist.message}`;
+              alert(`Template not saved.\n\n${reasonText}`);
+              return;
+            }
             setCustomTplVersion(v => v + 1);
             setSaveTplOpen(false);
           }}
@@ -669,10 +793,12 @@ interface ModalProps {
   formId: string;
   schemaTitle: string;
   mode: 'create' | 'update';
+  /** Whether the indexer confirmed the tx within the wait window. */
+  indexerConfirmed: boolean;
   onClose: () => void;
 }
 
-function PublishedModal({ blobId, txHash, formId, schemaTitle, mode, onClose }: ModalProps) {
+function PublishedModal({ blobId, txHash, formId, schemaTitle, mode, indexerConfirmed, onClose }: ModalProps) {
   const blobShort = `${blobId.slice(0, 12)}…${blobId.slice(-6)}`;
   const txShort = `${txHash.slice(0, 12)}…${txHash.slice(-6)}`;
   const formShort = `${formId.slice(0, 12)}…${formId.slice(-6)}`;
@@ -691,16 +817,40 @@ function PublishedModal({ blobId, txHash, formId, schemaTitle, mode, onClose }: 
     }
   };
 
+  // When the indexer never confirmed within the wait window, soften every
+  // visible "this happened on-chain!" claim — the tx is *probably* fine but
+  // we don't have positive proof. Encourages the user to check Suiscan.
+  const stampLabel = !indexerConfirmed
+    ? 'submitted'
+    : mode === 'update' ? 'updated!' : 'published!';
+  const headline = !indexerConfirmed
+    ? mode === 'update' ? 'Update submitted — verify on Suiscan.' : 'Publish submitted — verify on Suiscan.'
+    : mode === 'update' ? 'Schema updated on-chain.' : 'Your form is on-chain.';
+
   return (
     <div className="publish-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="publish-modal">
-        <div className="publish-stamp" style={mode === 'update' ? { background: 'var(--marker-green)' } : undefined}>
-          {mode === 'update' ? 'updated!' : 'published!'}
+        <div
+          className="publish-stamp"
+          style={
+            !indexerConfirmed
+              ? { background: 'var(--marker-yellow, #d4a44d)' }
+              : mode === 'update'
+                ? { background: 'var(--marker-green)' }
+                : undefined
+          }
+        >
+          {stampLabel}
         </div>
-        <h3>{mode === 'update' ? 'Schema updated on-chain.' : 'Your form is on-chain.'}</h3>
+        <h3>{headline}</h3>
         <p>
           <b>{schemaTitle}</b> —{' '}
-          {mode === 'update' ? (
+          {!indexerConfirmed ? (
+            <>
+              tx submitted to the wallet but the Sui indexer didn't confirm within 30s.
+              The tx <i>probably</i> landed — check Suiscan below to verify before sharing the link.
+            </>
+          ) : mode === 'update' ? (
             <>
               new schema blob on Walrus, <code style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>update_schema</code> recorded on Sui.
               {' '}

@@ -28,6 +28,10 @@ export default function InboxSurface({ surface, onSurfaceChange, onOpenInAdmin, 
   const recents = recentQuery.data ?? [];
   const newCount = entries.reduce((sum, e) => sum + e.submissionCount, 0);
   const formCount = entries.length;
+  // Don't show "0 total submissions" alongside an error banner — that
+  // implies the user genuinely has zero submissions when the truth is "the
+  // query crashed." Counters render only when both feeds succeeded.
+  const countersAreReliable = !feedQuery.isError && !recentQuery.isError && !feedQuery.isLoading;
 
   return (
     <>
@@ -55,12 +59,15 @@ export default function InboxSurface({ surface, onSurfaceChange, onOpenInAdmin, 
             Your <span className="marker">activity feed.</span>
           </h1>
           <p style={{ fontFamily: 'var(--body)', fontSize: 18, color: 'var(--ink-soft)', margin: '0 0 22px', maxWidth: '60ch' }}>
-            What got new — across every form you own. Click a row to drill into <b>Admin</b>
+            What got new — across every form you own. Click a row to drill into <b>Admin</b>{' '}
             for triage, decrypt, filters, and exports.
           </p>
 
-          {/* aggregate counters — gives "what's new" at a glance */}
-          {account && (
+          {/* aggregate counters — gives "what's new" at a glance.
+              Hidden when any underlying query errored, to avoid a "0
+              submissions" line directly above an error banner saying "the
+              query crashed" — that combo is misleading. */}
+          {account && countersAreReliable && (
             <div className="inbox-summary">
               <div className="is-card">
                 <b>{newCount}</b>
@@ -94,12 +101,22 @@ export default function InboxSurface({ surface, onSurfaceChange, onOpenInAdmin, 
 
           {feedQuery.isError && (
             <div className="seed-form-banner err">
-              <b>⚠ couldn't load feed</b>
+              <b>⚠ couldn't load form list</b>
               <span>{(feedQuery.error as Error).message.slice(0, 200)}</span>
             </div>
           )}
 
-          {account && !feedQuery.isLoading && entries.length === 0 && (
+          {/* Recent-submissions feed is a separate query — surface its
+              error independently so a partial failure (e.g. one Walrus
+              gateway flaky) doesn't masquerade as an empty inbox. */}
+          {account && recentQuery.isError && (
+            <div className="seed-form-banner err">
+              <b>⚠ couldn't load recent submissions</b>
+              <span>{(recentQuery.error as Error).message.slice(0, 200)}</span>
+            </div>
+          )}
+
+          {account && !feedQuery.isLoading && !feedQuery.isError && entries.length === 0 && (
             <div className="adm-empty">
               No forms yet.
               <small>publish a form via Builder; activity appears here as respondents fill the share URL.</small>

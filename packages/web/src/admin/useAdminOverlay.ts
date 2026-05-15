@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
-import { walrus, WalrusFile } from '@mysten/walrus';
-import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
+import { WalrusFile } from '@mysten/walrus';
+import { useWalrusClient } from '@/lib/useWalrusClient';
 import type { Submission } from './types';
 
 /**
@@ -37,10 +37,18 @@ function loadFromLocal(formId: string): { overlay: OverlayMap; lastBackup?: Back
   try {
     const raw = window.localStorage.getItem(lsKey(formId));
     if (!raw) return { overlay: new Map() };
-    const parsed = JSON.parse(raw) as PersistedShape;
+    const parsed = JSON.parse(raw) as Partial<PersistedShape>;
     if (parsed.version !== 1 || parsed.formId !== formId) return { overlay: new Map() };
+    // Defensive: localStorage values can be tampered (extension, manual
+    // devtools edit, future schema migration leaving v1 keys around). If
+    // `patches` is anything other than a plain object, Object.entries will
+    // throw and crash the entire AdminSurface render. Coerce to {}.
+    const patchesRaw = parsed.patches;
+    const patches = (patchesRaw && typeof patchesRaw === 'object' && !Array.isArray(patchesRaw))
+      ? (patchesRaw as Record<string, OverlayPatch>)
+      : {};
     return {
-      overlay: new Map(Object.entries(parsed.patches)),
+      overlay: new Map(Object.entries(patches)),
       lastBackup: parsed.lastBackup,
     };
   } catch (err) {
@@ -78,14 +86,15 @@ export function useAdminOverlay(activeFormId: string) {
   const [lastBackup, setLastBackup] = useState<BackupEntry | undefined>();
   const [busy, setBusy] = useState<'idle' | 'backing-up' | 'restoring'>('idle');
   const lastFormIdRef = useRef<string | null>(null);
+  // Mirror lastBackup in a ref so setOverlay's closure always reads the
+  // latest backup metadata. Without this, after a backup completes and
+  // setLastBackup updates state, the next patchSubmission call still
+  // persists the stale (undefined or older) lastBackup, intermittently
+  // wiping the "↗ last backup" link.
+  const lastBackupRef = useRef<BackupEntry | undefined>(lastBackup);
+  useEffect(() => { lastBackupRef.current = lastBackup; }, [lastBackup]);
 
-  const walrusClient = useMemo(() => sui.$extend(walrus({
-    wasmUrl: walrusWasmUrl,
-    uploadRelay: {
-      host: 'https://upload-relay.testnet.walrus.space',
-      sendTip: { max: 1_000 },
-    },
-  })), [sui]);
+  const walrusClient = useWalrusClient();
 
   // Hydrate from localStorage when the active form changes.
   useEffect(() => {
@@ -96,14 +105,16 @@ export function useAdminOverlay(activeFormId: string) {
     setLastBackup(lb);
   }, [activeFormId]);
 
-  // Mutator that also persists to localStorage immediately.
+  // Mutator that also persists to localStorage immediately. Reads
+  // lastBackup from the ref so we never persist a stale value (see
+  // lastBackupRef declaration for the bug context).
   const setOverlay = useCallback((updater: (prev: OverlayMap) => OverlayMap) => {
     setOverlayState(prev => {
       const next = updater(prev);
-      saveToLocal(activeFormId, next, lastBackup);
+      saveToLocal(activeFormId, next, lastBackupRef.current);
       return next;
     });
-  }, [activeFormId, lastBackup]);
+  }, [activeFormId]);
 
   const patchSubmission = useCallback((id: string, patch: OverlayPatch) => {
     setOverlay(prev => {

@@ -1,10 +1,8 @@
-import { useMemo } from 'react';
-import { useSuiClient } from '@mysten/dapp-kit';
+import { useSuiClient, useCurrentAccount } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
-import { walrus } from '@mysten/walrus';
-import walrusWasmUrl from '@mysten/walrus-wasm/web/walrus_wasm_bg.wasm?url';
-import { CATAT_PACKAGE_ID } from './contract';
+import { BUG_REPORT_FORM_ID, CATAT_PACKAGE_ID } from './contract';
 import { useOwnedForms, type OwnedForm } from './useOwnedForms';
+import { useWalrusClient } from './useWalrusClient';
 
 export interface RecentSubmission {
   formId: string;
@@ -40,24 +38,27 @@ const RECENT_LIMIT = 12;
  */
 export function useRecentSubmissions() {
   const sui = useSuiClient();
+  const account = useCurrentAccount();
   const ownedQuery = useOwnedForms();
   const owned = ownedQuery.data;
 
-  const walrusClient = useMemo(() => sui.$extend(walrus({
-    wasmUrl: walrusWasmUrl,
-    uploadRelay: {
-      host: 'https://upload-relay.testnet.walrus.space',
-      sendTip: { max: 1_000 },
-    },
-  })), [sui]);
+  const walrusClient = useWalrusClient();
 
   return useQuery<RecentSubmission[]>({
-    queryKey: ['recent-submissions', owned?.map(f => f.formId).join(',')],
-    enabled: !!owned,
+    // See useInboxFeed for the wallet-address-in-key rationale — same bug
+    // class otherwise.
+    queryKey: ['recent-submissions', account?.address ?? 'no-wallet', owned?.length ?? 0, owned?.map(f => f.formId).join(',') ?? ''],
+    enabled: !!account && !!owned && !ownedQuery.isLoading,
     queryFn: async () => {
       if (!owned || owned.length === 0) return [];
+      // Same seed-form exclusion policy as useInboxFeed — the public demo
+      // form's submissions don't appear in the personal Inbox feed even if
+      // the connected wallet happens to own it.
       const titleByFormId = new Map<string, string>();
-      for (const f of owned as OwnedForm[]) titleByFormId.set(f.formId, f.title);
+      for (const f of owned as OwnedForm[]) {
+        if (f.formId === BUG_REPORT_FORM_ID) continue;
+        titleByFormId.set(f.formId, f.title);
+      }
 
       const eventType = `${CATAT_PACKAGE_ID}::form::SubmissionAdded`;
       const result = await sui.queryEvents({

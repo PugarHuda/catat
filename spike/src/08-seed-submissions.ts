@@ -308,6 +308,12 @@ async function submitOne(index: number, sampleFn: SampleFn): Promise<void> {
   const flow = sui.walrus.writeFilesFlow({ files: [file] });
   const encoded = await flow.encode();
   const blobId = encoded.blobId;
+  if (!blobId) {
+    // Defensive — if Walrus SDK ever returns null/undefined here, the rest
+    // of the flow would silently encode "undefined" as the blob_id string
+    // and pollute on-chain state.
+    throw new Error('[seed] Walrus encode returned no blobId');
+  }
 
   // Wait between sigs to avoid gas-coin version race (see commit
   // b08a336 — first run all failed because the SDK's local object
@@ -331,7 +337,17 @@ async function submitOne(index: number, sampleFn: SampleFn): Promise<void> {
     ],
   });
   const recordResult = await sui.signAndExecuteTransaction({ transaction: recordTx, signer: kp });
-  await sui.waitForTransaction({ digest: recordResult.digest });
+  // Inspect effects.status — `signAndExecuteTransaction` resolves on
+  // submission, NOT on success. A Move abort (ENotOwner, gate misconfig,
+  // package upgrade mismatch) lands as `status: 'failure'` and would
+  // otherwise be silently logged as success.
+  const recordDetails = await sui.waitForTransaction({
+    digest: recordResult.digest,
+    options: { showEffects: true },
+  });
+  if (recordDetails.effects?.status?.status === 'failure') {
+    throw new Error(`[seed] Move call submit() reverted: ${recordDetails.effects.status.error ?? 'unknown'}`);
+  }
 
   const headline =
     (typeof values.f_title === 'string' && values.f_title) ||
@@ -345,16 +361,29 @@ async function submitOne(index: number, sampleFn: SampleFn): Promise<void> {
   console.log(`[seed] blob ${blobId}`);
 }
 
+// Track failures across the whole batch so a single bad submission doesn't
+// abort the loop, but the workflow still exits non-zero — otherwise a green
+// CI run hides 5/7 dropped submissions and we ship unreliable seed data.
+const failures: Array<{ index: number; error: Error }> = [];
 for (let i = 0; i < samplesToUse.length; i++) {
   try {
     await submitOne(i, samplesToUse[i]!);
     await new Promise(r => setTimeout(r, 1500));
   } catch (err) {
     console.error(`[seed] submission ${i + 1} failed:`, err);
+    failures.push({ index: i, error: err as Error });
   }
 }
 
-console.log(`\n[seed] done — https://suiscan.xyz/testnet/object/${FORM_ID}`);
+const succeeded = samplesToUse.length - failures.length;
+console.log(`\n[seed] done — ${succeeded}/${samplesToUse.length} succeeded — https://suiscan.xyz/testnet/object/${FORM_ID}`);
+if (failures.length > 0) {
+  console.error(`\n[seed] ${failures.length} submission(s) failed:`);
+  for (const { index, error } of failures) {
+    console.error(`  - sample #${index + 1}: ${error.message}`);
+  }
+  process.exit(1);
+}
 
 function req(k: string): string {
   const v = process.env[k];

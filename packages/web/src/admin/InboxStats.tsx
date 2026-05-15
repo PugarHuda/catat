@@ -14,7 +14,12 @@ interface Props {
  * status bars + (optional) severity bars. SVG hand-drawn to match
  * paper aesthetic; no chart library dependency.
  */
-export default function InboxStats({ submissions, hasSeverityField }: Props) {
+export default function InboxStats({ submissions: rawSubmissions, hasSeverityField }: Props) {
+  // Drop placeholder rows (failed-blob synth entries) so charts reflect
+  // real data only — a Walrus relay outage shouldn't add a fake spike to
+  // the sparkline or move the status/severity bars.
+  const submissions = useMemo(() => rawSubmissions.filter(s => !s._isPlaceholder), [rawSubmissions]);
+
   // ─── Sparkline data: bucket submissions into the last 7 days ───────
   const buckets = useMemo(() => {
     const now = Date.now();

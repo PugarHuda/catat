@@ -38,6 +38,14 @@ export function useSealDecrypt() {
   const sui = useSuiClient();
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
   const sessionKeyRef = useRef<SessionKey | null>(null);
+  // In-flight session-key creation promise. Multiple decrypt() calls fired
+  // concurrently (e.g. user clicks decrypt on field A, then quickly on
+  // field B before signing) all await the SAME wallet popup instead of
+  // each spawning their own — without this, both signPersonalMessage
+  // popups would resolve and race to set sessionKeyRef.current, which can
+  // leave the second-resolving key written there even though the first
+  // call already used a different one.
+  const sessionKeyPromiseRef = useRef<Promise<SessionKey> | null>(null);
 
   const sealClient = useMemo(
     () =>
@@ -64,17 +72,31 @@ export function useSealDecrypt() {
 
       if (sessionStale) {
         try {
-          sessionKey = await SessionKey.create({
-            address: account.address,
-            packageId: meta.packageId,
-            ttlMin: SESSION_TTL_MIN,
-            suiClient: sui as unknown as Parameters<typeof SessionKey.create>[0]['suiClient'],
-          });
-          const sig = await signPersonalMessage({
-            message: sessionKey.getPersonalMessage(),
-          });
-          await sessionKey.setPersonalMessageSignature(sig.signature);
-          sessionKeyRef.current = sessionKey;
+          // If another concurrent caller already started a session-key
+          // creation, await theirs instead of starting a second wallet
+          // popup. Distinct addresses/packageIds break sharing — we only
+          // share when the in-flight key matches what THIS caller needs.
+          if (!sessionKeyPromiseRef.current) {
+            sessionKeyPromiseRef.current = (async () => {
+              const newKey = await SessionKey.create({
+                address: account.address,
+                packageId: meta.packageId,
+                ttlMin: SESSION_TTL_MIN,
+                suiClient: sui as unknown as Parameters<typeof SessionKey.create>[0]['suiClient'],
+              });
+              const sig = await signPersonalMessage({
+                message: newKey.getPersonalMessage(),
+              });
+              await newKey.setPersonalMessageSignature(sig.signature);
+              sessionKeyRef.current = newKey;
+              return newKey;
+            })().finally(() => {
+              // Clear the in-flight slot so a future stale-session check
+              // can spawn a fresh popup later.
+              sessionKeyPromiseRef.current = null;
+            });
+          }
+          sessionKey = await sessionKeyPromiseRef.current;
         } catch (err) {
           throw tagPhase('session-key', err);
         }
