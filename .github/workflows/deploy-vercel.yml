@@ -45,25 +45,17 @@ jobs:
         # of May 2026.
         run: npm install --global vercel@37
 
-      - name: Pull Vercel project config
-        # Syncs the project's framework + env vars + build settings down
-        # to the runner. `--yes` accepts the prompt non-interactively.
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: packages/web
-
-      - name: Build with Vercel
-        # Uses the project's configured build command (npm run build →
-        # tsc -b && vite build). Output goes to .vercel/output/ which
-        # `vercel deploy --prebuilt` then ships as-is.
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: packages/web
-
       - name: Deploy to Vercel production
         id: deploy
-        # --prebuilt skips Vercel's remote build (we already built locally
-        # in the previous step), faster + identical artifact.
+        # Remote-build flow (no --prebuilt): upload source, Vercel builds
+        # on their infra with whatever Node version the project is
+        # configured for. This matches the manual `vercel --prod` flow.
+        # We skip `vercel pull` + `vercel build` because the project is
+        # set to Node 24.x and Vercel CLI's local build doesn't support
+        # that yet — letting Vercel do the build sidesteps the version
+        # mismatch entirely.
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          URL=$(vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deployed to $URL"
         working-directory: packages/web
