@@ -1,0 +1,77 @@
+name: Deploy to Vercel
+
+# Auto-deploy production to https://catat-walrus.vercel.app on every push
+# to main that touches the web package. Manual trigger also available via
+# the Actions tab.
+#
+# Setup (one-time, by repo admin):
+#   1. Create a Vercel access token: https://vercel.com/account/tokens
+#      Scope = "Full account" (the cli needs project + deploy permissions).
+#   2. Add it as a GitHub secret named `VERCEL_TOKEN`:
+#      gh secret set VERCEL_TOKEN
+#
+# The non-secret org + project IDs are hardcoded below — they're public
+# identifiers, knowing them doesn't grant access without the token.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/web/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-vercel.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_NdlwQPgRp4Fn2WzyuKh1BLB2
+      VERCEL_PROJECT_ID: prj_iRTd7GqPWInWu1xkjhSRdh4kEP10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        # Pin to a specific major to avoid breaking changes mid-hackathon.
+        # Vercel CLI is backwards-compatible per major; v37 is current as
+        # of May 2026.
+        run: npm install --global vercel@37
+
+      - name: Pull Vercel project config
+        # Syncs the project's framework + env vars + build settings down
+        # to the runner. `--yes` accepts the prompt non-interactively.
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: packages/web
+
+      - name: Build with Vercel
+        # Uses the project's configured build command (npm run build →
+        # tsc -b && vite build). Output goes to .vercel/output/ which
+        # `vercel deploy --prebuilt` then ships as-is.
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: packages/web
+
+      - name: Deploy to Vercel production
+        id: deploy
+        # --prebuilt skips Vercel's remote build (we already built locally
+        # in the previous step), faster + identical artifact.
+        run: |
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $URL"
+        working-directory: packages/web
+
+      - name: Summary
+        run: |
+          echo "## ✅ Deployed to Vercel" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Deployment URL: ${{ steps.deploy.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Aliased to: https://catat-walrus.vercel.app" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
