@@ -40,10 +40,12 @@ jobs:
           cache: 'npm'
 
       - name: Install Vercel CLI
-        # Pin to a specific major to avoid breaking changes mid-hackathon.
-        # Vercel CLI is backwards-compatible per major; v37 is current as
-        # of May 2026.
-        run: npm install --global vercel@37
+        # Vercel server-side periodically requires CLI ≥ N.x for new
+        # endpoint shapes. Use `latest` so deploys don't suddenly break
+        # when Vercel rolls API versions — the trade-off is occasional
+        # CLI behavior changes, but those are rare and usually backwards-
+        # compatible. v47.2.2 is the current floor as of May 2026.
+        run: npm install --global vercel@latest
 
       - name: Deploy to Vercel production
         id: deploy
