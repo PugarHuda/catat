@@ -6,6 +6,8 @@ import InboxStats from './InboxStats';
 import MyFormsPicker from '@/components/MyFormsPicker';
 import AdminTable from './AdminTable';
 import AdminDetail from './AdminDetail';
+import ExportMenu from './ExportMenu';
+import { exportSubmissions, triggerDownload, type ExportFormat } from './exporters';
 import { useRealSubmissions } from './useRealSubmissions';
 import { useAdminOverlay } from './useAdminOverlay';
 import SurfaceTabs from '@/components/SurfaceTabs';
@@ -213,25 +215,27 @@ export default function AdminSurface({ schema, activeFormId, onActiveFormChange,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, focusedId, openId]);
 
+  // Counters exclude placeholder rows (failed-blob synth entries) so a
+  // transient Walrus relay outage doesn't inflate "X submissions" or "Y new"
+  // in the Inbox header. Placeholders are still rendered as table rows with
+  // a "blob unreachable" body — they're just not counted.
+  const realReal = realSubmissions.filter(s => !s._isPlaceholder);
+  const allReal = allSubmissions.filter(s => !s._isPlaceholder);
   const counts = {
-    total: allSubmissions.length,
-    real: realSubmissions.length,
+    total: allReal.length,
+    real: realReal.length,
     mock: submissions.length,
-    sealed: allSubmissions.filter(hasEncryptedField).length,
-    new: allSubmissions.filter(s => s.status === 'new').length,
+    sealed: allReal.filter(hasEncryptedField).length,
+    new: allReal.filter(s => s.status === 'new').length,
   };
 
-  const handleExport = () => {
-    const csv = exportToCsv(schema, filtered);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `catat-${schema.id}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // Sealed fields export as "[sealed]" — the decrypt hook is a per-call
+  // async fn (no in-component cache), so we can't synchronously fold
+  // plaintext into the bytestream. Future improvement: surface a "Decrypt
+  // & export" button that batches decrypt over filtered rows first.
+  const handleExport = (format: ExportFormat) => {
+    const result = exportSubmissions(format, { schema, submissions: filtered });
+    triggerDownload(result);
   };
 
   const openSubmission = openId ? allSubmissions.find(s => s.id === openId) ?? null : null;
@@ -374,9 +378,7 @@ export default function AdminSurface({ schema, activeFormId, onActiveFormChange,
             <button type="button" className="export-btn-paper" onClick={() => realQuery.refetch()} disabled={realQuery.isFetching}>
               {realQuery.isFetching ? '⟳ refreshing…' : '⟳ refresh chain'}
             </button>
-            <button type="button" className="export-btn-paper" onClick={handleExport}>
-              ⬇ export CSV
-            </button>
+            <ExportMenu disabled={filtered.length === 0} onExport={handleExport} />
           </div>
 
           <div className="admin-grid">
@@ -422,38 +424,4 @@ export default function AdminSurface({ schema, activeFormId, onActiveFormChange,
   );
 }
 
-function exportToCsv(schema: FormSchema, submissions: Submission[]): string {
-  const fieldHeaders = schema.fields.map(f => (f.encrypted ? `${f.label} [encrypted]` : f.label));
-  const headers = ['id', 'status', 'priority', 'submitted_at_iso', 'submitter', 'blob_id', 'tx_hash', 'source', ...fieldHeaders];
-  const rows = submissions.map(s => {
-    const meta = [
-      s.id,
-      s.status,
-      s.priority,
-      new Date(s.submitted_at_ms).toISOString(),
-      s.submitter ?? '',
-      s.blob_id,
-      s.tx_hash,
-      s.source ?? 'mock',
-    ];
-    const fieldValues = schema.fields.map(f => {
-      const v = s.values[f.id];
-      if (f.encrypted) return '[encrypted]';
-      if (v == null) return '';
-      if (Array.isArray(v))
-        return v
-          .map(item => (typeof item === 'object' && item !== null && 'filename' in item ? (item as { filename: string }).filename : String(item)))
-          .join('; ');
-      if (typeof v === 'object') return JSON.stringify(v);
-      return String(v);
-    });
-    return [...meta, ...fieldValues];
-  });
-  return [headers, ...rows].map(row => row.map(escapeCsvCell).join(',')).join('\n');
-}
-
-function escapeCsvCell(cell: unknown): string {
-  if (cell == null) return '';
-  const s = String(cell);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+// Export logic moved to ./exporters.ts — see ExportMenu + handleExport.
