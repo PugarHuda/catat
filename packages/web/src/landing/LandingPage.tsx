@@ -9,12 +9,14 @@ interface Props {
    *  (e.g. 'verify' when the user clicks the Verify nav link). Default
    *  surface when called with no argument is 'builder'. */
   onEnterApp: (surface?: Surface) => void;
+  /** Open the in-app docs viewer (separate `View`, not a Surface). */
+  onOpenDocs: () => void;
 }
 
-export default function LandingPage({ onEnterApp }: Props) {
+export default function LandingPage({ onEnterApp, onOpenDocs }: Props) {
   return (
     <>
-      <Header onEnterApp={onEnterApp} />
+      <Header onEnterApp={onEnterApp} onOpenDocs={onOpenDocs} />
       <Hero onEnterApp={onEnterApp} />
       <Band />
       <Features />
@@ -25,7 +27,7 @@ export default function LandingPage({ onEnterApp }: Props) {
   );
 }
 
-function Header({ onEnterApp }: Props) {
+function Header({ onEnterApp, onOpenDocs }: Pick<Props, 'onEnterApp' | 'onOpenDocs'>) {
   return (
     <header className="nav">
       <div className="wrap nav-row">
@@ -38,13 +40,7 @@ function Header({ onEnterApp }: Props) {
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
           <button type="button" onClick={() => onEnterApp('verify')}>Verify ↗</button>
-          <a
-            href="https://github.com/PugarHuda/catat#readme"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Docs ↗
-          </a>
+          <button type="button" onClick={onOpenDocs}>Docs ↗</button>
         </nav>
         <div className="nav-cta">
           <button type="button" className="btn btn-primary" onClick={() => onEnterApp()}>
@@ -65,7 +61,7 @@ function Arrow() {
   );
 }
 
-function Hero({ onEnterApp }: Props) {
+function Hero({ onEnterApp }: Pick<Props, 'onEnterApp'>) {
   const { data: stats, isLoading: statsLoading } = useFormStats();
   const count = stats?.count ?? 0;
 
@@ -352,7 +348,7 @@ function StepArt({ rows }: { rows: Array<[string, string]> }) {
   );
 }
 
-function CTA({ onEnterApp }: Props) {
+function CTA({ onEnterApp }: Pick<Props, 'onEnterApp'>) {
   return (
     <section className="cta-section">
       <div className="wrap">

@@ -12,8 +12,9 @@ const RunnerSurface = lazy(() => import('./runner/RunnerSurface'));
 const InboxSurface = lazy(() => import('./inbox/InboxSurface'));
 const AdminSurface = lazy(() => import('./admin/AdminSurface'));
 const VerifySurface = lazy(() => import('./verify/VerifySurface'));
+const DocsView = lazy(() => import('./docs/DocsView'));
 
-type View = 'landing' | 'app';
+type View = 'landing' | 'app' | 'docs';
 
 /**
  * Read the optional `?f=0x...` form_id from the URL. Use case: a form
@@ -29,7 +30,15 @@ function parseUrlParams(): { formId?: string; surface?: Surface; embed: boolean 
   const f = sp.get('f');
   const formId = f && /^0x[a-fA-F0-9]{64}$/.test(f) ? f : undefined;
   const goParam = sp.get('go');
-  const surfaceMap: Record<string, Surface> = {
+
+  // SECURITY: when a formId arrives via the URL, the visitor is in
+  // "respondent context" — clicked a share link sent by someone else. They
+  // must NOT be able to use ?go= to land in another publisher's Admin /
+  // Inbox / Builder where the in-memory schema state from their respondent
+  // session would leak into a different surface. We therefore restrict the
+  // surface whitelist to runner-only when ?f= is set, regardless of ?go=.
+  // ?full=1 is also ignored — embed mode is locked on for share links.
+  const fullSurfaceMap: Record<string, Surface> = {
     builder: 'builder',
     submit: 'runner',
     runner: 'runner',
@@ -37,10 +46,19 @@ function parseUrlParams(): { formId?: string; surface?: Surface; embed: boolean 
     admin: 'admin',
     verify: 'verify',
   };
-  const surface = goParam ? surfaceMap[goParam.toLowerCase()] : undefined;
-  // Default to embed mode when arriving via share URL — respondents
-  // shouldn't see the Builder/Inbox/Verify tabs. Pass ?full=1 to override.
-  const embed = !!formId && sp.get('full') !== '1';
+  const sharedLinkSurfaceMap: Record<string, Surface> = {
+    submit: 'runner',
+    runner: 'runner',
+  };
+  const map = formId ? sharedLinkSurfaceMap : fullSurfaceMap;
+  const surface = goParam ? map[goParam.toLowerCase()] : undefined;
+  // `?go=docs` routes to the docs viewer instead of an app surface — handled
+  // separately in App since docs is its own View, not a Surface.
+
+  // Embed mode is locked on for any share-URL arrival. The legacy `?full=1`
+  // override was a phishing risk (let a malicious share URL drop a visitor
+  // into the publisher's Admin pretending it's the form they just filled).
+  const embed = !!formId;
   return { formId, surface, embed };
 }
 
@@ -81,6 +99,13 @@ export default function App() {
   // On first mount, honor a shared `?f=0x...&go=submit` URL by jumping
   // straight into the requested surface with the named form active.
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('go') === 'docs') {
+        setView('docs');
+        return;
+      }
+    }
     const { formId, surface: targetSurface, embed } = parseUrlParams();
     if (formId) {
       setActiveFormId(formId);
@@ -99,13 +124,14 @@ export default function App() {
   // fetch+parse the chunks in background after landing settles, so
   // navigation between surfaces becomes instant on subsequent clicks.
   useEffect(() => {
-    if (view !== 'app') return;
+    if (view === 'landing') return;
     const handle = setTimeout(() => {
       void import('./builder/BuilderSurface');
       void import('./runner/RunnerSurface');
       void import('./inbox/InboxSurface');
       void import('./admin/AdminSurface');
       void import('./verify/VerifySurface');
+      void import('./docs/DocsView');
     }, 1500);
     return () => clearTimeout(handle);
   }, [view]);
@@ -140,6 +166,7 @@ export default function App() {
           setSurface(targetSurface ?? 'builder');
           setView('app');
         }}
+        onOpenDocs={() => setView('docs')}
       />
     );
   }
@@ -151,13 +178,28 @@ export default function App() {
     setView('landing');
   };
 
+  if (view === 'docs') {
+    return (
+      <Suspense fallback={<SurfaceFallback />}>
+        <DocsView onHome={onHome} />
+      </Suspense>
+    );
+  }
+
   // Loading/error/placeholder views ONLY when we genuinely need to fetch
   // schema from chain (URL-supplied formId, no local schema).
   if (needsRemoteFetch && remoteSchemaQuery.isLoading) {
     return <SchemaLoading formId={activeFormId} />;
   }
   if (needsRemoteFetch && remoteSchemaQuery.isError) {
-    return <SchemaError formId={activeFormId} message={(remoteSchemaQuery.error as Error).message} onHome={onHome} />;
+    return (
+      <SchemaError
+        formId={activeFormId}
+        message={(remoteSchemaQuery.error as Error).message}
+        onHome={onHome}
+        onRetry={() => remoteSchemaQuery.refetch()}
+      />
+    );
   }
   if (needsRemoteFetch && remoteSchemaQuery.data && !remoteSchemaQuery.data.schema) {
     return <SchemaPlaceholder formId={activeFormId} meta={remoteSchemaQuery.data.meta} onHome={onHome} />;
@@ -170,6 +212,14 @@ export default function App() {
           schema={schema}
           activeFormId={activeFormId}
           embedMode={embedMode}
+          // Embed escape hatch: respondent finishes submitting via share
+          // URL, then wants to make their own form in the same tab. Drop
+          // embed lock + jump to Builder. Without this, they had to close
+          // the tab and re-visit the root URL.
+          onExitEmbed={() => {
+            setEmbedMode(false);
+            setSurface('builder');
+          }}
           surface={surface}
           onSurfaceChange={setSurface}
           onHome={onHome}
@@ -229,14 +279,30 @@ function SchemaLoading({ formId }: { formId: string }) {
   );
 }
 
-function SchemaError({ formId, message, onHome }: { formId: string; message: string; onHome: () => void }) {
+function SchemaError({ formId, message, onHome, onRetry }: { formId: string; message: string; onHome: () => void; onRetry?: () => void }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)', padding: 24 }}>
       <div style={{ maxWidth: 520, textAlign: 'center', fontFamily: 'var(--body)', color: 'var(--ink)' }}>
         <div style={{ fontFamily: 'var(--hand)', fontSize: 32, color: 'var(--marker-red)' }}>Form not loadable</div>
         <p style={{ marginTop: 8 }}>Couldn&rsquo;t load Form <code style={{ fontFamily: 'var(--mono)' }}>{formId.slice(0, 14)}…</code> from chain.</p>
         <p style={{ color: 'var(--marker-red)', fontSize: 13 }}>{message}</p>
-        <button type="button" className="btn btn-primary btn-sm" onClick={onHome} style={{ marginTop: 12 }}>← back to catat home</button>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
+          {onRetry && (
+            <button type="button" className="btn btn-primary btn-sm" onClick={onRetry}>↻ Retry</button>
+          )}
+          <a
+            href={`https://suiscan.xyz/testnet/object/${formId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm"
+          >
+            View on Suiscan ↗
+          </a>
+          <button type="button" className="btn btn-sm" onClick={onHome}>← catat home</button>
+        </div>
+        <p style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-soft)' }}>
+          If this persists, the Walrus storage epoch for the schema may have expired, or the form ID isn't a real Form.
+        </p>
       </div>
     </div>
   );

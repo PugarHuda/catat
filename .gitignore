@@ -13,3 +13,7 @@ dist/
 
 # Vercel
 .vercel/
+
+# Playwright MCP test artifacts (snapshots, console logs, screenshots
+# auto-generated during interactive QA — never check these in)
+.playwright-mcp/
