@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useSuiClient } from '@mysten/dapp-kit';
 import { useWalrusClient } from '@/lib/useWalrusClient';
 import SurfaceTabs from '@/components/SurfaceTabs';

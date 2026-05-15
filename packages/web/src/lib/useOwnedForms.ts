@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
 import { CATAT_PACKAGE_ID } from './contract';

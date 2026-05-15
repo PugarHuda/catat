@@ -1,4 +1,4 @@
-import { Callout, P, H2, H3, Lead, Code, KeyList } from '../primitives';
+import { Callout, P, H2, Lead, Code, KeyList } from '../primitives';
 
 export function InboxAdminDoc() {
   return (
