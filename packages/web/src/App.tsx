@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import LandingPage from './landing/LandingPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { blankCanvasTemplate, bugReportTemplate } from './builder/templates';
 import type { FormSchema } from './builder/types';
 import type { Submission } from './admin/types';
@@ -179,9 +180,11 @@ export default function App() {
 
   if (view === 'docs') {
     return (
-      <Suspense fallback={<SurfaceFallback />}>
-        <DocsView onHome={onHome} />
-      </Suspense>
+      <ErrorBoundary surface="docs">
+        <Suspense fallback={<SurfaceFallback />}>
+          <DocsView onHome={onHome} />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
@@ -205,7 +208,12 @@ export default function App() {
   }
 
   return (
-    <Suspense fallback={<SurfaceFallback />}>
+    // Per-surface boundary: a crash or chunk-load failure in one surface
+    // shows a recoverable card scoped to that surface instead of blanking
+    // the whole app. `key={surface}` resets the boundary on navigation so
+    // a previously-errored surface gets a clean retry when revisited.
+    <ErrorBoundary key={surface} surface={surface}>
+      <Suspense fallback={<SurfaceFallback />}>
       {surface === 'runner' ? (
         <RunnerSurface
           schema={schema}
@@ -261,7 +269,8 @@ export default function App() {
           onHome={onHome}
         />
       )}
-    </Suspense>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

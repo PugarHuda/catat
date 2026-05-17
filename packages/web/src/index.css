@@ -4038,3 +4038,121 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   .docs-h2 { font-size: 26px; }
   .docs-keylist-row { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ==========================================================================
+   Error Boundary fallback — full-screen + inline variants
+   ========================================================================== */
+
+.errbound-full {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  padding: 24px;
+}
+
+.eb-card {
+  max-width: 480px;
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--paper-edge);
+  border-radius: 12px;
+  padding: 32px 28px 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-family: var(--body);
+  color: var(--ink);
+  position: relative;
+}
+
+.eb-stamp {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  background: var(--marker-red);
+  color: #fff;
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 18px;
+  padding: 2px 16px;
+  border-radius: 4px;
+  letter-spacing: .04em;
+}
+
+.eb-card h2 {
+  font-family: var(--hand);
+  font-size: 32px;
+  font-weight: 700;
+  margin: 12px 0 10px;
+  color: var(--ink);
+}
+
+.eb-card p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+}
+
+.eb-detail {
+  text-align: left;
+  margin: 0 0 18px;
+  font-size: 12px;
+}
+.eb-detail summary {
+  cursor: pointer;
+  font-family: var(--type);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: var(--pencil);
+}
+.eb-detail code {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: var(--paper-edge);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--marker-red);
+  word-break: break-word;
+}
+
+.eb-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.eb-foot {
+  display: block;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--pencil);
+}
+.eb-foot a, .eb-card a { color: var(--marker-blue); }
+
+/* Inline variant — scoped per-surface, doesn't take the whole viewport */
+.errbound-inline {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  align-items: start;
+  max-width: 560px;
+  margin: 40px auto;
+  padding: 16px 18px;
+  background: #fbe8d7;
+  border: 1.5px solid #d68d4c;
+  border-radius: 10px;
+  font-family: var(--body);
+  color: var(--ink);
+}
+.errbound-inline .eb-icon { font-size: 22px; line-height: 1; }
+.errbound-inline .eb-body { display: flex; flex-direction: column; gap: 4px; }
+.errbound-inline .eb-body b { font-size: 15px; }
+.errbound-inline .eb-body span { font-size: 13px; color: var(--ink-soft); }
+.errbound-inline .eb-actions { justify-content: flex-start; margin-top: 8px; }
