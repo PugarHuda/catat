@@ -113,13 +113,19 @@ function toCsv({ schema, submissions, decryptedValues }: ExportArgs): string {
 function escapeCsvCell(cell: unknown): string {
   if (cell == null) return '';
   let s = String(cell);
-  // CSV-injection mitigation: Excel/LibreOffice treat cells starting with
-  // `=`, `+`, `-`, `@`, or `\t` as formulas — a label like `=cmd|'/c calc'!A1`
-  // can run shell commands when the file is opened. Prefix with a single
-  // quote so the spreadsheet treats the value as literal text instead of a
-  // formula. The leading quote is stripped by Excel on display so users
-  // never see it.
-  if (/^[=+\-@\t]/.test(s)) s = "'" + s;
+  // CSV-injection mitigation: Excel/LibreOffice execute cells starting
+  // with `=`, `+`, `@`, or tab as formulas — `=cmd|'/c calc'!A1` can run
+  // shell commands when the file opens. Prefix those with a single quote
+  // so the spreadsheet treats them as literal text (Excel strips the
+  // quote on display).
+  //
+  // A leading `-` is only dangerous when it's NOT a plain negative number
+  // (`-2+3+cmd|...` is a formula; `-1` / `-3.5` are legitimate numeric
+  // answers). Guarding `-1` would silently rewrite a respondent's real
+  // numeric value, so we exclude pure negative numbers from the guard.
+  const isFormulaRisk =
+    /^[=+@\t]/.test(s) || (s.startsWith('-') && !/^-\d+(\.\d+)?$/.test(s));
+  if (isFormulaRisk) s = "'" + s;
   // Escape if value contains delimiter, quote, or any line-break char
   // (Excel will misinterpret unescaped CR/LF as a row break).
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
