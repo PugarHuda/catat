@@ -180,7 +180,7 @@ export default function App() {
 
   if (view === 'docs') {
     return (
-      <ErrorBoundary surface="docs">
+      <ErrorBoundary key="docs" surface="docs">
         <Suspense fallback={<SurfaceFallback />}>
           <DocsView onHome={onHome} />
         </Suspense>
@@ -208,10 +208,11 @@ export default function App() {
   }
 
   return (
-    // Per-surface boundary: a crash or chunk-load failure in one surface
-    // shows a recoverable card scoped to that surface instead of blanking
-    // the whole app. `key={surface}` resets the boundary on navigation so
-    // a previously-errored surface gets a clean retry when revisited.
+    // Per-surface boundary: a crash or chunk-load failure shows the
+    // recoverable error card instead of blanking the whole app.
+    // `key={surface}` remounts the boundary on navigation — so if a
+    // surface crashed once, switching away and back gives it a clean
+    // retry rather than showing the stale error card forever.
     <ErrorBoundary key={surface} surface={surface}>
       <Suspense fallback={<SurfaceFallback />}>
       {surface === 'runner' ? (

@@ -38,7 +38,11 @@ export interface ExportResult {
 /** Public entry — picks the right serializer for `format`. */
 export function exportSubmissions(format: ExportFormat, args: ExportArgs): ExportResult {
   const tsSlug = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-  const baseName = `catat-${args.schema.id || 'form'}-${tsSlug}`;
+  // Slugify the schema id — chain/user-derived ids can contain chars
+  // illegal in filenames (`/`, `:`, `0x...`), which break the download
+  // on some browsers. Collapse anything non-alphanumeric to a dash.
+  const idSlug = (args.schema.id || 'form').replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 40);
+  const baseName = `catat-${idSlug}-${tsSlug}`;
   switch (format) {
     case 'csv':
       return { filename: `${baseName}.csv`, mimeType: 'text/csv;charset=utf-8', content: toCsv(args) };
@@ -94,7 +98,7 @@ function toCsv({ schema, submissions, decryptedValues }: ExportArgs): string {
       s.tx_hash,
       s.blob_id ? walruscanBlob(s.blob_id) : '',
       s.tx_hash ? suiscanTx(s.tx_hash) : '',
-      s.source ?? 'mock',
+      s.source ?? 'unknown',
       s.notes ?? '',
     ];
     const fieldValues = schema.fields.map(f => stringifyFieldValue(s, f.id, !!f.encrypted, decryptedValues));
@@ -158,7 +162,7 @@ function toJson({ schema, submissions, decryptedValues }: ExportArgs): string {
         tags: s.tags,
         notes: s.notes ?? null,
       },
-      source: s.source ?? 'mock',
+      source: s.source ?? 'unknown',
       values: schema.fields.reduce<Record<string, unknown>>((acc, f) => {
         acc[f.id] = readableFieldValue(s, f.id, !!f.encrypted, decryptedValues);
         return acc;

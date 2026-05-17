@@ -54,7 +54,10 @@ export default function ExportMenu({ disabled = false, onExport }: Props) {
         className="export-btn-paper"
         onClick={() => setOpen(o => !o)}
         disabled={disabled}
-        aria-haspopup="menu"
+        // `aria-haspopup="true"` (generic popup) not "menu" — a menu role
+        // promises arrow-key navigation we don't implement. The popup is
+        // a plain group of buttons; Tab + Enter works as announced.
+        aria-haspopup="true"
         aria-expanded={open}
         title={disabled ? 'No submissions to export' : 'Export submissions in your preferred format'}
       >
@@ -63,12 +66,11 @@ export default function ExportMenu({ disabled = false, onExport }: Props) {
       </button>
 
       {open && (
-        <div className="export-menu" role="menu">
+        <div className="export-menu">
           {FORMATS.map(f => (
             <button
               key={f.key}
               type="button"
-              role="menuitem"
               className="export-menu-item"
               onClick={() => pick(f.key)}
             >

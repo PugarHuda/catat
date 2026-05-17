@@ -4135,24 +4135,3 @@ textarea.in-rich::placeholder { color: var(--pencil-soft); font-style: italic; }
   color: var(--pencil);
 }
 .eb-foot a, .eb-card a { color: var(--marker-blue); }
-
-/* Inline variant — scoped per-surface, doesn't take the whole viewport */
-.errbound-inline {
-  display: grid;
-  grid-template-columns: 32px 1fr;
-  gap: 12px;
-  align-items: start;
-  max-width: 560px;
-  margin: 40px auto;
-  padding: 16px 18px;
-  background: #fbe8d7;
-  border: 1.5px solid #d68d4c;
-  border-radius: 10px;
-  font-family: var(--body);
-  color: var(--ink);
-}
-.errbound-inline .eb-icon { font-size: 22px; line-height: 1; }
-.errbound-inline .eb-body { display: flex; flex-direction: column; gap: 4px; }
-.errbound-inline .eb-body b { font-size: 15px; }
-.errbound-inline .eb-body span { font-size: 13px; color: var(--ink-soft); }
-.errbound-inline .eb-actions { justify-content: flex-start; margin-top: 8px; }
