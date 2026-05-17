@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>catat — OG image (1200×630)</title>
+<!--
+  Social preview image source for og:image / twitter:image.
+
+  index.html ALREADY points og:image + twitter:image at /og.png — the
+  ONLY remaining step is to generate that PNG and commit it:
+
+   1. Open this file in Chrome.
+   2. The `.og` card below is EXACTLY 1200×630 px.
+   3. Capture it — DevTools is the precise route:
+        - Right-click the card → Inspect
+        - In the Elements panel, right-click the <div class="og"> node
+        - "Capture node screenshot"  →  pixel-exact 1200×630 PNG
+   4. Save it as  packages/web/public/og.png
+   5. Commit + push  →  auto-deploys.
+   6. Test the unfurl at https://www.opengraph.xyz/ (paste the live URL).
+
+  Until og.png exists, the og:image will 404 — but the previous SVG
+  didn't unfurl on Discord/Twitter/Slack anyway, so nothing is lost in
+  the meantime. They need a raster PNG/JPG; SVG is not supported.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@600;700&family=JetBrains+Mono:wght@600&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  :root {
+    --paper:       #f4ecd6;
+    --paper-edge:  #e9dfc1;
+    --ink:         #2b2823;
+    --ink-soft:    #6b6457;
+    --marker-blue: #2f6f9f;
+    --marker-red:  #c2452f;
+    --marker-green:#5c8a3a;
+    --hand: 'Caveat', cursive;
+    --body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  html, body { margin: 0; padding: 0; background: #1d1d1f; }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px;
+  }
+
+  /* EXACT OG dimensions — do not change */
+  .og {
+    width: 1200px;
+    height: 630px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(900px 500px at 78% 22%, #faf3df 0%, transparent 60%),
+      linear-gradient(160deg, #f8f0da 0%, var(--paper) 45%, var(--paper-edge) 100%);
+    font-family: var(--body);
+    color: var(--ink);
+    padding: 72px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* faint ruled-paper lines for the notebook aesthetic */
+  .og::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0 47px,
+      rgba(47, 111, 159, 0.07) 47px 48px
+    );
+    pointer-events: none;
+  }
+  /* margin rule line, like a real notebook */
+  .og::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 132px;
+    width: 2px;
+    background: rgba(194, 69, 47, 0.18);
+  }
+
+  .row { position: relative; z-index: 1; }
+
+  /* ── top: brand ───────────────────────────────── */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .glyph {
+    width: 58px; height: 58px;
+    border: 3px solid var(--ink);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    transform: rotate(-4deg);
+    box-shadow: 4px 5px 0 rgba(43, 40, 35, 0.18);
+  }
+  .glyph span {
+    font-family: var(--hand);
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--marker-blue);
+    transform: rotate(4deg);
+  }
+  .wordmark {
+    font-family: var(--hand);
+    font-weight: 700;
+    font-size: 52px;
+    color: var(--ink);
+    letter-spacing: .01em;
+  }
+  .est {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin-left: 4px;
+  }
+
+  /* ── middle: headline ─────────────────────────── */
+  .headline {
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: 76px;
+    line-height: 1.08;
+    color: var(--ink);
+    max-width: 16ch;
+  }
+  .headline .marker {
+    background: linear-gradient(180deg, transparent 58%, rgba(92, 138, 58, 0.45) 58%);
+    padding: 0 4px;
+  }
+  .headline .strike {
+    text-decoration: line-through;
+    text-decoration-color: var(--marker-red);
+    text-decoration-thickness: 5px;
+    color: var(--ink-soft);
+  }
+  .sub {
+    margin-top: 22px;
+    font-size: 27px;
+    color: var(--ink-soft);
+    max-width: 40ch;
+    line-height: 1.45;
+  }
+
+  /* ── bottom: chips + url ──────────────────────── */
+  .bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .chips { display: flex; gap: 14px; }
+  .chip {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 20px;
+    padding: 9px 18px;
+    border-radius: 9px;
+    border: 2.5px solid;
+    background: #fff;
+  }
+  .chip.blue  { color: var(--marker-blue);  border-color: var(--marker-blue);  transform: rotate(-2deg); }
+  .chip.green { color: var(--marker-green); border-color: var(--marker-green); transform: rotate(1.5deg); }
+  .chip.red   { color: var(--marker-red);   border-color: var(--marker-red);   transform: rotate(-1deg); }
+
+  .url {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    background: #fff;
+    border: 2.5px dashed var(--ink-soft);
+    border-radius: 10px;
+    padding: 10px 20px;
+  }
+</style>
+</head>
+<body>
+  <div class="og">
+    <!-- top -->
+    <div class="row brand">
+      <div class="glyph"><span>c</span></div>
+      <div class="wordmark">catat</div>
+      <div class="est">est. 2026</div>
+    </div>
+
+    <!-- middle -->
+    <div class="row">
+      <div class="headline">
+        Forms with <span class="marker">cryptographic proof</span>,
+        not <span class="strike">vendor</span> promises.
+      </div>
+      <div class="sub">
+        Walrus-native feedback platform — submissions on Walrus, sealed via Seal,
+        proven on Sui. No backend, no SaaS lock-in.
+      </div>
+    </div>
+
+    <!-- bottom -->
+    <div class="row bottom">
+      <div class="chips">
+        <div class="chip blue">SUI</div>
+        <div class="chip green">WALRUS</div>
+        <div class="chip red">SEAL</div>
+      </div>
+      <div class="url">catat-walrus.vercel.app</div>
+    </div>
+  </div>
+</body>
+</html>
